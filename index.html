@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NES Emulator</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+        background: #111;
+        color: #f0f0f0;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(255, 240, 180, 0.15), transparent 35%),
+          linear-gradient(180deg, #191919, #090909);
+      }
+
+      main {
+        width: min(960px, calc(100vw - 32px));
+        display: grid;
+        gap: 16px;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      .shell {
+        border: 2px solid #3d3d3d;
+        background: rgba(0, 0, 0, 0.7);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+      }
+
+      canvas {
+        width: 100%;
+        aspect-ratio: 256 / 240;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        display: block;
+        background: #000;
+      }
+
+      .meta {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .badge {
+        padding: 4px 8px;
+        border: 1px solid #4d4d4d;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      #status {
+        min-height: 1lh;
+        color: #f5d76e;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="row">
+        <h1>Super Mario Bros</h1>
+        <div class="badge">Mapper 0</div>
+        <div class="badge">No external libraries</div>
+      </div>
+      <div class="shell">
+        <canvas id="screen" width="256" height="240" aria-label="NES screen"></canvas>
+      </div>
+      <section class="shell meta">
+        <p id="status">Booting ROM…</p>
+        <div class="row">
+          <span class="badge">Arrows: D-pad</span>
+          <span class="badge">Z: B</span>
+          <span class="badge">X: A</span>
+          <span class="badge">Enter: Start</span>
+          <span class="badge">Shift: Select</span>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
