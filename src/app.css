@@ -236,6 +236,12 @@ strong,
   line-height: 1;
 }
 
+.stat-copy {
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.1;
+  color: #f6f1d2;
+}
+
 .input-card {
   text-align: right;
 }
@@ -276,46 +282,6 @@ strong,
     inset 0 -3px 0 rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(228, 0, 15, 0.2),
     0 6px 10px rgba(0, 0, 0, 0.25);
-}
-
-.audio-panel {
-  display: grid;
-  gap: 8px;
-}
-
-.audio-status {
-  margin: 0;
-  font-size: clamp(18px, 1.8vw, 22px);
-  line-height: 1.08;
-  color: #f6f1d2;
-}
-
-.audio-status[data-tone="error"] {
-  color: #ffb0b0;
-}
-
-.audio-button {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 8px 10px;
-  border: 2px solid rgba(228, 0, 15, 0.5);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
-    #111111;
-  color: var(--ink);
-  cursor: pointer;
-  box-shadow:
-    inset 0 -3px 0 rgba(0, 0, 0, 0.35),
-    0 6px 10px rgba(0, 0, 0, 0.25);
-}
-
-.audio-button:hover,
-.audio-button:focus-visible {
-  border-color: rgba(248, 184, 0, 0.55);
-  transform: translateY(-1px);
 }
 
 .content-grid {
@@ -417,6 +383,7 @@ canvas {
 }
 
 .overlay {
+  appearance: none;
   position: absolute;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
@@ -433,9 +400,15 @@ canvas {
     0 0 0 4px rgba(12, 12, 12, 0.96),
     0 20px 40px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
+  cursor: pointer;
   transition: opacity 180ms ease;
   z-index: 1;
   animation: overlay-hover 2.8s steps(4, end) infinite;
+}
+
+.overlay:focus-visible {
+  outline: 2px solid rgba(248, 184, 0, 0.7);
+  outline-offset: 4px;
 }
 
 .stage.loaded .overlay {
@@ -790,8 +763,7 @@ canvas {
   }
 
   .badge,
-  .input-badge-key,
-  .audio-button {
+  .input-badge-key {
     min-height: 28px;
   }
 

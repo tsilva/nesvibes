@@ -7,22 +7,14 @@
 
   let canvas;
   let emulator;
+  let filePicker;
   let romCatalog = [];
   let activeCatalogId = "";
   let catalogMessage = "Loading bundled ROMs...";
   let stageMode = "empty";
   let isDragging = false;
   let overlayTitle = "Drop a `.nes` ROM";
-  let overlayCopy = "Enable audio, then drag in a ROM or launch one from the library.";
-  let audioMessage = "Click to arm browser audio, then boot a ROM.";
-  let audioTone = "ready";
-  let audioButtonLabel = "Enable Audio";
-
-  function setAudioStatus(message, tone = "ready", buttonLabel = "Enable Audio") {
-    audioMessage = message;
-    audioTone = tone;
-    audioButtonLabel = buttonLabel;
-  }
+  let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
 
   function setOverlay(title, message) {
     overlayTitle = title;
@@ -79,7 +71,7 @@
       const bytes = new Uint8Array(await file.arrayBuffer());
       loadRomBytes(
         bytes,
-        `${file.name} loaded. Drag a new ROM into the window to replace it.`
+        `${file.name} loaded. Drop another ROM anytime to replace it.`
       );
     } catch (error) {
       console.error(error);
@@ -97,7 +89,7 @@
       const bytes = new Uint8Array(await response.arrayBuffer());
       loadRomBytes(
         bytes,
-        `${entry.title} launched from Quicklaunch. Drag another ROM anytime to replace it.`
+        `${entry.title} launched from Quicklaunch. Drop another ROM anytime to replace it.`
       );
       activeCatalogId = entry.id;
     } catch (error) {
@@ -129,10 +121,20 @@
     return Array.from(event.dataTransfer?.types || []).includes("Files");
   }
 
+  function openRomPicker() {
+    void enableAudio();
+    filePicker?.click();
+  }
+
+  async function handleFilePickerChange(event) {
+    const [file] = event.currentTarget.files ?? [];
+    await loadRomFile(file);
+    event.currentTarget.value = "";
+  }
+
   onMount(() => {
     emulator = createNesEmulator({
       canvas,
-      onAudioStatus: setAudioStatus,
       onRuntimeError: handleEmulatorRuntimeError
     });
 
@@ -271,13 +273,8 @@
           </span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Audio</span>
-          <div class="audio-panel">
-            <p class="audio-status" data-tone={audioTone}>{audioMessage}</p>
-            <button class="audio-button" type="button" on:click={() => void enableAudio()}>
-              {audioButtonLabel}
-            </button>
-          </div>
+          <span class="stat-label">Load</span>
+          <span class="stat-value stat-copy">Drop ROM or click prompt</span>
         </div>
       </div>
     </div>
@@ -285,17 +282,24 @@
 
   <main class="content-grid">
     <section class="cabinet" aria-label="NES player">
+      <input
+        bind:this={filePicker}
+        type="file"
+        accept=".nes,application/octet-stream"
+        hidden
+        on:change={handleFilePickerChange}
+      />
       <div class="stage-shell">
         <section
           class={`stage ${stageMode}${isDragging ? " dragging" : ""}`}
           aria-label="ROM drop zone"
         >
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
-          <div class="overlay">
+          <button class="overlay" type="button" on:click={openRomPicker}>
             <p class="loader-kicker">PLAYER ONE READY</p>
             <strong>{overlayTitle}</strong>
             <p id="loader-copy">{overlayCopy}</p>
-          </div>
+          </button>
         </section>
       </div>
     </section>
