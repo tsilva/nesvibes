@@ -4,27 +4,27 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NES Vibes</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23120814'/%3E%3Crect x='8' y='10' width='48' height='44' rx='4' fill='%23f4ecff'/%3E%3Crect x='14' y='16' width='36' height='18' fill='%23000000'/%3E%3Crect x='18' y='20' width='28' height='10' fill='%2344e5d8'/%3E%3Crect x='14' y='40' width='12' height='4' fill='%23ff5470'/%3E%3Crect x='30' y='40' width='20' height='4' fill='%23ffd166'/%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23252525'/%3E%3Crect x='8' y='10' width='48' height='44' rx='4' fill='%23c7c7c7'/%3E%3Crect x='14' y='16' width='36' height='18' fill='%23070707'/%3E%3Crect x='18' y='20' width='28' height='10' fill='%233b6fd8'/%3E%3Crect x='14' y='40' width='12' height='4' fill='%23e4000f'/%3E%3Crect x='30' y='40' width='20' height='4' fill='%23909090'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <style>
       :root {
         color-scheme: dark;
-        --bg: #120814;
-        --panel: rgba(33, 14, 45, 0.88);
-        --panel-strong: rgba(14, 8, 24, 0.92);
-        --ink: #fff7dd;
-        --muted: #d5c8ff;
-        --accent: #ff5470;
-        --accent-2: #ffd166;
-        --accent-3: #44e5d8;
+        --bg: #252525;
+        --panel: rgba(42, 42, 42, 0.9);
+        --panel-strong: rgba(20, 20, 20, 0.94);
+        --ink: #f3f3f3;
+        --muted: #d2d2d2;
+        --accent: #e4000f;
+        --accent-2: #c7c7c7;
+        --accent-3: #3b6fd8;
         --shadow: rgba(0, 0, 0, 0.45);
         font-family: "VT323", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
         background:
-          radial-gradient(circle at top, rgba(255, 209, 102, 0.18), transparent 24%),
-          radial-gradient(circle at 20% 20%, rgba(68, 229, 216, 0.12), transparent 25%),
-          linear-gradient(180deg, #25103b 0%, #120814 45%, #05010c 100%);
+          radial-gradient(circle at top, rgba(228, 0, 15, 0.16), transparent 24%),
+          radial-gradient(circle at 20% 20%, rgba(59, 111, 216, 0.12), transparent 25%),
+          linear-gradient(180deg, #4b4b4b 0%, #252525 42%, #090909 100%);
         color: var(--ink);
       }
 
@@ -38,8 +38,8 @@
         background:
           linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-          radial-gradient(circle at top, rgba(255, 209, 102, 0.18), transparent 24%),
-          linear-gradient(180deg, #25103b 0%, #120814 45%, #05010c 100%);
+          radial-gradient(circle at top, rgba(228, 0, 15, 0.16), transparent 24%),
+          linear-gradient(180deg, #4b4b4b 0%, #252525 42%, #090909 100%);
         background-size: 24px 24px, 24px 24px, auto, auto;
       }
 
@@ -80,11 +80,11 @@
         padding: 18px 20px;
         margin-bottom: 14px;
         background:
-          linear-gradient(135deg, rgba(255, 84, 112, 0.18), rgba(126, 106, 247, 0.18)),
+          linear-gradient(135deg, rgba(228, 0, 15, 0.18), rgba(199, 199, 199, 0.16)),
           var(--panel-strong);
-        border: 4px solid #f4ecff;
+        border: 4px solid #d0d0d0;
         box-shadow:
-          0 0 0 4px #24112f,
+          0 0 0 4px #1a1a1a,
           0 18px 40px var(--shadow);
         overflow: hidden;
         animation: banner-rise 720ms steps(6, end) both;
@@ -96,7 +96,7 @@
         inset: auto -60px -70px auto;
         width: 220px;
         height: 220px;
-        background: radial-gradient(circle, rgba(68, 229, 216, 0.38) 0%, rgba(68, 229, 216, 0) 68%);
+        background: radial-gradient(circle, rgba(59, 111, 216, 0.3) 0%, rgba(59, 111, 216, 0) 68%);
         pointer-events: none;
         animation: orb-pulse 3.6s ease-in-out infinite;
       }
@@ -131,7 +131,7 @@
         margin: 0;
         font-size: clamp(28px, 5vw, 52px);
         line-height: 1.05;
-        text-shadow: 4px 4px 0 #221028;
+        text-shadow: 4px 4px 0 #111111;
       }
 
       .hero-lede {
@@ -163,13 +163,14 @@
         min-height: 34px;
         padding: 8px 12px;
         font-size: 10px;
-        color: #17070f;
+        color: #111111;
         background: var(--accent-2);
         box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
       }
 
       .badge.alt {
-        background: var(--accent-3);
+        color: #f3f3f3;
+        background: var(--accent);
       }
 
       .hero-stats {
@@ -179,7 +180,6 @@
       }
 
       .stat-card,
-      .footer-card,
       .side-card {
         padding: 13px 14px;
         background: var(--panel);
@@ -220,10 +220,10 @@
         padding: 14px;
         background:
           linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%),
-          linear-gradient(145deg, rgba(80, 55, 93, 0.65), rgba(13, 7, 21, 0.92));
-        border: 4px solid #f4ecff;
+          linear-gradient(145deg, rgba(116, 116, 116, 0.7), rgba(18, 18, 18, 0.94));
+        border: 4px solid #d0d0d0;
         box-shadow:
-          0 0 0 5px #2d1935,
+          0 0 0 5px #171717,
           0 24px 44px var(--shadow);
       }
 
@@ -241,20 +241,20 @@
         aspect-ratio: 256 / 240;
         overflow: hidden;
         background:
-          radial-gradient(circle at top, rgba(255, 216, 134, 0.18), transparent 28%),
-          radial-gradient(circle at 50% 120%, rgba(68, 229, 216, 0.16), transparent 28%),
+          radial-gradient(circle at top, rgba(228, 0, 15, 0.12), transparent 28%),
+          radial-gradient(circle at 50% 120%, rgba(59, 111, 216, 0.1), transparent 28%),
           #000;
         border: 3px solid #0d0714;
         box-shadow:
-          inset 0 0 0 4px #20102a,
+          inset 0 0 0 4px #1e1e1e,
           inset 0 0 80px rgba(0, 0, 0, 0.7);
       }
 
       .stage.dragging {
         box-shadow:
-          inset 0 0 0 4px var(--accent-2),
-          inset 0 0 50px rgba(255, 209, 102, 0.2),
-          0 0 28px rgba(255, 209, 102, 0.24);
+          inset 0 0 0 4px var(--accent),
+          inset 0 0 50px rgba(228, 0, 15, 0.18),
+          0 0 28px rgba(228, 0, 15, 0.22);
       }
 
       .stage::before,
@@ -302,10 +302,10 @@
         text-align: center;
         background:
           linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 20%),
-          rgba(12, 6, 20, 0.9);
-        border: 3px solid rgba(255, 247, 221, 0.85);
+          rgba(20, 20, 20, 0.92);
+        border: 3px solid rgba(199, 199, 199, 0.9);
         box-shadow:
-          0 0 0 4px rgba(24, 10, 35, 0.95),
+          0 0 0 4px rgba(12, 12, 12, 0.96),
           0 20px 40px rgba(0, 0, 0, 0.45);
         backdrop-filter: blur(8px);
         transition: opacity 180ms ease;
@@ -337,7 +337,6 @@
       }
 
       .overlay p,
-      .footer-card p,
       .side-card p,
       .side-card li,
       .cartridge span {
@@ -348,20 +347,13 @@
       }
 
       #loader-copy {
-        color: #f5d76e;
+        color: #d44a4a;
       }
 
       .overlay-note {
-        color: #c7b8ef;
+        color: #bdbdbd;
       }
 
-      .cabinet-footer {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .footer-card h2,
       .side-card h2 {
         margin: 0 0 12px;
         font-size: 14px;
@@ -376,11 +368,12 @@
         min-width: 54px;
         padding: 8px 10px;
         font-size: 10px;
-        color: #11040d;
-        background: var(--accent-3);
+        color: #f3f3f3;
+        background: var(--accent);
       }
 
       .button-key.alt {
+        color: #111111;
         background: var(--accent-2);
       }
 
@@ -395,7 +388,7 @@
 
       .side-card.highlight {
         background:
-          linear-gradient(135deg, rgba(255, 84, 112, 0.18), transparent 60%),
+          linear-gradient(135deg, rgba(228, 0, 15, 0.2), transparent 60%),
           var(--panel);
       }
 
@@ -407,7 +400,7 @@
       .cartridge {
         position: relative;
         padding: 14px 16px 14px 24px;
-        background: rgba(5, 1, 12, 0.65);
+        background: rgba(17, 17, 17, 0.72);
         border: 3px solid rgba(255, 255, 255, 0.12);
         overflow: hidden;
       }
@@ -417,7 +410,7 @@
         position: absolute;
         inset: 0 auto 0 0;
         width: 10px;
-        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+        background: linear-gradient(180deg, var(--accent), var(--accent-3));
       }
 
       .cartridge strong {
@@ -484,8 +477,7 @@
 
       @media (max-width: 980px) {
         .hero-grid,
-        .content-grid,
-        .cabinet-footer {
+        .content-grid {
           grid-template-columns: 1fr;
         }
 
@@ -503,7 +495,6 @@
         .hero-banner,
         .stage-shell,
         .stat-card,
-        .footer-card,
         .side-card {
           padding-left: 16px;
           padding-right: 16px;
@@ -537,7 +528,6 @@
         }
 
         .overlay p,
-        .footer-card p,
         .side-card p,
         .side-card li,
         .cartridge span {
@@ -595,25 +585,24 @@
               </div>
             </section>
           </div>
-
-          <div class="cabinet-footer">
-            <article class="footer-card">
-              <h2>Controls</h2>
-              <div class="button-row" aria-label="Keyboard controls">
-                <span class="button-key">Z = B</span>
-                <span class="button-key">X = A</span>
-                <span class="button-key alt">Shift = Select</span>
-                <span class="button-key alt">Enter = Start</span>
-              </div>
-            </article>
-            <article class="footer-card">
-              <h2>D-Pad</h2>
-              <p>Arrow keys drive movement. The canvas keeps focus after boot so inputs feel immediate.</p>
-            </article>
-          </div>
         </section>
 
         <aside class="side-rail" aria-label="Setup notes">
+          <article class="side-card">
+            <h2>Controls</h2>
+            <div class="button-row" aria-label="Keyboard controls">
+              <span class="button-key">Z = B</span>
+              <span class="button-key">X = A</span>
+              <span class="button-key alt">Shift = Select</span>
+              <span class="button-key alt">Enter = Start</span>
+            </div>
+          </article>
+
+          <article class="side-card">
+            <h2>D-Pad</h2>
+            <p>Arrow keys drive movement. The canvas keeps focus after boot so inputs feel immediate.</p>
+          </article>
+
           <article class="side-card highlight">
             <h2>Boot Sequence</h2>
             <p>Drop a ROM anywhere in the window. The loader swaps it in instantly and keeps the cabinet warm for the next cart.</p>
