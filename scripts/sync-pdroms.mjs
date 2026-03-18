@@ -5,9 +5,10 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+const staticRoot = path.join(repoRoot, "static");
 const baseUrl = "https://www.zophar.net";
 const listingUrl = `${baseUrl}/pdroms/nes.html`;
-const outputRoot = path.join(repoRoot, "roms", "pdroms", "nes");
+const outputRoot = path.join(staticRoot, "roms", "pdroms", "nes");
 const archiveDir = path.join(outputRoot, "archives");
 const extractDir = path.join(outputRoot, "library");
 const catalogPath = path.join(outputRoot, "catalog.json");
@@ -127,7 +128,7 @@ function mapperSupport(mapper) {
 }
 
 async function buildCatalogEntry(filePath, archiveMeta) {
-  const relativePath = path.relative(repoRoot, filePath).split(path.sep).join("/");
+  const relativePath = path.relative(staticRoot, filePath).split(path.sep).join("/");
   const data = new Uint8Array(await readFile(filePath));
 
   if (

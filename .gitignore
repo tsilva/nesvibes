@@ -1,4 +1,7 @@
-*.nes
-!roms/pdroms/nes/library/**/*.nes
-!roms/pdroms/nes/library/**/*.NES
+node_modules
+.svelte-kit
 .vercel
+
+*.nes
+!static/roms/pdroms/nes/library/**/*.nes
+!static/roms/pdroms/nes/library/**/*.NES
