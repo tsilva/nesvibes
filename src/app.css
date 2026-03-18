@@ -48,7 +48,6 @@ h1,
 h2,
 h3,
 strong,
-.badge,
 .stat-label,
 .loader-kicker,
 .button-key {
@@ -73,7 +72,7 @@ strong,
   position: relative;
   display: grid;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 16px 240px 16px 18px;
   background:
     linear-gradient(135deg, rgba(228, 0, 15, 0.18), rgba(199, 199, 199, 0.16)),
     var(--panel-strong);
@@ -148,9 +147,9 @@ strong,
 .hero-grid {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.75fr);
+  grid-template-columns: 1fr;
   gap: 16px;
-  align-items: center;
+  align-items: start;
   z-index: 1;
 }
 
@@ -183,35 +182,17 @@ strong,
   color: var(--accent-2);
 }
 
-.hero-badges,
 .button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 7px 10px;
-  font-size: 10px;
-  color: #111111;
-  background: var(--accent-2);
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
-}
-
-.badge.alt {
-  color: #f3f3f3;
-  background: var(--accent);
-}
-
 .hero-stats {
-  display: grid;
-  grid-template-columns: minmax(320px, max-content);
-  gap: 8px;
-  justify-content: end;
+  position: absolute;
+  top: 14px;
+  right: 66px;
+  z-index: 2;
 }
 
 .stat-card,
@@ -238,7 +219,9 @@ strong,
 }
 
 .input-card {
-  text-align: right;
+  width: max-content;
+  padding: 9px 10px;
+  text-align: left;
 }
 
 .input-badge-row {
@@ -246,7 +229,7 @@ strong,
   flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .input-badge-key {
@@ -680,9 +663,18 @@ canvas {
     overflow: visible;
   }
 
+  .hero-banner {
+    padding-right: 18px;
+  }
+
   .hero-grid,
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    position: static;
+    width: max-content;
   }
 
   .hero-lede {
@@ -719,6 +711,19 @@ canvas {
     height: 40px;
   }
 
+  .hero-stats {
+    width: 100%;
+  }
+
+  .input-card {
+    width: 100%;
+    text-align: right;
+  }
+
+  .input-badge-row {
+    justify-content: flex-end;
+  }
+
   .overlay {
     width: calc(100% - 22px);
     padding: 16px;
@@ -737,7 +742,7 @@ canvas {
   }
 
   .hero-banner {
-    padding: 14px 16px;
+    padding: 14px 240px 14px 16px;
   }
 
   .hero-grid {
@@ -757,7 +762,6 @@ canvas {
     font-size: 14px;
   }
 
-  .badge,
   .input-badge-key {
     min-height: 28px;
   }
