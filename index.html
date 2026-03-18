@@ -1234,186 +1234,232 @@
       }
 
       const OPCODES = new Array(256);
+      const OPCODE_GROUPS = {
+        ADC: [
+          [0x69, "immediate", 2],
+          [0x65, "zeroPage", 3],
+          [0x75, "zeroPageX", 4],
+          [0x6d, "absolute", 4],
+          [0x7d, "absoluteX", 4, true],
+          [0x79, "absoluteY", 4, true],
+          [0x61, "indexedIndirect", 6],
+          [0x71, "indirectIndexed", 5, true],
+        ],
+        AND: [
+          [0x29, "immediate", 2],
+          [0x25, "zeroPage", 3],
+          [0x35, "zeroPageX", 4],
+          [0x2d, "absolute", 4],
+          [0x3d, "absoluteX", 4, true],
+          [0x39, "absoluteY", 4, true],
+          [0x21, "indexedIndirect", 6],
+          [0x31, "indirectIndexed", 5, true],
+        ],
+        ASL: [
+          [0x0a, "accumulator", 2],
+          [0x06, "zeroPage", 5],
+          [0x16, "zeroPageX", 6],
+          [0x0e, "absolute", 6],
+          [0x1e, "absoluteX", 7],
+        ],
+        BCC: [[0x90, "relative", 2]],
+        BCS: [[0xb0, "relative", 2]],
+        BEQ: [[0xf0, "relative", 2]],
+        BIT: [
+          [0x24, "zeroPage", 3],
+          [0x2c, "absolute", 4],
+        ],
+        BMI: [[0x30, "relative", 2]],
+        BNE: [[0xd0, "relative", 2]],
+        BPL: [[0x10, "relative", 2]],
+        BRK: [[0x00, "implied", 7]],
+        BVC: [[0x50, "relative", 2]],
+        BVS: [[0x70, "relative", 2]],
+        CLC: [[0x18, "implied", 2]],
+        CLD: [[0xd8, "implied", 2]],
+        CLI: [[0x58, "implied", 2]],
+        CLV: [[0xb8, "implied", 2]],
+        CMP: [
+          [0xc9, "immediate", 2],
+          [0xc5, "zeroPage", 3],
+          [0xd5, "zeroPageX", 4],
+          [0xcd, "absolute", 4],
+          [0xdd, "absoluteX", 4, true],
+          [0xd9, "absoluteY", 4, true],
+          [0xc1, "indexedIndirect", 6],
+          [0xd1, "indirectIndexed", 5, true],
+        ],
+        CPX: [
+          [0xe0, "immediate", 2],
+          [0xe4, "zeroPage", 3],
+          [0xec, "absolute", 4],
+        ],
+        CPY: [
+          [0xc0, "immediate", 2],
+          [0xc4, "zeroPage", 3],
+          [0xcc, "absolute", 4],
+        ],
+        DEC: [
+          [0xc6, "zeroPage", 5],
+          [0xd6, "zeroPageX", 6],
+          [0xce, "absolute", 6],
+          [0xde, "absoluteX", 7],
+        ],
+        DEX: [[0xca, "implied", 2]],
+        DEY: [[0x88, "implied", 2]],
+        EOR: [
+          [0x49, "immediate", 2],
+          [0x45, "zeroPage", 3],
+          [0x55, "zeroPageX", 4],
+          [0x4d, "absolute", 4],
+          [0x5d, "absoluteX", 4, true],
+          [0x59, "absoluteY", 4, true],
+          [0x41, "indexedIndirect", 6],
+          [0x51, "indirectIndexed", 5, true],
+        ],
+        INC: [
+          [0xe6, "zeroPage", 5],
+          [0xf6, "zeroPageX", 6],
+          [0xee, "absolute", 6],
+          [0xfe, "absoluteX", 7],
+        ],
+        INX: [[0xe8, "implied", 2]],
+        INY: [[0xc8, "implied", 2]],
+        JMP: [
+          [0x4c, "absolute", 3],
+          [0x6c, "indirect", 5],
+        ],
+        JSR: [[0x20, "absolute", 6]],
+        LDA: [
+          [0xa9, "immediate", 2],
+          [0xa5, "zeroPage", 3],
+          [0xb5, "zeroPageX", 4],
+          [0xad, "absolute", 4],
+          [0xbd, "absoluteX", 4, true],
+          [0xb9, "absoluteY", 4, true],
+          [0xa1, "indexedIndirect", 6],
+          [0xb1, "indirectIndexed", 5, true],
+        ],
+        LDX: [
+          [0xa2, "immediate", 2],
+          [0xa6, "zeroPage", 3],
+          [0xb6, "zeroPageY", 4],
+          [0xae, "absolute", 4],
+          [0xbe, "absoluteY", 4, true],
+        ],
+        LDY: [
+          [0xa0, "immediate", 2],
+          [0xa4, "zeroPage", 3],
+          [0xb4, "zeroPageX", 4],
+          [0xac, "absolute", 4],
+          [0xbc, "absoluteX", 4, true],
+        ],
+        LSR: [
+          [0x4a, "accumulator", 2],
+          [0x46, "zeroPage", 5],
+          [0x56, "zeroPageX", 6],
+          [0x4e, "absolute", 6],
+          [0x5e, "absoluteX", 7],
+        ],
+        NOP: [
+          [0xea, "implied", 2],
+          [0x1a, "implied", 2],
+          [0x3a, "implied", 2],
+          [0x5a, "implied", 2],
+          [0x7a, "implied", 2],
+          [0xda, "implied", 2],
+          [0xfa, "implied", 2],
+          [0x04, "zeroPage", 3],
+          [0x44, "zeroPage", 3],
+          [0x64, "zeroPage", 3],
+          [0x14, "zeroPageX", 4],
+          [0x34, "zeroPageX", 4],
+          [0x54, "zeroPageX", 4],
+          [0x74, "zeroPageX", 4],
+          [0xd4, "zeroPageX", 4],
+          [0xf4, "zeroPageX", 4],
+          [0x0c, "absolute", 4],
+          [0x1c, "absoluteX", 4, true],
+          [0x3c, "absoluteX", 4, true],
+          [0x5c, "absoluteX", 4, true],
+          [0x7c, "absoluteX", 4, true],
+          [0xdc, "absoluteX", 4, true],
+          [0xfc, "absoluteX", 4, true],
+        ],
+        ORA: [
+          [0x09, "immediate", 2],
+          [0x05, "zeroPage", 3],
+          [0x15, "zeroPageX", 4],
+          [0x0d, "absolute", 4],
+          [0x1d, "absoluteX", 4, true],
+          [0x19, "absoluteY", 4, true],
+          [0x01, "indexedIndirect", 6],
+          [0x11, "indirectIndexed", 5, true],
+        ],
+        PHA: [[0x48, "implied", 3]],
+        PHP: [[0x08, "implied", 3]],
+        PLA: [[0x68, "implied", 4]],
+        PLP: [[0x28, "implied", 4]],
+        ROL: [
+          [0x2a, "accumulator", 2],
+          [0x26, "zeroPage", 5],
+          [0x36, "zeroPageX", 6],
+          [0x2e, "absolute", 6],
+          [0x3e, "absoluteX", 7],
+        ],
+        ROR: [
+          [0x6a, "accumulator", 2],
+          [0x66, "zeroPage", 5],
+          [0x76, "zeroPageX", 6],
+          [0x6e, "absolute", 6],
+          [0x7e, "absoluteX", 7],
+        ],
+        RTI: [[0x40, "implied", 6]],
+        RTS: [[0x60, "implied", 6]],
+        SBC: [
+          [0xe9, "immediate", 2],
+          [0xe5, "zeroPage", 3],
+          [0xf5, "zeroPageX", 4],
+          [0xed, "absolute", 4],
+          [0xfd, "absoluteX", 4, true],
+          [0xf9, "absoluteY", 4, true],
+          [0xe1, "indexedIndirect", 6],
+          [0xf1, "indirectIndexed", 5, true],
+        ],
+        SEC: [[0x38, "implied", 2]],
+        SED: [[0xf8, "implied", 2]],
+        SEI: [[0x78, "implied", 2]],
+        STA: [
+          [0x85, "zeroPage", 3],
+          [0x95, "zeroPageX", 4],
+          [0x8d, "absolute", 4],
+          [0x9d, "absoluteX", 5],
+          [0x99, "absoluteY", 5],
+          [0x81, "indexedIndirect", 6],
+          [0x91, "indirectIndexed", 6],
+        ],
+        STX: [
+          [0x86, "zeroPage", 3],
+          [0x96, "zeroPageY", 4],
+          [0x8e, "absolute", 4],
+        ],
+        STY: [
+          [0x84, "zeroPage", 3],
+          [0x94, "zeroPageX", 4],
+          [0x8c, "absolute", 4],
+        ],
+        TAX: [[0xaa, "implied", 2]],
+        TAY: [[0xa8, "implied", 2]],
+        TSX: [[0xba, "implied", 2]],
+        TXA: [[0x8a, "implied", 2]],
+        TXS: [[0x9a, "implied", 2]],
+        TYA: [[0x98, "implied", 2]],
+      };
 
-      defineOpcode(OPCODES, 0x69, "ADC", "immediate", 2);
-      defineOpcode(OPCODES, 0x65, "ADC", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x75, "ADC", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x6d, "ADC", "absolute", 4);
-      defineOpcode(OPCODES, 0x7d, "ADC", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0x79, "ADC", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0x61, "ADC", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0x71, "ADC", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0x29, "AND", "immediate", 2);
-      defineOpcode(OPCODES, 0x25, "AND", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x35, "AND", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x2d, "AND", "absolute", 4);
-      defineOpcode(OPCODES, 0x3d, "AND", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0x39, "AND", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0x21, "AND", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0x31, "AND", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0x0a, "ASL", "accumulator", 2);
-      defineOpcode(OPCODES, 0x06, "ASL", "zeroPage", 5);
-      defineOpcode(OPCODES, 0x16, "ASL", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0x0e, "ASL", "absolute", 6);
-      defineOpcode(OPCODES, 0x1e, "ASL", "absoluteX", 7);
-      defineOpcode(OPCODES, 0x90, "BCC", "relative", 2);
-      defineOpcode(OPCODES, 0xb0, "BCS", "relative", 2);
-      defineOpcode(OPCODES, 0xf0, "BEQ", "relative", 2);
-      defineOpcode(OPCODES, 0x24, "BIT", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x2c, "BIT", "absolute", 4);
-      defineOpcode(OPCODES, 0x30, "BMI", "relative", 2);
-      defineOpcode(OPCODES, 0xd0, "BNE", "relative", 2);
-      defineOpcode(OPCODES, 0x10, "BPL", "relative", 2);
-      defineOpcode(OPCODES, 0x00, "BRK", "implied", 7);
-      defineOpcode(OPCODES, 0x50, "BVC", "relative", 2);
-      defineOpcode(OPCODES, 0x70, "BVS", "relative", 2);
-      defineOpcode(OPCODES, 0x18, "CLC", "implied", 2);
-      defineOpcode(OPCODES, 0xd8, "CLD", "implied", 2);
-      defineOpcode(OPCODES, 0x58, "CLI", "implied", 2);
-      defineOpcode(OPCODES, 0xb8, "CLV", "implied", 2);
-      defineOpcode(OPCODES, 0xc9, "CMP", "immediate", 2);
-      defineOpcode(OPCODES, 0xc5, "CMP", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xd5, "CMP", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0xcd, "CMP", "absolute", 4);
-      defineOpcode(OPCODES, 0xdd, "CMP", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0xd9, "CMP", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0xc1, "CMP", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0xd1, "CMP", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0xe0, "CPX", "immediate", 2);
-      defineOpcode(OPCODES, 0xe4, "CPX", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xec, "CPX", "absolute", 4);
-      defineOpcode(OPCODES, 0xc0, "CPY", "immediate", 2);
-      defineOpcode(OPCODES, 0xc4, "CPY", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xcc, "CPY", "absolute", 4);
-      defineOpcode(OPCODES, 0xc6, "DEC", "zeroPage", 5);
-      defineOpcode(OPCODES, 0xd6, "DEC", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0xce, "DEC", "absolute", 6);
-      defineOpcode(OPCODES, 0xde, "DEC", "absoluteX", 7);
-      defineOpcode(OPCODES, 0xca, "DEX", "implied", 2);
-      defineOpcode(OPCODES, 0x88, "DEY", "implied", 2);
-      defineOpcode(OPCODES, 0x49, "EOR", "immediate", 2);
-      defineOpcode(OPCODES, 0x45, "EOR", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x55, "EOR", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x4d, "EOR", "absolute", 4);
-      defineOpcode(OPCODES, 0x5d, "EOR", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0x59, "EOR", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0x41, "EOR", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0x51, "EOR", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0xe6, "INC", "zeroPage", 5);
-      defineOpcode(OPCODES, 0xf6, "INC", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0xee, "INC", "absolute", 6);
-      defineOpcode(OPCODES, 0xfe, "INC", "absoluteX", 7);
-      defineOpcode(OPCODES, 0xe8, "INX", "implied", 2);
-      defineOpcode(OPCODES, 0xc8, "INY", "implied", 2);
-      defineOpcode(OPCODES, 0x4c, "JMP", "absolute", 3);
-      defineOpcode(OPCODES, 0x6c, "JMP", "indirect", 5);
-      defineOpcode(OPCODES, 0x20, "JSR", "absolute", 6);
-      defineOpcode(OPCODES, 0xa9, "LDA", "immediate", 2);
-      defineOpcode(OPCODES, 0xa5, "LDA", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xb5, "LDA", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0xad, "LDA", "absolute", 4);
-      defineOpcode(OPCODES, 0xbd, "LDA", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0xb9, "LDA", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0xa1, "LDA", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0xb1, "LDA", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0xa2, "LDX", "immediate", 2);
-      defineOpcode(OPCODES, 0xa6, "LDX", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xb6, "LDX", "zeroPageY", 4);
-      defineOpcode(OPCODES, 0xae, "LDX", "absolute", 4);
-      defineOpcode(OPCODES, 0xbe, "LDX", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0xa0, "LDY", "immediate", 2);
-      defineOpcode(OPCODES, 0xa4, "LDY", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xb4, "LDY", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0xac, "LDY", "absolute", 4);
-      defineOpcode(OPCODES, 0xbc, "LDY", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0x4a, "LSR", "accumulator", 2);
-      defineOpcode(OPCODES, 0x46, "LSR", "zeroPage", 5);
-      defineOpcode(OPCODES, 0x56, "LSR", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0x4e, "LSR", "absolute", 6);
-      defineOpcode(OPCODES, 0x5e, "LSR", "absoluteX", 7);
-      defineOpcode(OPCODES, 0xea, "NOP", "implied", 2);
-      defineOpcode(OPCODES, 0x09, "ORA", "immediate", 2);
-      defineOpcode(OPCODES, 0x05, "ORA", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x15, "ORA", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x0d, "ORA", "absolute", 4);
-      defineOpcode(OPCODES, 0x1d, "ORA", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0x19, "ORA", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0x01, "ORA", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0x11, "ORA", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0x48, "PHA", "implied", 3);
-      defineOpcode(OPCODES, 0x08, "PHP", "implied", 3);
-      defineOpcode(OPCODES, 0x68, "PLA", "implied", 4);
-      defineOpcode(OPCODES, 0x28, "PLP", "implied", 4);
-      defineOpcode(OPCODES, 0x2a, "ROL", "accumulator", 2);
-      defineOpcode(OPCODES, 0x26, "ROL", "zeroPage", 5);
-      defineOpcode(OPCODES, 0x36, "ROL", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0x2e, "ROL", "absolute", 6);
-      defineOpcode(OPCODES, 0x3e, "ROL", "absoluteX", 7);
-      defineOpcode(OPCODES, 0x6a, "ROR", "accumulator", 2);
-      defineOpcode(OPCODES, 0x66, "ROR", "zeroPage", 5);
-      defineOpcode(OPCODES, 0x76, "ROR", "zeroPageX", 6);
-      defineOpcode(OPCODES, 0x6e, "ROR", "absolute", 6);
-      defineOpcode(OPCODES, 0x7e, "ROR", "absoluteX", 7);
-      defineOpcode(OPCODES, 0x40, "RTI", "implied", 6);
-      defineOpcode(OPCODES, 0x60, "RTS", "implied", 6);
-      defineOpcode(OPCODES, 0xe9, "SBC", "immediate", 2);
-      defineOpcode(OPCODES, 0xe5, "SBC", "zeroPage", 3);
-      defineOpcode(OPCODES, 0xf5, "SBC", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0xed, "SBC", "absolute", 4);
-      defineOpcode(OPCODES, 0xfd, "SBC", "absoluteX", 4, true);
-      defineOpcode(OPCODES, 0xf9, "SBC", "absoluteY", 4, true);
-      defineOpcode(OPCODES, 0xe1, "SBC", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0xf1, "SBC", "indirectIndexed", 5, true);
-      defineOpcode(OPCODES, 0x38, "SEC", "implied", 2);
-      defineOpcode(OPCODES, 0xf8, "SED", "implied", 2);
-      defineOpcode(OPCODES, 0x78, "SEI", "implied", 2);
-      defineOpcode(OPCODES, 0x85, "STA", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x95, "STA", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x8d, "STA", "absolute", 4);
-      defineOpcode(OPCODES, 0x9d, "STA", "absoluteX", 5);
-      defineOpcode(OPCODES, 0x99, "STA", "absoluteY", 5);
-      defineOpcode(OPCODES, 0x81, "STA", "indexedIndirect", 6);
-      defineOpcode(OPCODES, 0x91, "STA", "indirectIndexed", 6);
-      defineOpcode(OPCODES, 0x86, "STX", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x96, "STX", "zeroPageY", 4);
-      defineOpcode(OPCODES, 0x8e, "STX", "absolute", 4);
-      defineOpcode(OPCODES, 0x84, "STY", "zeroPage", 3);
-      defineOpcode(OPCODES, 0x94, "STY", "zeroPageX", 4);
-      defineOpcode(OPCODES, 0x8c, "STY", "absolute", 4);
-      defineOpcode(OPCODES, 0xaa, "TAX", "implied", 2);
-      defineOpcode(OPCODES, 0xa8, "TAY", "implied", 2);
-      defineOpcode(OPCODES, 0xba, "TSX", "implied", 2);
-      defineOpcode(OPCODES, 0x8a, "TXA", "implied", 2);
-      defineOpcode(OPCODES, 0x9a, "TXS", "implied", 2);
-      defineOpcode(OPCODES, 0x98, "TYA", "implied", 2);
-
-      const unofficialNops = [
-        [0x1a, "implied", 2],
-        [0x3a, "implied", 2],
-        [0x5a, "implied", 2],
-        [0x7a, "implied", 2],
-        [0xda, "implied", 2],
-        [0xfa, "implied", 2],
-        [0x04, "zeroPage", 3],
-        [0x44, "zeroPage", 3],
-        [0x64, "zeroPage", 3],
-        [0x14, "zeroPageX", 4],
-        [0x34, "zeroPageX", 4],
-        [0x54, "zeroPageX", 4],
-        [0x74, "zeroPageX", 4],
-        [0xd4, "zeroPageX", 4],
-        [0xf4, "zeroPageX", 4],
-        [0x0c, "absolute", 4],
-        [0x1c, "absoluteX", 4, true],
-        [0x3c, "absoluteX", 4, true],
-        [0x5c, "absoluteX", 4, true],
-        [0x7c, "absoluteX", 4, true],
-        [0xdc, "absoluteX", 4, true],
-        [0xfc, "absoluteX", 4, true],
-      ];
-
-      for (const [opcode, mode, cycles, pageCycle] of unofficialNops) {
-        defineOpcode(OPCODES, opcode, "NOP", mode, cycles, pageCycle);
+      for (const [name, entries] of Object.entries(OPCODE_GROUPS)) {
+        for (const [opcode, mode, cycles, pageCycle = false] of entries) {
+          defineOpcode(OPCODES, opcode, name, mode, cycles, pageCycle);
+        }
       }
 
       class Bus {
