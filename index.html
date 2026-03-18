@@ -354,6 +354,156 @@
         color: #bdbdbd;
       }
 
+      .launcher-shell {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%),
+          rgba(14, 14, 14, 0.9);
+        border: 4px solid rgba(199, 199, 199, 0.8);
+        box-shadow:
+          0 0 0 4px #171717,
+          0 18px 32px rgba(0, 0, 0, 0.28);
+      }
+
+      .launcher-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .launcher-header h2 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--accent-2);
+      }
+
+      .launcher-header p,
+      .launcher-status,
+      .launcher-empty,
+      .launcher-item em {
+        margin: 0;
+        font-size: clamp(18px, 2vw, 22px);
+        line-height: 1.05;
+        color: #efe6ff;
+      }
+
+      .launcher-search {
+        display: grid;
+        gap: 6px;
+        min-width: min(100%, 280px);
+      }
+
+      .launcher-search span {
+        font-size: 10px;
+        color: var(--accent-2);
+      }
+
+      .launcher-search input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid rgba(255, 255, 255, 0.16);
+        background: rgba(0, 0, 0, 0.42);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .launcher-search input:focus {
+        outline: 2px solid var(--accent-3);
+        outline-offset: 2px;
+      }
+
+      .launcher-status,
+      .launcher-empty {
+        padding: 11px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .launcher-status[data-tone="ready"] {
+        color: #f6f1d2;
+        border-color: rgba(248, 184, 0, 0.35);
+      }
+
+      .launcher-status[data-tone="error"] {
+        color: #ffb0b0;
+        border-color: rgba(228, 0, 15, 0.45);
+      }
+
+      .launcher-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        max-height: 420px;
+        padding-right: 6px;
+        overflow: auto;
+      }
+
+      .launcher-grid::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .launcher-grid::-webkit-scrollbar-thumb {
+        background: rgba(199, 199, 199, 0.28);
+      }
+
+      .launcher-item {
+        display: grid;
+        gap: 8px;
+        width: 100%;
+        padding: 14px;
+        text-align: left;
+        border: 3px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(135deg, rgba(59, 111, 216, 0.12), rgba(255, 255, 255, 0.03)),
+          rgba(18, 18, 18, 0.9);
+        color: var(--ink);
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      .launcher-item:hover,
+      .launcher-item:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(248, 184, 0, 0.45);
+        box-shadow: 0 12px 18px rgba(0, 0, 0, 0.24);
+      }
+
+      .launcher-item.active {
+        border-color: rgba(228, 0, 15, 0.62);
+        box-shadow: 0 0 0 2px rgba(228, 0, 15, 0.18);
+      }
+
+      .launcher-item.unsupported {
+        cursor: not-allowed;
+        background:
+          linear-gradient(135deg, rgba(228, 0, 15, 0.1), rgba(255, 255, 255, 0.03)),
+          rgba(18, 18, 18, 0.9);
+      }
+
+      .launcher-item:disabled {
+        opacity: 0.72;
+      }
+
+      .launcher-item strong {
+        display: block;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .launcher-item span {
+        display: block;
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.05;
+        color: var(--accent-2);
+      }
+
       .side-card h2 {
         margin: 0 0 12px;
         font-size: 14px;
@@ -519,6 +669,11 @@
           grid-template-columns: 1fr;
         }
 
+        .launcher-grid {
+          grid-template-columns: 1fr;
+          max-height: none;
+        }
+
         .overlay {
           gap: 10px;
         }
@@ -565,8 +720,8 @@
               <span class="stat-value">Z X Shift Enter</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Feel</span>
-              <span class="stat-value">CRT Glow</span>
+              <span class="stat-label">Library</span>
+              <span id="library-stat" class="stat-value">Syncing…</span>
             </div>
           </div>
         </div>
@@ -585,6 +740,21 @@
               </div>
             </section>
           </div>
+
+          <article class="launcher-shell" aria-label="Bundled public domain quicklaunch">
+            <div class="launcher-header">
+              <div>
+                <h2>Quicklaunch</h2>
+                <p id="quicklaunch-summary">Bundled Zophar public-domain carts, ready for one-click boot.</p>
+              </div>
+              <label class="launcher-search" for="quicklaunch-filter">
+                <span>Filter library</span>
+                <input id="quicklaunch-filter" type="search" placeholder="Search title, archive, or author">
+              </label>
+            </div>
+            <p id="quicklaunch-status" class="launcher-status" data-tone="ready">Loading bundled ROM catalog…</p>
+            <div id="quicklaunch-grid" class="launcher-grid" role="list"></div>
+          </article>
         </section>
 
         <aside class="side-rail" aria-label="Setup notes">
@@ -605,7 +775,7 @@
 
           <article class="side-card highlight">
             <h2>Boot Sequence</h2>
-            <p>Drop a ROM anywhere in the window. The loader swaps it in instantly and keeps the cabinet warm for the next cart.</p>
+            <p>Use Quicklaunch for bundled public-domain carts, or drag any `.nes` file into the cabinet to hot-swap it instantly.</p>
           </article>
 
           <article class="side-card">
@@ -2689,6 +2859,11 @@
       const dropzone = document.getElementById("dropzone");
       const loaderTitle = document.getElementById("loader-title");
       const loaderCopy = document.getElementById("loader-copy");
+      const libraryStat = document.getElementById("library-stat");
+      const quicklaunchSummary = document.getElementById("quicklaunch-summary");
+      const quicklaunchStatus = document.getElementById("quicklaunch-status");
+      const quicklaunchGrid = document.getElementById("quicklaunch-grid");
+      const quicklaunchFilter = document.getElementById("quicklaunch-filter");
 
       const BUTTON_MAP = new Map([
         ["KeyZ", "b"],
@@ -2702,9 +2877,13 @@
         ["ArrowRight", "right"],
       ]);
 
+      const CATALOG_URL = "roms/pdroms/nes/catalog.json";
+
       let activeNES = null;
       let frameHandle = 0;
       let loopGeneration = 0;
+      let romCatalog = [];
+      let activeCatalogId = "";
 
       function setOverlay(title, message) {
         loaderTitle.textContent = title;
@@ -2719,6 +2898,27 @@
       function drawPlaceholder() {
         context.fillStyle = "#000";
         context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function setQuicklaunchStatus(message, tone = "ready") {
+        quicklaunchStatus.textContent = message;
+        quicklaunchStatus.dataset.tone = tone;
+      }
+
+      function formatRomSize(sizeBytes) {
+        return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
+      }
+
+      function clearQuicklaunchGrid(message) {
+        quicklaunchGrid.replaceChildren();
+        if (!message) {
+          return;
+        }
+
+        const empty = document.createElement("p");
+        empty.className = "launcher-empty";
+        empty.textContent = message;
+        quicklaunchGrid.append(empty);
       }
 
       function stopActiveLoop() {
@@ -2774,18 +2974,13 @@
         frameHandle = requestAnimationFrame(frame);
       }
 
-      async function loadRomFile(file) {
-        if (!file) {
-          return;
-        }
-
+      function loadRomBytes(bytes, successMessage) {
         try {
-          const bytes = new Uint8Array(await file.arrayBuffer());
           const cartridge = Cartridge.fromINES(bytes);
           const nes = new NES(cartridge, canvas);
           bootNES(nes);
           setStageMode("loaded");
-          setOverlay("Drop another ROM", `${file.name} loaded. Drag a new ROM into the window to replace it.`);
+          setOverlay("Drop another ROM", successMessage);
           canvas.focus({ preventScroll: true });
         } catch (error) {
           console.error(error);
@@ -2795,6 +2990,158 @@
           setOverlay(
             "ROM load failed",
             error instanceof Error ? error.message : String(error)
+          );
+          throw error;
+        }
+      }
+
+      async function loadRomFile(file) {
+        if (!file) {
+          return;
+        }
+
+        try {
+          activeCatalogId = "";
+          renderQuicklaunch();
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          loadRomBytes(
+            bytes,
+            `${file.name} loaded. Drag a new ROM into the window to replace it.`
+          );
+          setQuicklaunchStatus("Drag-loaded ROM is live. Quicklaunch stays ready for the next swap.", "ready");
+        } catch {}
+      }
+
+      function renderQuicklaunch() {
+        const query = quicklaunchFilter.value.trim().toLowerCase();
+        const filtered = romCatalog.filter((entry) => {
+          if (!query) {
+            return true;
+          }
+
+          return [
+            entry.title,
+            entry.archiveTitle,
+            entry.author,
+            entry.description,
+          ].some((value) => value && value.toLowerCase().includes(query));
+        });
+
+        quicklaunchGrid.replaceChildren();
+
+        if (filtered.length === 0) {
+          clearQuicklaunchGrid("No ROMs match that filter.");
+          quicklaunchSummary.textContent = `0 matches in the ${romCatalog.length}-ROM library.`;
+          return;
+        }
+
+        const supportedCount = romCatalog.filter((entry) => entry.supported).length;
+        quicklaunchSummary.textContent = query
+          ? `${filtered.length} matches in the ${romCatalog.length}-ROM library.`
+          : `${supportedCount} playable ROMs from Zophar's NES public-domain archive.`;
+
+        for (const entry of filtered) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "launcher-item";
+          button.setAttribute("role", "listitem");
+
+          if (!entry.supported) {
+            button.classList.add("unsupported");
+            button.disabled = true;
+          }
+
+          if (entry.id === activeCatalogId) {
+            button.classList.add("active");
+          }
+
+          const title = document.createElement("strong");
+          title.textContent = entry.title;
+
+          const meta = document.createElement("span");
+          const metaParts = [
+            entry.archiveTitle !== entry.title ? entry.archiveTitle : "",
+            entry.author || "",
+            `Mapper ${entry.mapper}`,
+            formatRomSize(entry.sizeBytes),
+          ].filter(Boolean);
+          meta.textContent = metaParts.join(" • ");
+
+          const status = document.createElement("em");
+          status.textContent = entry.supported
+            ? "Click to boot"
+            : `Unavailable in this build (mapper ${entry.mapper})`;
+
+          button.append(title, meta, status);
+
+          if (entry.supported) {
+            button.addEventListener("click", () => {
+              void loadBundledRom(entry);
+            });
+          }
+
+          quicklaunchGrid.append(button);
+        }
+      }
+
+      async function loadBundledRom(entry) {
+        setQuicklaunchStatus(`Loading ${entry.title} from the bundled library…`, "ready");
+
+        try {
+          const response = await fetch(entry.file, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} while fetching ${entry.file}`);
+          }
+
+          const bytes = new Uint8Array(await response.arrayBuffer());
+          loadRomBytes(
+            bytes,
+            `${entry.title} launched from Quicklaunch. Drag another ROM anytime to replace it.`
+          );
+          activeCatalogId = entry.id;
+          renderQuicklaunch();
+          setQuicklaunchStatus(`${entry.title} is live on the cabinet.`, "ready");
+        } catch (error) {
+          console.error(error);
+          setQuicklaunchStatus(
+            `Quicklaunch failed for ${entry.title}: ${error instanceof Error ? error.message : String(error)}`,
+            "error"
+          );
+        }
+      }
+
+      async function loadBundledCatalog() {
+        if (location.protocol === "file:") {
+          libraryStat.textContent = "Drag only";
+          clearQuicklaunchGrid("Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.");
+          setQuicklaunchStatus("Bundled ROM fetch is disabled in file mode. Drag-and-drop still works.", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(CATALOG_URL, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} while loading ${CATALOG_URL}`);
+          }
+
+          romCatalog = await response.json();
+          const supportedCount = romCatalog.filter((entry) => entry.supported).length;
+          const unsupportedCount = romCatalog.length - supportedCount;
+          libraryStat.textContent = `${supportedCount}/${romCatalog.length}`;
+          renderQuicklaunch();
+          setQuicklaunchStatus(
+            unsupportedCount > 0
+              ? `${supportedCount} ROMs can boot here now. ${unsupportedCount} remain visible but disabled.`
+              : `${supportedCount} ROMs are ready to boot.`,
+            "ready"
+          );
+        } catch (error) {
+          console.error(error);
+          libraryStat.textContent = "Offline";
+          clearQuicklaunchGrid("Bundled ROM catalog failed to load. Drag-and-drop remains available.");
+          setQuicklaunchStatus(
+            `Catalog load failed: ${error instanceof Error ? error.message : String(error)}`,
+            "error"
           );
         }
       }
@@ -2858,9 +3205,12 @@
         await loadRomFile(event.dataTransfer.files[0]);
       });
 
+      quicklaunchFilter.addEventListener("input", renderQuicklaunch);
+
       drawPlaceholder();
       setStageMode("empty");
       setOverlay("Drop a `.nes` ROM", "Supports mappers 0, 1, 2, 3, and 4. Drag a ROM anywhere into the window to begin.");
+      void loadBundledCatalog();
     </script>
   </body>
 </html>

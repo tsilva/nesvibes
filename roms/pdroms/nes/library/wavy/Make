@@ -1,0 +1,2 @@
+DAsm cmcwavy.asm -f3
+Join Header a.out CMC.CHR AS CMCWavy.NES
