@@ -10,6 +10,7 @@ This repository ships as a mostly self-contained static site rooted at [`index.h
 - Mapper 0 / NROM, 1 / MMC1, 2 / UxROM, 3 / CNROM, and 4 / MMC3 iNES support
 - 6502 CPU core with official opcodes and common unofficial NOPs
 - PPU rendering with scrolling, sprites, OAM DMA, NMI, palette RAM, and nametable mirroring
+- Browser audio with pulse, triangle, noise, frame counter timing, and DMC direct-level mixing
 - Keyboard controller input
 
 ## Run
@@ -25,11 +26,12 @@ To use the bundled ROM quicklaunch panel, serve or deploy the repo so [`roms/pdr
 - `X`: A
 - `Enter`: Start
 - `Shift`: Select
+- Click `Enable Audio` once to unlock browser playback before or during play
 
 ## Notes
 
 - This build currently targets mapper 0, 1, 2, 3, and 4 ROMs.
-- Audio is not implemented.
+- Audio playback requires a user gesture in the browser; the page exposes an `Enable Audio` button for that unlock step.
 - The bundled Zophar sync currently resolves 36 `.nes` files, with 35 launchable in this mapper set and the mapper-5 `TMNT Demo` shown but disabled.
 
 ## ROM Sync

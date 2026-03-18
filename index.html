@@ -202,18 +202,23 @@
         line-height: 1;
       }
 
+      .input-card {
+        text-align: right;
+      }
+
       .input-badge-row {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         align-items: center;
+        justify-content: flex-end;
       }
 
       .input-badge-key {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 34px;
+        min-width: 38px;
         min-height: 34px;
         padding: 7px 10px;
         font-size: 10px;
@@ -227,12 +232,56 @@
           0 6px 10px rgba(0, 0, 0, 0.25);
       }
 
+      .input-badge-key.wide {
+        min-width: 72px;
+      }
+
       .input-badge-key.accent {
         border-color: rgba(228, 0, 15, 0.48);
         box-shadow:
           inset 0 -3px 0 rgba(0, 0, 0, 0.35),
           0 0 0 1px rgba(228, 0, 15, 0.2),
           0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+
+      .audio-panel {
+        display: grid;
+        gap: 10px;
+      }
+
+      .audio-status {
+        margin: 0;
+        font-size: clamp(19px, 2vw, 24px);
+        line-height: 1.08;
+        color: #f6f1d2;
+      }
+
+      .audio-status[data-tone="error"] {
+        color: #ffb0b0;
+      }
+
+      .audio-button {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 10px 12px;
+        border: 2px solid rgba(228, 0, 15, 0.5);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+          #111111;
+        color: var(--ink);
+        cursor: pointer;
+        box-shadow:
+          inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+          0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+
+      .audio-button:hover,
+      .audio-button:focus-visible {
+        border-color: rgba(248, 184, 0, 0.55);
+        transform: translateY(-1px);
       }
 
       .content-grid {
@@ -412,7 +461,6 @@
         color: var(--accent-2);
       }
 
-      .launcher-status,
       .launcher-empty {
         margin: 0;
         font-size: 18px;
@@ -420,21 +468,10 @@
         color: #efe6ff;
       }
 
-      .launcher-status,
       .launcher-empty {
         padding: 9px 10px;
         background: rgba(255, 255, 255, 0.05);
         border: 2px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .launcher-status[data-tone="ready"] {
-        color: #f6f1d2;
-        border-color: rgba(248, 184, 0, 0.35);
-      }
-
-      .launcher-status[data-tone="error"] {
-        color: #ffb0b0;
-        border-color: rgba(228, 0, 15, 0.45);
       }
 
       .launcher-grid {
@@ -695,14 +732,21 @@
             <p class="hero-meta">Plain JavaScript. Vibecoded with GPT-5.4.</p>
           </div>
           <div class="hero-stats" aria-label="Runtime stats">
-            <div class="stat-card">
+            <div class="stat-card input-card">
               <span class="stat-label">Input</span>
               <span class="stat-value input-badge-row" aria-label="Keyboard controls">
                 <span class="input-badge-key accent">Z</span>
                 <span class="input-badge-key accent">X</span>
-                <span class="input-badge-key">Shift</span>
-                <span class="input-badge-key">Enter</span>
+                <span class="input-badge-key wide">Shift</span>
+                <span class="input-badge-key wide">Enter</span>
               </span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Audio</span>
+              <div class="audio-panel">
+                <p id="audio-status" class="audio-status" data-tone="ready">Click to arm browser audio, then boot a ROM.</p>
+                <button id="audio-toggle" class="audio-button" type="button">Enable Audio</button>
+              </div>
             </div>
           </div>
         </div>
@@ -716,8 +760,7 @@
               <div class="overlay">
                 <p class="loader-kicker">PLAYER ONE READY</p>
                 <strong id="loader-title">Drop a `.nes` ROM</strong>
-                <p id="loader-copy">Supports mappers 0, 1, 2, 3, and 4. Drag a ROM anywhere into the window to begin.</p>
-                <p class="overlay-note">When a game boots, the overlay clears and the cabinet stays live.</p>
+                <p id="loader-copy"></p>
               </div>
             </section>
           </div>
@@ -728,7 +771,6 @@
             <div class="launcher-header">
               <h2>Public Domain ROMs</h2>
             </div>
-            <p id="quicklaunch-status" class="launcher-status" data-tone="ready">Loading bundled ROM catalog…</p>
             <div id="quicklaunch-grid" class="launcher-grid" role="list"></div>
           </article>
         </aside>
@@ -762,6 +804,30 @@
         [248, 184, 248], [248, 164, 192], [240, 208, 176], [252, 224, 168],
         [248, 216, 120], [216, 248, 120], [184, 248, 184], [184, 248, 216],
         [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0],
+      ];
+
+      const NTSC_CPU_CLOCK = 1789773;
+      const LENGTH_TABLE = [
+        10, 254, 20, 2, 40, 4, 80, 6,
+        160, 8, 60, 10, 14, 12, 26, 14,
+        12, 16, 24, 18, 48, 20, 96, 22,
+        192, 24, 72, 26, 16, 28, 32, 30,
+      ];
+      const PULSE_DUTY_TABLE = [
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 1, 1, 0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 1, 0, 0, 0],
+        [1, 0, 0, 1, 1, 1, 1, 1],
+      ];
+      const TRIANGLE_SEQUENCE = [
+        15, 14, 13, 12, 11, 10, 9, 8,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        0, 1, 2, 3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12, 13, 14, 15,
+      ];
+      const NOISE_PERIOD_TABLE = [
+        4, 8, 16, 32, 64, 96, 128, 160,
+        202, 254, 380, 508, 762, 1016, 2034, 4068,
       ];
 
       function wrapIndex(index, size) {
@@ -2653,11 +2719,700 @@
         }
       }
 
+      class HighPassFilter {
+        constructor(sampleRate, cutoffHz) {
+          const dt = 1 / sampleRate;
+          const rc = 1 / (2 * Math.PI * cutoffHz);
+          this.alpha = rc / (rc + dt);
+          this.prevInput = 0;
+          this.prevOutput = 0;
+        }
+
+        step(input) {
+          const output = this.alpha * (this.prevOutput + input - this.prevInput);
+          this.prevInput = input;
+          this.prevOutput = output;
+          return output;
+        }
+      }
+
+      class LowPassFilter {
+        constructor(sampleRate, cutoffHz) {
+          const dt = 1 / sampleRate;
+          const rc = 1 / (2 * Math.PI * cutoffHz);
+          this.alpha = dt / (rc + dt);
+          this.output = 0;
+        }
+
+        step(input) {
+          this.output += this.alpha * (input - this.output);
+          return this.output;
+        }
+      }
+
+      class AudioDriver {
+        constructor(onStatusChange = () => {}) {
+          this.onStatusChange = onStatusChange;
+          this.context = null;
+          this.processor = null;
+          this.gain = null;
+          this.buffer = new Float32Array(16384);
+          this.readIndex = 0;
+          this.writeIndex = 0;
+          this.availableSamples = 0;
+        }
+
+        getSampleRate() {
+          return this.context?.sampleRate || 0;
+        }
+
+        clear() {
+          this.readIndex = 0;
+          this.writeIndex = 0;
+          this.availableSamples = 0;
+        }
+
+        pushSample(sample) {
+          if (!this.context) {
+            return;
+          }
+
+          if (this.availableSamples >= this.buffer.length) {
+            this.readIndex = (this.readIndex + 1) % this.buffer.length;
+            this.availableSamples -= 1;
+          }
+
+          this.buffer[this.writeIndex] = Math.max(-1, Math.min(1, sample));
+          this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
+          this.availableSamples += 1;
+        }
+
+        consume(buffer) {
+          for (let i = 0; i < buffer.length; i += 1) {
+            if (this.availableSamples > 0) {
+              buffer[i] = this.buffer[this.readIndex];
+              this.readIndex = (this.readIndex + 1) % this.buffer.length;
+              this.availableSamples -= 1;
+            } else {
+              buffer[i] = 0;
+            }
+          }
+        }
+
+        createContext() {
+          const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextCtor) {
+            this.onStatusChange("Web Audio is unavailable in this browser.", "error", "Audio Unsupported");
+            return false;
+          }
+
+          this.context = new AudioContextCtor();
+          this.processor = this.context.createScriptProcessor(2048, 0, 1);
+          this.gain = this.context.createGain();
+          this.gain.gain.value = 0.18;
+          this.processor.onaudioprocess = (event) => {
+            this.consume(event.outputBuffer.getChannelData(0));
+          };
+          this.processor.connect(this.gain);
+          this.gain.connect(this.context.destination);
+          return true;
+        }
+
+        async enable() {
+          try {
+            if (!this.context && !this.createContext()) {
+              return false;
+            }
+
+            await this.context.resume();
+            this.onStatusChange("Audio live. Boot a ROM or keep playing to hear it.", "ready", "Audio On");
+            return true;
+          } catch (error) {
+            this.onStatusChange(
+              error instanceof Error ? error.message : String(error),
+              "error",
+              "Retry Audio"
+            );
+            return false;
+          }
+        }
+      }
+
+      class EnvelopeGenerator {
+        constructor() {
+          this.reset();
+        }
+
+        reset() {
+          this.loop = false;
+          this.constantVolume = false;
+          this.period = 0;
+          this.start = false;
+          this.divider = 0;
+          this.decayLevel = 0;
+        }
+
+        writeControl(value) {
+          this.loop = (value & 0x20) !== 0;
+          this.constantVolume = (value & 0x10) !== 0;
+          this.period = value & 0x0f;
+        }
+
+        restart() {
+          this.start = true;
+        }
+
+        clock() {
+          if (this.start) {
+            this.start = false;
+            this.decayLevel = 15;
+            this.divider = this.period;
+            return;
+          }
+
+          if (this.divider === 0) {
+            this.divider = this.period;
+            if (this.decayLevel > 0) {
+              this.decayLevel -= 1;
+            } else if (this.loop) {
+              this.decayLevel = 15;
+            }
+            return;
+          }
+
+          this.divider -= 1;
+        }
+
+        getVolume() {
+          return this.constantVolume ? this.period : this.decayLevel;
+        }
+      }
+
+      class PulseChannel {
+        constructor(onesComplementSweep) {
+          this.onesComplementSweep = onesComplementSweep;
+          this.envelope = new EnvelopeGenerator();
+          this.reset();
+        }
+
+        reset() {
+          this.enabled = false;
+          this.duty = 0;
+          this.sequenceIndex = 0;
+          this.lengthCounter = 0;
+          this.lengthHalt = false;
+          this.timerPeriod = 0;
+          this.timerValue = 0;
+          this.sweepEnabled = false;
+          this.sweepPeriod = 0;
+          this.sweepNegate = false;
+          this.sweepShift = 0;
+          this.sweepDivider = 0;
+          this.sweepReload = false;
+          this.envelope.reset();
+        }
+
+        setEnabled(enabled) {
+          this.enabled = enabled;
+          if (!enabled) {
+            this.lengthCounter = 0;
+          }
+        }
+
+        writeControl(value) {
+          this.duty = (value >> 6) & 0x03;
+          this.lengthHalt = (value & 0x20) !== 0;
+          this.envelope.writeControl(value);
+        }
+
+        writeSweep(value) {
+          this.sweepEnabled = (value & 0x80) !== 0;
+          this.sweepPeriod = (value >> 4) & 0x07;
+          this.sweepNegate = (value & 0x08) !== 0;
+          this.sweepShift = value & 0x07;
+          this.sweepReload = true;
+        }
+
+        writeTimerLow(value) {
+          this.timerPeriod = (this.timerPeriod & 0x0700) | value;
+        }
+
+        writeTimerHigh(value) {
+          this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
+          if (this.enabled) {
+            this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
+          }
+          this.sequenceIndex = 0;
+          this.envelope.restart();
+        }
+
+        getSweepTarget() {
+          const delta = this.timerPeriod >> this.sweepShift;
+          if (this.sweepNegate) {
+            return this.timerPeriod - delta - (this.onesComplementSweep ? 1 : 0);
+          }
+          return this.timerPeriod + delta;
+        }
+
+        clockTimer() {
+          if (this.timerValue === 0) {
+            this.timerValue = this.timerPeriod;
+            this.sequenceIndex = (this.sequenceIndex + 1) & 0x07;
+          } else {
+            this.timerValue -= 1;
+          }
+        }
+
+        clockQuarterFrame() {
+          this.envelope.clock();
+        }
+
+        clockHalfFrame() {
+          if (this.lengthCounter > 0 && !this.lengthHalt) {
+            this.lengthCounter -= 1;
+          }
+
+          const dividerZero = this.sweepDivider === 0;
+          if (dividerZero && this.sweepEnabled && this.sweepShift > 0 && this.timerPeriod >= 8) {
+            const target = this.getSweepTarget();
+            if (target >= 0 && target <= 0x07ff) {
+              this.timerPeriod = target;
+            }
+          }
+
+          if (dividerZero || this.sweepReload) {
+            this.sweepDivider = this.sweepPeriod;
+            this.sweepReload = false;
+          } else {
+            this.sweepDivider -= 1;
+          }
+        }
+
+        output() {
+          if (!this.enabled || this.lengthCounter === 0) {
+            return 0;
+          }
+
+          if (this.timerPeriod < 8 || this.getSweepTarget() > 0x07ff) {
+            return 0;
+          }
+
+          if (PULSE_DUTY_TABLE[this.duty][this.sequenceIndex] === 0) {
+            return 0;
+          }
+
+          return this.envelope.getVolume();
+        }
+      }
+
+      class TriangleChannel {
+        constructor() {
+          this.reset();
+        }
+
+        reset() {
+          this.enabled = false;
+          this.controlFlag = false;
+          this.linearReloadValue = 0;
+          this.linearCounter = 0;
+          this.linearReloadFlag = false;
+          this.lengthCounter = 0;
+          this.timerPeriod = 0;
+          this.timerValue = 0;
+          this.sequenceIndex = 0;
+        }
+
+        setEnabled(enabled) {
+          this.enabled = enabled;
+          if (!enabled) {
+            this.lengthCounter = 0;
+          }
+        }
+
+        writeControl(value) {
+          this.controlFlag = (value & 0x80) !== 0;
+          this.linearReloadValue = value & 0x7f;
+        }
+
+        writeTimerLow(value) {
+          this.timerPeriod = (this.timerPeriod & 0x0700) | value;
+        }
+
+        writeTimerHigh(value) {
+          this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
+          if (this.enabled) {
+            this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
+          }
+          this.linearReloadFlag = true;
+        }
+
+        clockTimer() {
+          if (this.timerValue === 0) {
+            this.timerValue = this.timerPeriod;
+            if (this.lengthCounter > 0 && this.linearCounter > 0) {
+              this.sequenceIndex = (this.sequenceIndex + 1) & 0x1f;
+            }
+          } else {
+            this.timerValue -= 1;
+          }
+        }
+
+        clockQuarterFrame() {
+          if (this.linearReloadFlag) {
+            this.linearCounter = this.linearReloadValue;
+          } else if (this.linearCounter > 0) {
+            this.linearCounter -= 1;
+          }
+
+          if (!this.controlFlag) {
+            this.linearReloadFlag = false;
+          }
+        }
+
+        clockHalfFrame() {
+          if (this.lengthCounter > 0 && !this.controlFlag) {
+            this.lengthCounter -= 1;
+          }
+        }
+
+        output() {
+          if (!this.enabled) {
+            return 0;
+          }
+
+          if (this.timerPeriod < 2) {
+            return 7.5;
+          }
+
+          return TRIANGLE_SEQUENCE[this.sequenceIndex];
+        }
+      }
+
+      class NoiseChannel {
+        constructor() {
+          this.envelope = new EnvelopeGenerator();
+          this.reset();
+        }
+
+        reset() {
+          this.enabled = false;
+          this.lengthCounter = 0;
+          this.lengthHalt = false;
+          this.mode = false;
+          this.timerPeriod = NOISE_PERIOD_TABLE[0];
+          this.timerValue = 0;
+          this.shiftRegister = 1;
+          this.envelope.reset();
+        }
+
+        setEnabled(enabled) {
+          this.enabled = enabled;
+          if (!enabled) {
+            this.lengthCounter = 0;
+          }
+        }
+
+        writeControl(value) {
+          this.lengthHalt = (value & 0x20) !== 0;
+          this.envelope.writeControl(value);
+        }
+
+        writePeriod(value) {
+          this.mode = (value & 0x80) !== 0;
+          this.timerPeriod = NOISE_PERIOD_TABLE[value & 0x0f];
+        }
+
+        writeLength(value) {
+          if (this.enabled) {
+            this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
+          }
+          this.envelope.restart();
+        }
+
+        clockTimer() {
+          if (this.timerValue === 0) {
+            this.timerValue = this.timerPeriod;
+            const tapBit = this.mode ? 6 : 1;
+            const feedback = (this.shiftRegister & 0x01) ^ ((this.shiftRegister >> tapBit) & 0x01);
+            this.shiftRegister = (this.shiftRegister >> 1) | (feedback << 14);
+          } else {
+            this.timerValue -= 1;
+          }
+        }
+
+        clockQuarterFrame() {
+          this.envelope.clock();
+        }
+
+        clockHalfFrame() {
+          if (this.lengthCounter > 0 && !this.lengthHalt) {
+            this.lengthCounter -= 1;
+          }
+        }
+
+        output() {
+          if (!this.enabled || this.lengthCounter === 0 || (this.shiftRegister & 0x01) !== 0) {
+            return 0;
+          }
+
+          return this.envelope.getVolume();
+        }
+      }
+
+      class APU {
+        constructor(audioDriver) {
+          this.audioDriver = audioDriver;
+          this.pulse1 = new PulseChannel(true);
+          this.pulse2 = new PulseChannel(false);
+          this.triangle = new TriangleChannel();
+          this.noise = new NoiseChannel();
+          this.reset();
+        }
+
+        reset() {
+          this.pulse1.reset();
+          this.pulse2.reset();
+          this.triangle.reset();
+          this.noise.reset();
+          this.frameMode = 0;
+          this.frameInterruptInhibit = false;
+          this.frameInterruptFlag = false;
+          this.pendingFrameCounterWrite = null;
+          this.cpuCycles = 0;
+          this.sampleClock = 0;
+          this.sampleRate = 0;
+          this.dmcOutput = 0;
+          this.dmcEnabled = false;
+          this.highPass90 = null;
+          this.highPass440 = null;
+          this.lowPass14k = null;
+        }
+
+        hasIRQ() {
+          return this.frameInterruptFlag;
+        }
+
+        configureFilters(sampleRate) {
+          if (sampleRate <= 0 || sampleRate === this.sampleRate) {
+            return;
+          }
+
+          this.sampleRate = sampleRate;
+          this.sampleClock = 0;
+          this.highPass90 = new HighPassFilter(sampleRate, 90);
+          this.highPass440 = new HighPassFilter(sampleRate, 440);
+          this.lowPass14k = new LowPassFilter(sampleRate, 14000);
+        }
+
+        readStatus() {
+          const status =
+            (this.frameInterruptFlag ? 0x40 : 0) |
+            (this.noise.lengthCounter > 0 ? 0x08 : 0) |
+            (this.triangle.lengthCounter > 0 ? 0x04 : 0) |
+            (this.pulse2.lengthCounter > 0 ? 0x02 : 0) |
+            (this.pulse1.lengthCounter > 0 ? 0x01 : 0);
+          this.frameInterruptFlag = false;
+          return status;
+        }
+
+        writeStatus(value) {
+          this.pulse1.setEnabled((value & 0x01) !== 0);
+          this.pulse2.setEnabled((value & 0x02) !== 0);
+          this.triangle.setEnabled((value & 0x04) !== 0);
+          this.noise.setEnabled((value & 0x08) !== 0);
+          this.dmcEnabled = (value & 0x10) !== 0;
+        }
+
+        writeFrameCounter(value) {
+          if (value & 0x40) {
+            this.frameInterruptFlag = false;
+          }
+
+          this.pendingFrameCounterWrite = {
+            value,
+            delay: (this.cpuCycles & 0x01) === 0 ? 4 : 3,
+          };
+        }
+
+        applyFrameCounterWrite(value) {
+          this.frameMode = (value >> 7) & 0x01;
+          this.frameInterruptInhibit = (value & 0x40) !== 0;
+          if (this.frameInterruptInhibit) {
+            this.frameInterruptFlag = false;
+          }
+          this.cpuCycles = 0;
+          if (this.frameMode === 1) {
+            this.clockQuarterFrame();
+            this.clockHalfFrame();
+          }
+        }
+
+        writeRegister(address, value) {
+          switch (address) {
+            case 0x4000:
+              this.pulse1.writeControl(value);
+              break;
+            case 0x4001:
+              this.pulse1.writeSweep(value);
+              break;
+            case 0x4002:
+              this.pulse1.writeTimerLow(value);
+              break;
+            case 0x4003:
+              this.pulse1.writeTimerHigh(value);
+              break;
+            case 0x4004:
+              this.pulse2.writeControl(value);
+              break;
+            case 0x4005:
+              this.pulse2.writeSweep(value);
+              break;
+            case 0x4006:
+              this.pulse2.writeTimerLow(value);
+              break;
+            case 0x4007:
+              this.pulse2.writeTimerHigh(value);
+              break;
+            case 0x4008:
+              this.triangle.writeControl(value);
+              break;
+            case 0x400a:
+              this.triangle.writeTimerLow(value);
+              break;
+            case 0x400b:
+              this.triangle.writeTimerHigh(value);
+              break;
+            case 0x400c:
+              this.noise.writeControl(value);
+              break;
+            case 0x400e:
+              this.noise.writePeriod(value);
+              break;
+            case 0x400f:
+              this.noise.writeLength(value);
+              break;
+            case 0x4010:
+            case 0x4012:
+            case 0x4013:
+              break;
+            case 0x4011:
+              this.dmcOutput = value & 0x7f;
+              break;
+            case 0x4015:
+              this.writeStatus(value);
+              break;
+            case 0x4017:
+              this.writeFrameCounter(value);
+              break;
+            default:
+              break;
+          }
+        }
+
+        clockQuarterFrame() {
+          this.pulse1.clockQuarterFrame();
+          this.pulse2.clockQuarterFrame();
+          this.triangle.clockQuarterFrame();
+          this.noise.clockQuarterFrame();
+        }
+
+        clockHalfFrame() {
+          this.pulse1.clockHalfFrame();
+          this.pulse2.clockHalfFrame();
+          this.triangle.clockHalfFrame();
+          this.noise.clockHalfFrame();
+        }
+
+        clockFrameCounter() {
+          if (this.frameMode === 0) {
+            if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
+              this.clockQuarterFrame();
+            } else if (this.cpuCycles === 7457) {
+              this.clockQuarterFrame();
+              this.clockHalfFrame();
+            } else if (this.cpuCycles === 14915) {
+              this.clockQuarterFrame();
+              this.clockHalfFrame();
+              if (!this.frameInterruptInhibit) {
+                this.frameInterruptFlag = true;
+              }
+              this.cpuCycles = 0;
+            }
+            return;
+          }
+
+          if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
+            this.clockQuarterFrame();
+          } else if (this.cpuCycles === 7457 || this.cpuCycles === 18641) {
+            this.clockQuarterFrame();
+            this.clockHalfFrame();
+            if (this.cpuCycles === 18641) {
+              this.cpuCycles = 0;
+            }
+          }
+        }
+
+        mixSample() {
+          const pulse1 = this.pulse1.output();
+          const pulse2 = this.pulse2.output();
+          const triangle = this.triangle.output();
+          const noise = this.noise.output();
+          const dmc = this.dmcOutput;
+
+          const pulseSum = pulse1 + pulse2;
+          const pulseOut = pulseSum === 0 ? 0 : 95.88 / ((8128 / pulseSum) + 100);
+          const tndDenominator = (triangle / 8227) + (noise / 12241) + (dmc / 22638);
+          const tndOut = tndDenominator === 0 ? 0 : 159.79 / ((1 / tndDenominator) + 100);
+
+          let sample = pulseOut + tndOut;
+          if (this.highPass90 && this.highPass440 && this.lowPass14k) {
+            sample = this.highPass90.step(sample);
+            sample = this.highPass440.step(sample);
+            sample = this.lowPass14k.step(sample);
+          }
+
+          return sample * 1.8;
+        }
+
+        stepCpuCycle() {
+          if (this.pendingFrameCounterWrite) {
+            this.pendingFrameCounterWrite.delay -= 1;
+            if (this.pendingFrameCounterWrite.delay <= 0) {
+              const { value } = this.pendingFrameCounterWrite;
+              this.pendingFrameCounterWrite = null;
+              this.applyFrameCounterWrite(value);
+            }
+          }
+
+          this.cpuCycles += 1;
+          this.triangle.clockTimer();
+
+          if ((this.cpuCycles & 0x01) === 0) {
+            this.pulse1.clockTimer();
+            this.pulse2.clockTimer();
+            this.noise.clockTimer();
+          }
+
+          this.clockFrameCounter();
+
+          const sampleRate = this.audioDriver.getSampleRate();
+          if (sampleRate > 0) {
+            this.configureFilters(sampleRate);
+            this.sampleClock += sampleRate;
+            if (this.sampleClock >= NTSC_CPU_CLOCK) {
+              this.sampleClock -= NTSC_CPU_CLOCK;
+              this.audioDriver.pushSample(this.mixSample());
+            }
+          }
+        }
+      }
+
       class Bus {
-        constructor(cartridge) {
+        constructor(cartridge, audioDriver) {
           this.cartridge = cartridge;
           this.cpuRam = new Uint8Array(0x0800);
           this.ppu = new PPU(cartridge);
+          this.apu = new APU(audioDriver);
           this.controller1 = new Controller();
           this.controller2 = new Controller();
         }
@@ -2666,6 +3421,7 @@
           this.cpuRam.fill(0);
           this.cartridge.reset();
           this.ppu.reset();
+          this.apu.reset();
         }
 
         pollNMI() {
@@ -2673,7 +3429,7 @@
         }
 
         hasIRQ() {
-          return this.cartridge.hasIRQ();
+          return this.cartridge.hasIRQ() || this.apu.hasIRQ();
         }
 
         read(addr) {
@@ -2689,6 +3445,10 @@
 
           if (address === 0x4016) {
             return this.controller1.read();
+          }
+
+          if (address === 0x4015) {
+            return this.apu.readStatus();
           }
 
           if (address === 0x4017) {
@@ -2735,6 +3495,11 @@
             return 0;
           }
 
+          if ((address >= 0x4000 && address <= 0x4013) || address === 0x4015 || address === 0x4017) {
+            this.apu.writeRegister(address, value);
+            return 0;
+          }
+
           if (address >= 0x6000 && address < 0x8000) {
             this.cartridge.writePrgRam(address, value);
             return 0;
@@ -2750,8 +3515,8 @@
       }
 
       class NES {
-        constructor(cartridge, canvas) {
-          this.bus = new Bus(cartridge);
+        constructor(cartridge, canvas, audioDriver) {
+          this.bus = new Bus(cartridge, audioDriver);
           this.cpu = new CPU6502(this.bus);
           this.canvas = canvas;
           this.context = canvas.getContext("2d");
@@ -2778,6 +3543,10 @@
           while (!this.bus.ppu.frameReady) {
             const cpuCycles = this.cpu.step();
 
+            for (let i = 0; i < cpuCycles; i += 1) {
+              this.bus.apu.stepCpuCycle();
+            }
+
             for (let i = 0; i < cpuCycles * 3; i += 1) {
               this.bus.ppu.step();
             }
@@ -2795,7 +3564,8 @@
       const dropzone = document.getElementById("dropzone");
       const loaderTitle = document.getElementById("loader-title");
       const loaderCopy = document.getElementById("loader-copy");
-      const quicklaunchStatus = document.getElementById("quicklaunch-status");
+      const audioStatus = document.getElementById("audio-status");
+      const audioToggle = document.getElementById("audio-toggle");
       const quicklaunchGrid = document.getElementById("quicklaunch-grid");
 
       const BUTTON_MAP = new Map([
@@ -2818,6 +3588,18 @@
       let romCatalog = [];
       let activeCatalogId = "";
 
+      function setAudioStatus(message, tone = "ready", buttonLabel = "Enable Audio") {
+        audioStatus.textContent = message;
+        audioStatus.dataset.tone = tone;
+        audioToggle.textContent = buttonLabel;
+      }
+
+      const audioDriver = new AudioDriver(setAudioStatus);
+
+      async function enableAudio() {
+        return audioDriver.enable();
+      }
+
       function setOverlay(title, message) {
         loaderTitle.textContent = title;
         loaderCopy.textContent = message;
@@ -2831,11 +3613,6 @@
       function drawPlaceholder() {
         context.fillStyle = "#000";
         context.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      function setQuicklaunchStatus(message, tone = "ready") {
-        quicklaunchStatus.textContent = message;
-        quicklaunchStatus.dataset.tone = tone;
       }
 
       function formatRomSize(sizeBytes) {
@@ -2864,6 +3641,7 @@
           activeNES.releaseAllButtons();
         }
         activeNES = null;
+        audioDriver.clear();
       }
 
       function bootNES(nes) {
@@ -2910,7 +3688,7 @@
       function loadRomBytes(bytes, successMessage) {
         try {
           const cartridge = Cartridge.fromINES(bytes);
-          const nes = new NES(cartridge, canvas);
+          const nes = new NES(cartridge, canvas, audioDriver);
           bootNES(nes);
           setStageMode("loaded");
           setOverlay("Drop another ROM", successMessage);
@@ -2934,6 +3712,7 @@
         }
 
         try {
+          await enableAudio();
           activeCatalogId = "";
           renderQuicklaunch();
           const bytes = new Uint8Array(await file.arrayBuffer());
@@ -2941,7 +3720,6 @@
             bytes,
             `${file.name} loaded. Drag a new ROM into the window to replace it.`
           );
-          setQuicklaunchStatus("Drag-loaded ROM is live. Quicklaunch stays ready for the next swap.", "ready");
         } catch {}
       }
 
@@ -2986,9 +3764,8 @@
       }
 
       async function loadBundledRom(entry) {
-        setQuicklaunchStatus(`Loading ${entry.title} from the bundled library…`, "ready");
-
         try {
+          await enableAudio();
           const response = await fetch(entry.file, { cache: "no-store" });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status} while fetching ${entry.file}`);
@@ -3001,20 +3778,14 @@
           );
           activeCatalogId = entry.id;
           renderQuicklaunch();
-          setQuicklaunchStatus(`${entry.title} is live on the cabinet.`, "ready");
         } catch (error) {
           console.error(error);
-          setQuicklaunchStatus(
-            `Quicklaunch failed for ${entry.title}: ${error instanceof Error ? error.message : String(error)}`,
-            "error"
-          );
         }
       }
 
       async function loadBundledCatalog() {
         if (location.protocol === "file:") {
           clearQuicklaunchGrid("Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.");
-          setQuicklaunchStatus("Bundled ROM fetch is disabled in file mode. Drag-and-drop still works.", "error");
           return;
         }
 
@@ -3026,14 +3797,9 @@
 
           romCatalog = await response.json();
           renderQuicklaunch();
-          setQuicklaunchStatus("Select a bundled ROM to boot it instantly.", "ready");
         } catch (error) {
           console.error(error);
           clearQuicklaunchGrid("Bundled ROM catalog failed to load. Drag-and-drop remains available.");
-          setQuicklaunchStatus(
-            `Catalog load failed: ${error instanceof Error ? error.message : String(error)}`,
-            "error"
-          );
         }
       }
 
@@ -3052,9 +3818,13 @@
         }
 
         event.preventDefault();
+        void enableAudio();
         activeNES.setButton(button, pressed);
       }
 
+      audioToggle.addEventListener("click", () => {
+        void enableAudio();
+      });
       window.addEventListener("keydown", (event) => setButton(true, event));
       window.addEventListener("keyup", (event) => setButton(false, event));
       window.addEventListener("blur", () => activeNES?.releaseAllButtons());
@@ -3098,7 +3868,7 @@
 
       drawPlaceholder();
       setStageMode("empty");
-      setOverlay("Drop a `.nes` ROM", "Supports mappers 0, 1, 2, 3, and 4. Drag a ROM anywhere into the window to begin.");
+      setOverlay("Drop a `.nes` ROM", "Enable audio, then drag in a ROM or launch one from the library.");
       void loadBundledCatalog();
     </script>
   </body>
