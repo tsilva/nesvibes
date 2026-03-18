@@ -256,11 +256,6 @@
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
         <p class="hero-meta">Svelte shell. Emulator isolated in one module. Tuned for Vercel.</p>
-        <div class="hero-badges" aria-label="Platform highlights">
-          <span class="badge alt">Svelte</span>
-          <span class="badge">Vercel-ready</span>
-          <span class="badge">Single-file emulator core</span>
-        </div>
       </div>
       <div class="hero-stats" aria-label="Runtime stats">
         <div class="stat-card input-card">
