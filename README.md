@@ -1,25 +1,19 @@
-# NES Emulator
+# NES Vibes
 
-This repository now contains a small browser-based NES emulator written from scratch for the bundled `SuperMarioBros-Nes-v0.nes` ROM.
+This repository now ships as a single self-contained [`index.html`](/Users/tsilva/repos/romhacking/index.html) file. Open it directly in a browser with `file://`, then drag a `.nes` ROM into the viewport to load it.
 
 ## Features
 
+- Single-file emulator with no HTTP server requirement
+- Drag-and-drop or manual ROM selection
+- Mapper 0 / NROM iNES support
 - 6502 CPU core with official opcodes and common unofficial NOPs
-- iNES parsing for mapper 0 / NROM
 - PPU rendering with scrolling, sprites, OAM DMA, NMI, palette RAM, and nametable mirroring
 - Keyboard controller input
-- No external dependencies
 
 ## Run
 
-Serve the folder over HTTP and open the page in a browser:
-
-```sh
-cd /Users/tsilva/repos/romhacking
-python3 -m http.server 8000
-```
-
-Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+Open [`index.html`](/Users/tsilva/repos/romhacking/index.html) directly in your browser.
 
 ## Controls
 
@@ -31,5 +25,5 @@ Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 ## Notes
 
-- This emulator is intentionally scoped to the included mapper 0 ROM.
+- This build intentionally targets mapper 0 ROMs only.
 - Audio is not implemented.

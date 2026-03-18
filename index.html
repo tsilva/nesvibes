@@ -3,13 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>NES Emulator</title>
+    <title>NES Vibes</title>
     <style>
       :root {
         color-scheme: dark;
         font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
-        background: #111;
-        color: #f0f0f0;
+        background: #101010;
+        color: #f3f3f3;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
@@ -18,14 +22,15 @@
         display: grid;
         place-items: center;
         background:
-          radial-gradient(circle at top, rgba(255, 240, 180, 0.15), transparent 35%),
-          linear-gradient(180deg, #191919, #090909);
+          radial-gradient(circle at top, rgba(255, 216, 134, 0.16), transparent 30%),
+          linear-gradient(180deg, #191919, #080808 70%);
       }
 
       main {
-        width: min(960px, calc(100vw - 32px));
+        width: min(980px, calc(100vw - 32px));
         display: grid;
         gap: 16px;
+        padding: 24px 0;
       }
 
       h1,
@@ -33,10 +38,44 @@
         margin: 0;
       }
 
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
       .shell {
         border: 2px solid #3d3d3d;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.72);
         box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+      }
+
+      .badge,
+      button {
+        padding: 6px 10px;
+        border: 1px solid #4d4d4d;
+        background: rgba(255, 255, 255, 0.05);
+        color: inherit;
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .stage {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stage.dragging {
+        border-color: #f5d76e;
+        box-shadow: 0 0 0 2px rgba(245, 215, 110, 0.35), 0 24px 48px rgba(0, 0, 0, 0.45);
       }
 
       canvas {
@@ -48,43 +87,81 @@
         background: #000;
       }
 
+      .overlay {
+        position: absolute;
+        inset: auto 16px 16px 16px;
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        background: rgba(7, 7, 7, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+      }
+
+      .stage.loaded .overlay {
+        inset: auto 12px 12px auto;
+        width: min(360px, calc(100% - 24px));
+        background: rgba(7, 7, 7, 0.72);
+      }
+
+      .overlay p {
+        line-height: 1.4;
+      }
+
       .meta {
         display: grid;
-        gap: 8px;
+        gap: 10px;
         padding: 16px;
-      }
-
-      .row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-      }
-
-      .badge {
-        padding: 4px 8px;
-        border: 1px solid #4d4d4d;
-        background: rgba(255, 255, 255, 0.04);
       }
 
       #status {
         min-height: 1lh;
         color: #f5d76e;
       }
+
+      .dim {
+        color: #c5c5c5;
+      }
+
+      #rom-input {
+        display: none;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          width: calc(100vw - 20px);
+          padding: 10px 0 18px;
+        }
+
+        .overlay {
+          inset: auto 10px 10px 10px;
+        }
+      }
     </style>
   </head>
   <body>
     <main>
       <div class="row">
-        <h1>Super Mario Bros</h1>
-        <div class="badge">Mapper 0</div>
-        <div class="badge">No external libraries</div>
+        <h1>NES Vibes</h1>
+        <div class="badge">Single-file build</div>
+        <div class="badge">Mapper 0 / NROM</div>
+        <div class="badge">Open directly from disk</div>
       </div>
-      <div class="shell">
-        <canvas id="screen" width="256" height="240" aria-label="NES screen"></canvas>
-      </div>
+
+      <section id="dropzone" class="shell stage" aria-label="ROM drop zone">
+        <canvas id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
+        <div class="overlay">
+          <p id="loader-copy">Drop a `.nes` ROM anywhere on this window, or choose one manually.</p>
+          <div class="row">
+            <button id="pick-rom" type="button">Choose ROM</button>
+            <span class="badge" id="rom-name">No ROM loaded</span>
+          </div>
+        </div>
+      </section>
+
       <section class="shell meta">
-        <p id="status">Booting ROM…</p>
-        <div class="row">
+        <p id="status">Open this file directly in your browser, then drop a mapper 0 ROM into the viewport.</p>
+        <div class="row dim">
           <span class="badge">Arrows: D-pad</span>
           <span class="badge">Z: B</span>
           <span class="badge">X: A</span>
@@ -92,7 +169,1622 @@
           <span class="badge">Shift: Select</span>
         </div>
       </section>
+
+      <input id="rom-input" type="file" accept=".nes,application/octet-stream">
     </main>
-    <script type="module" src="./main.js"></script>
+
+    <script>
+      const CPU_FLAG_CARRY = 0x01;
+      const CPU_FLAG_ZERO = 0x02;
+      const CPU_FLAG_INTERRUPT = 0x04;
+      const CPU_FLAG_DECIMAL = 0x08;
+      const CPU_FLAG_BREAK = 0x10;
+      const CPU_FLAG_UNUSED = 0x20;
+      const CPU_FLAG_OVERFLOW = 0x40;
+      const CPU_FLAG_NEGATIVE = 0x80;
+
+      const NES_PALETTE = [
+        [124, 124, 124], [0, 0, 252], [0, 0, 188], [68, 40, 188],
+        [148, 0, 132], [168, 0, 32], [168, 16, 0], [136, 20, 0],
+        [80, 48, 0], [0, 120, 0], [0, 104, 0], [0, 88, 0],
+        [0, 64, 88], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [188, 188, 188], [0, 120, 248], [0, 88, 248], [104, 68, 252],
+        [216, 0, 204], [228, 0, 88], [248, 56, 0], [228, 92, 16],
+        [172, 124, 0], [0, 184, 0], [0, 168, 0], [0, 168, 68],
+        [0, 136, 136], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [248, 248, 248], [60, 188, 252], [104, 136, 252], [152, 120, 248],
+        [248, 120, 248], [248, 88, 152], [248, 120, 88], [252, 160, 68],
+        [248, 184, 0], [184, 248, 24], [88, 216, 84], [88, 248, 152],
+        [0, 232, 216], [120, 120, 120], [0, 0, 0], [0, 0, 0],
+        [252, 252, 252], [164, 228, 252], [184, 184, 248], [216, 184, 248],
+        [248, 184, 248], [248, 164, 192], [240, 208, 176], [252, 224, 168],
+        [248, 216, 120], [216, 248, 120], [184, 248, 184], [184, 248, 216],
+        [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0],
+      ];
+
+      class Cartridge {
+        static fromINES(bytes) {
+          if (bytes.length < 16) {
+            throw new Error("ROM is too small to contain an iNES header");
+          }
+
+          if (
+            bytes[0] !== 0x4e ||
+            bytes[1] !== 0x45 ||
+            bytes[2] !== 0x53 ||
+            bytes[3] !== 0x1a
+          ) {
+            throw new Error("ROM does not contain a valid iNES header");
+          }
+
+          const prgBanks = bytes[4];
+          const chrBanks = bytes[5];
+          const flags6 = bytes[6];
+          const flags7 = bytes[7];
+          const mapper = (flags6 >> 4) | (flags7 & 0xf0);
+
+          if (mapper !== 0) {
+            throw new Error(
+              `Unsupported mapper ${mapper}. This build only supports NROM (mapper 0).`
+            );
+          }
+
+          if (flags6 & 0x04) {
+            throw new Error("Trainer ROMs are not supported");
+          }
+
+          const prgSize = prgBanks * 0x4000;
+          const chrSize = chrBanks * 0x2000;
+          const offset = 16;
+          const prgRom = bytes.slice(offset, offset + prgSize);
+          const chrOffset = offset + prgSize;
+          const chrRom = chrSize > 0 ? bytes.slice(chrOffset, chrOffset + chrSize) : new Uint8Array(0x2000);
+
+          return new Cartridge({
+            prgRom,
+            chrRom,
+            hasChrRam: chrSize === 0,
+            mirroring: flags6 & 0x01 ? "vertical" : "horizontal",
+          });
+        }
+
+        constructor({ prgRom, chrRom, hasChrRam, mirroring }) {
+          this.prgRom = prgRom;
+          this.chrRom = chrRom;
+          this.hasChrRam = hasChrRam;
+          this.mirroring = mirroring;
+        }
+
+        readPrg(addr) {
+          let index = addr - 0x8000;
+          if (this.prgRom.length === 0x4000) {
+            index &= 0x3fff;
+          }
+          return this.prgRom[index];
+        }
+
+        readChr(addr) {
+          return this.chrRom[addr & 0x1fff];
+        }
+
+        writeChr(addr, value) {
+          if (this.hasChrRam) {
+            this.chrRom[addr & 0x1fff] = value;
+          }
+        }
+
+        mirrorNametableAddress(addr) {
+          const index = addr & 0x0fff;
+          const table = index >> 10;
+          const offset = index & 0x03ff;
+
+          if (this.mirroring === "vertical") {
+            return (table & 0x01) * 0x0400 + offset;
+          }
+
+          return ((table >> 1) & 0x01) * 0x0400 + offset;
+        }
+      }
+
+      class Controller {
+        constructor() {
+          this.state = 0;
+          this.shift = 0;
+          this.strobe = 0;
+        }
+
+        setButton(button, pressed) {
+          const bit = {
+            a: 0,
+            b: 1,
+            select: 2,
+            start: 3,
+            up: 4,
+            down: 5,
+            left: 6,
+            right: 7,
+          }[button];
+
+          if (bit === undefined) {
+            return;
+          }
+
+          if (pressed) {
+            this.state |= 1 << bit;
+          } else {
+            this.state &= ~(1 << bit);
+          }
+        }
+
+        write(value) {
+          const nextStrobe = value & 1;
+          if (this.strobe === 1 && nextStrobe === 0) {
+            this.shift = this.state;
+          }
+          this.strobe = nextStrobe;
+          if (this.strobe) {
+            this.shift = this.state;
+          }
+        }
+
+        read() {
+          let value;
+
+          if (this.strobe) {
+            value = this.state & 1;
+            this.shift = this.state;
+          } else {
+            value = this.shift & 1;
+            this.shift = (this.shift >> 1) | 0x80;
+          }
+
+          return value | 0x40;
+        }
+      }
+
+      class PPU {
+        constructor(cartridge) {
+          this.cartridge = cartridge;
+          this.nametableRam = new Uint8Array(0x0800);
+          this.paletteRam = new Uint8Array(0x20);
+          this.oam = new Uint8Array(0x100);
+          this.framebuffer = new Uint8ClampedArray(256 * 240 * 4);
+
+          this.ctrl = 0;
+          this.mask = 0;
+          this.status = 0;
+          this.oamAddr = 0;
+          this.readBuffer = 0;
+          this.openBus = 0;
+
+          this.v = 0;
+          this.t = 0;
+          this.x = 0;
+          this.w = 0;
+
+          this.scanline = 261;
+          this.cycle = 0;
+          this.frameReady = false;
+          this.nmiPending = false;
+          this.lineBaseV = 0;
+          this.lineSprites = [];
+        }
+
+        reset() {
+          this.ctrl = 0;
+          this.mask = 0;
+          this.status = 0;
+          this.oamAddr = 0;
+          this.readBuffer = 0;
+          this.openBus = 0;
+          this.v = 0;
+          this.t = 0;
+          this.x = 0;
+          this.w = 0;
+          this.scanline = 261;
+          this.cycle = 0;
+          this.frameReady = false;
+          this.nmiPending = false;
+          this.lineBaseV = 0;
+          this.lineSprites = [];
+        }
+
+        isRenderingEnabled() {
+          return (this.mask & 0x18) !== 0;
+        }
+
+        backgroundEnabled() {
+          return (this.mask & 0x08) !== 0;
+        }
+
+        spritesEnabled() {
+          return (this.mask & 0x10) !== 0;
+        }
+
+        triggerNMI() {
+          this.nmiPending = true;
+        }
+
+        pollNMI() {
+          if (!this.nmiPending) {
+            return false;
+          }
+          this.nmiPending = false;
+          return true;
+        }
+
+        readRegister(addr) {
+          const reg = addr & 0x2007;
+          let value = this.openBus;
+
+          switch (reg) {
+            case 0x2002:
+              value = (this.status & 0xe0) | (this.openBus & 0x1f);
+              this.status &= ~0x80;
+              this.w = 0;
+              break;
+            case 0x2004:
+              value = this.oam[this.oamAddr];
+              break;
+            case 0x2007: {
+              const address = this.v & 0x3fff;
+              const readValue = this.read(address);
+
+              if (address >= 0x3f00) {
+                value = readValue;
+                this.readBuffer = this.read(address - 0x1000);
+              } else {
+                value = this.readBuffer;
+                this.readBuffer = readValue;
+              }
+
+              this.incrementVramAddress();
+              break;
+            }
+            default:
+              break;
+          }
+
+          this.openBus = value;
+          return value;
+        }
+
+        writeRegister(addr, value) {
+          this.openBus = value;
+
+          switch (addr & 0x2007) {
+            case 0x2000: {
+              const wasNmiEnabled = (this.ctrl & 0x80) !== 0;
+              this.ctrl = value;
+              this.t = (this.t & 0xf3ff) | ((value & 0x03) << 10);
+              if (!wasNmiEnabled && (this.ctrl & 0x80) && (this.status & 0x80)) {
+                this.triggerNMI();
+              }
+              break;
+            }
+            case 0x2001:
+              this.mask = value;
+              break;
+            case 0x2003:
+              this.oamAddr = value;
+              break;
+            case 0x2004:
+              this.oam[this.oamAddr] = value;
+              this.oamAddr = (this.oamAddr + 1) & 0xff;
+              break;
+            case 0x2005:
+              if (this.w === 0) {
+                this.t = (this.t & 0x7fe0) | (value >> 3);
+                this.x = value & 0x07;
+                this.w = 1;
+              } else {
+                this.t = (this.t & 0x0c1f) | ((value & 0x07) << 12) | ((value & 0xf8) << 2);
+                this.w = 0;
+              }
+              break;
+            case 0x2006:
+              if (this.w === 0) {
+                this.t = (this.t & 0x00ff) | ((value & 0x3f) << 8);
+                this.w = 1;
+              } else {
+                this.t = (this.t & 0x7f00) | value;
+                this.v = this.t;
+                this.w = 0;
+              }
+              break;
+            case 0x2007:
+              this.write(this.v & 0x3fff, value);
+              this.incrementVramAddress();
+              break;
+            default:
+              break;
+          }
+        }
+
+        writeOamDma(buffer) {
+          for (let i = 0; i < 256; i += 1) {
+            this.oam[(this.oamAddr + i) & 0xff] = buffer[i];
+          }
+        }
+
+        incrementVramAddress() {
+          this.v = (this.v + ((this.ctrl & 0x04) ? 32 : 1)) & 0x7fff;
+        }
+
+        read(addr) {
+          const address = addr & 0x3fff;
+
+          if (address < 0x2000) {
+            return this.cartridge.readChr(address);
+          }
+
+          if (address < 0x3f00) {
+            return this.nametableRam[this.cartridge.mirrorNametableAddress(address)];
+          }
+
+          return this.paletteRam[this.normalizePaletteAddress(address)];
+        }
+
+        write(addr, value) {
+          const address = addr & 0x3fff;
+
+          if (address < 0x2000) {
+            this.cartridge.writeChr(address, value);
+            return;
+          }
+
+          if (address < 0x3f00) {
+            this.nametableRam[this.cartridge.mirrorNametableAddress(address)] = value;
+            return;
+          }
+
+          this.paletteRam[this.normalizePaletteAddress(address)] = value & 0x3f;
+        }
+
+        normalizePaletteAddress(addr) {
+          let index = addr & 0x1f;
+          if (index === 0x10 || index === 0x14 || index === 0x18 || index === 0x1c) {
+            index -= 0x10;
+          }
+          return index;
+        }
+
+        incrementX() {
+          if ((this.v & 0x001f) === 31) {
+            this.v &= ~0x001f;
+            this.v ^= 0x0400;
+          } else {
+            this.v += 1;
+          }
+        }
+
+        incrementY() {
+          if ((this.v & 0x7000) !== 0x7000) {
+            this.v += 0x1000;
+            return;
+          }
+
+          this.v &= ~0x7000;
+          let y = (this.v & 0x03e0) >> 5;
+
+          if (y === 29) {
+            y = 0;
+            this.v ^= 0x0800;
+          } else if (y === 31) {
+            y = 0;
+          } else {
+            y += 1;
+          }
+
+          this.v = (this.v & ~0x03e0) | (y << 5);
+        }
+
+        copyHorizontalBits() {
+          this.v = (this.v & ~0x041f) | (this.t & 0x041f);
+        }
+
+        copyVerticalBits() {
+          this.v = (this.v & ~0x7be0) | (this.t & 0x7be0);
+        }
+
+        decodeBackgroundPixel(screenX) {
+          if (!this.backgroundEnabled()) {
+            return { pixel: 0, palette: 0 };
+          }
+
+          if (screenX < 8 && (this.mask & 0x02) === 0) {
+            return { pixel: 0, palette: 0 };
+          }
+
+          const coarseXBase = this.lineBaseV & 0x001f;
+          const coarseY = (this.lineBaseV >> 5) & 0x001f;
+          const nametableXBase = (this.lineBaseV >> 10) & 0x01;
+          const nametableY = (this.lineBaseV >> 11) & 0x01;
+          const fineY = (this.lineBaseV >> 12) & 0x07;
+
+          const pixelOffset = this.x + screenX;
+          const tileX = (coarseXBase + (pixelOffset >> 3)) & 0x1f;
+          const nametableX = nametableXBase ^ ((coarseXBase + (pixelOffset >> 3)) >> 5);
+          const bit = 7 - (pixelOffset & 0x07);
+          const nametable = 0x2000 | (nametableY << 11) | (nametableX << 10);
+          const tileAddress = nametable | (coarseY << 5) | tileX;
+          const tileId = this.read(tileAddress);
+          const attributeAddress = nametable | 0x03c0 | ((coarseY >> 2) << 3) | (tileX >> 2);
+          const attribute = this.read(attributeAddress);
+          const palette = (attribute >> (((coarseY & 0x02) << 1) | (tileX & 0x02))) & 0x03;
+          const patternBase = (this.ctrl & 0x10) ? 0x1000 : 0x0000;
+          const patternAddress = patternBase + tileId * 16 + fineY;
+          const low = this.read(patternAddress);
+          const high = this.read(patternAddress + 8);
+          const pixel = ((low >> bit) & 0x01) | (((high >> bit) & 0x01) << 1);
+          return { pixel, palette };
+        }
+
+        getSpritePixel(screenX, screenY) {
+          if (!this.spritesEnabled()) {
+            return null;
+          }
+
+          if (screenX < 8 && (this.mask & 0x04) === 0) {
+            return null;
+          }
+
+          const spriteHeight = (this.ctrl & 0x20) ? 16 : 8;
+
+          for (const sprite of this.lineSprites) {
+            if (screenX < sprite.x || screenX >= sprite.x + 8) {
+              continue;
+            }
+
+            let row = screenY - (sprite.y + 1);
+            let column = screenX - sprite.x;
+
+            if (sprite.attributes & 0x80) {
+              row = spriteHeight - 1 - row;
+            }
+
+            if (sprite.attributes & 0x40) {
+              column = 7 - column;
+            }
+
+            let patternBase;
+            let tileIndex;
+            let fineY = row;
+
+            if (spriteHeight === 16) {
+              patternBase = (sprite.tileIndex & 0x01) * 0x1000;
+              tileIndex = sprite.tileIndex & 0xfe;
+              if (fineY >= 8) {
+                tileIndex += 1;
+                fineY -= 8;
+              }
+            } else {
+              patternBase = (this.ctrl & 0x08) ? 0x1000 : 0x0000;
+              tileIndex = sprite.tileIndex;
+            }
+
+            const patternAddress = patternBase + tileIndex * 16 + fineY;
+            const low = this.read(patternAddress);
+            const high = this.read(patternAddress + 8);
+            const bit = 7 - column;
+            const pixel = ((low >> bit) & 0x01) | (((high >> bit) & 0x01) << 1);
+
+            if (pixel === 0) {
+              continue;
+            }
+
+            return {
+              pixel,
+              palette: (sprite.attributes & 0x03) + 4,
+              priorityBehindBackground: (sprite.attributes & 0x20) !== 0,
+              sprite0: sprite.index === 0,
+            };
+          }
+
+          return null;
+        }
+
+        evaluateSpritesForScanline(scanline) {
+          this.lineSprites = [];
+          const spriteHeight = (this.ctrl & 0x20) ? 16 : 8;
+          let visibleCount = 0;
+
+          for (let i = 0; i < 64; i += 1) {
+            const base = i * 4;
+            const y = this.oam[base];
+            const row = scanline - (y + 1);
+
+            if (row < 0 || row >= spriteHeight) {
+              continue;
+            }
+
+            visibleCount += 1;
+            if (this.lineSprites.length < 8) {
+              this.lineSprites.push({
+                index: i,
+                y,
+                tileIndex: this.oam[base + 1],
+                attributes: this.oam[base + 2],
+                x: this.oam[base + 3],
+              });
+            }
+          }
+
+          if (visibleCount > 8) {
+            this.status |= 0x20;
+          }
+        }
+
+        readColor(paletteIndex, pixel) {
+          const colorIndex = pixel === 0
+            ? this.paletteRam[0] & 0x3f
+            : this.paletteRam[this.normalizePaletteAddress(0x3f00 + paletteIndex * 4 + pixel)] & 0x3f;
+          return NES_PALETTE[colorIndex];
+        }
+
+        renderPixel() {
+          const screenX = this.cycle - 1;
+          const screenY = this.scanline;
+          const bg = this.decodeBackgroundPixel(screenX);
+          const sprite = this.getSpritePixel(screenX, screenY);
+
+          let color = this.readColor(0, 0);
+
+          if (sprite && sprite.sprite0 && sprite.pixel !== 0 && bg.pixel !== 0 && screenX < 255) {
+            this.status |= 0x40;
+          }
+
+          if (sprite && sprite.pixel !== 0 && (bg.pixel === 0 || !sprite.priorityBehindBackground)) {
+            color = this.readColor(sprite.palette, sprite.pixel);
+          } else if (bg.pixel !== 0) {
+            color = this.readColor(bg.palette, bg.pixel);
+          }
+
+          const offset = (screenY * 256 + screenX) * 4;
+          this.framebuffer[offset] = color[0];
+          this.framebuffer[offset + 1] = color[1];
+          this.framebuffer[offset + 2] = color[2];
+          this.framebuffer[offset + 3] = 255;
+        }
+
+        step() {
+          const rendering = this.isRenderingEnabled();
+
+          if (this.scanline === 261 && this.cycle === 1) {
+            this.status &= ~0xe0;
+          }
+
+          if (this.scanline === 241 && this.cycle === 1) {
+            this.status |= 0x80;
+            this.frameReady = true;
+            if (this.ctrl & 0x80) {
+              this.triggerNMI();
+            }
+          }
+
+          if (this.scanline >= 0 && this.scanline < 240 && this.cycle === 0) {
+            this.lineBaseV = this.v;
+            this.evaluateSpritesForScanline(this.scanline);
+          }
+
+          if (this.scanline >= 0 && this.scanline < 240 && this.cycle >= 1 && this.cycle <= 256) {
+            this.renderPixel();
+          }
+
+          if (rendering) {
+            const isVisibleCycle = (this.cycle >= 1 && this.cycle <= 256) || (this.cycle >= 321 && this.cycle <= 336);
+            if ((this.scanline >= 0 && this.scanline < 240) || this.scanline === 261) {
+              if (isVisibleCycle && (this.cycle & 0x07) === 0) {
+                this.incrementX();
+              }
+
+              if (this.cycle === 256) {
+                this.incrementY();
+              }
+
+              if (this.cycle === 257) {
+                this.copyHorizontalBits();
+              }
+
+              if (this.scanline === 261 && this.cycle >= 280 && this.cycle <= 304) {
+                this.copyVerticalBits();
+              }
+            }
+          }
+
+          this.cycle += 1;
+          if (this.cycle > 340) {
+            this.cycle = 0;
+            this.scanline += 1;
+            if (this.scanline > 261) {
+              this.scanline = 0;
+            }
+          }
+        }
+      }
+
+      class CPU6502 {
+        constructor(bus) {
+          this.bus = bus;
+          this.a = 0;
+          this.x = 0;
+          this.y = 0;
+          this.s = 0xfd;
+          this.p = CPU_FLAG_INTERRUPT | CPU_FLAG_UNUSED;
+          this.pc = 0;
+          this.stallCycles = 0;
+        }
+
+        reset() {
+          this.a = 0;
+          this.x = 0;
+          this.y = 0;
+          this.s = 0xfd;
+          this.p = CPU_FLAG_INTERRUPT | CPU_FLAG_UNUSED;
+          this.stallCycles = 7;
+          this.pc = this.read16(0xfffc);
+        }
+
+        setFlag(flag, enabled) {
+          if (enabled) {
+            this.p |= flag;
+          } else {
+            this.p &= ~flag;
+          }
+        }
+
+        getFlag(flag) {
+          return (this.p & flag) !== 0;
+        }
+
+        setZN(value) {
+          this.setFlag(CPU_FLAG_ZERO, (value & 0xff) === 0);
+          this.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
+        }
+
+        read(addr) {
+          return this.bus.read(addr);
+        }
+
+        write(addr, value) {
+          const stall = this.bus.write(addr, value & 0xff);
+          if (stall) {
+            this.stallCycles += stall + ((this.bus.ppu.cycle & 1) ? 1 : 0);
+          }
+        }
+
+        read16(addr) {
+          const lo = this.read(addr);
+          const hi = this.read((addr + 1) & 0xffff);
+          return lo | (hi << 8);
+        }
+
+        read16Bug(addr) {
+          const lo = this.read(addr);
+          const hi = this.read((addr & 0xff00) | ((addr + 1) & 0x00ff));
+          return lo | (hi << 8);
+        }
+
+        push(value) {
+          this.write(0x0100 | this.s, value);
+          this.s = (this.s - 1) & 0xff;
+        }
+
+        pull() {
+          this.s = (this.s + 1) & 0xff;
+          return this.read(0x0100 | this.s);
+        }
+
+        push16(value) {
+          this.push((value >> 8) & 0xff);
+          this.push(value & 0xff);
+        }
+
+        pull16() {
+          const lo = this.pull();
+          const hi = this.pull();
+          return lo | (hi << 8);
+        }
+
+        serviceInterrupt(vector, breakFlag) {
+          this.push16(this.pc);
+          this.push((this.p & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED | (breakFlag ? CPU_FLAG_BREAK : 0));
+          this.setFlag(CPU_FLAG_INTERRUPT, true);
+          this.pc = this.read16(vector);
+        }
+
+        pageCrossed(a, b) {
+          return (a & 0xff00) !== (b & 0xff00);
+        }
+
+        immediate() {
+          const addr = this.pc;
+          this.pc = (this.pc + 1) & 0xffff;
+          return { addr, pageCrossed: false };
+        }
+
+        zeroPage() {
+          const addr = this.read(this.pc);
+          this.pc = (this.pc + 1) & 0xffff;
+          return { addr, pageCrossed: false };
+        }
+
+        zeroPageX() {
+          const addr = (this.read(this.pc) + this.x) & 0xff;
+          this.pc = (this.pc + 1) & 0xffff;
+          return { addr, pageCrossed: false };
+        }
+
+        zeroPageY() {
+          const addr = (this.read(this.pc) + this.y) & 0xff;
+          this.pc = (this.pc + 1) & 0xffff;
+          return { addr, pageCrossed: false };
+        }
+
+        absolute() {
+          const addr = this.read16(this.pc);
+          this.pc = (this.pc + 2) & 0xffff;
+          return { addr, pageCrossed: false };
+        }
+
+        absoluteX() {
+          const base = this.read16(this.pc);
+          const addr = (base + this.x) & 0xffff;
+          this.pc = (this.pc + 2) & 0xffff;
+          return { addr, pageCrossed: this.pageCrossed(base, addr) };
+        }
+
+        absoluteY() {
+          const base = this.read16(this.pc);
+          const addr = (base + this.y) & 0xffff;
+          this.pc = (this.pc + 2) & 0xffff;
+          return { addr, pageCrossed: this.pageCrossed(base, addr) };
+        }
+
+        indirect() {
+          const pointer = this.read16(this.pc);
+          this.pc = (this.pc + 2) & 0xffff;
+          return { addr: this.read16Bug(pointer), pageCrossed: false };
+        }
+
+        indexedIndirect() {
+          const pointer = (this.read(this.pc) + this.x) & 0xff;
+          this.pc = (this.pc + 1) & 0xffff;
+          const addr = this.read(pointer) | (this.read((pointer + 1) & 0xff) << 8);
+          return { addr, pageCrossed: false };
+        }
+
+        indirectIndexed() {
+          const pointer = this.read(this.pc);
+          this.pc = (this.pc + 1) & 0xffff;
+          const base = this.read(pointer) | (this.read((pointer + 1) & 0xff) << 8);
+          const addr = (base + this.y) & 0xffff;
+          return { addr, pageCrossed: this.pageCrossed(base, addr) };
+        }
+
+        relative() {
+          const offsetByte = this.read(this.pc);
+          this.pc = (this.pc + 1) & 0xffff;
+          const offset = offsetByte < 0x80 ? offsetByte : offsetByte - 0x100;
+          return { offset };
+        }
+
+        accumulator() {
+          return { addr: null, pageCrossed: false };
+        }
+
+        implied() {
+          return { addr: null, pageCrossed: false };
+        }
+
+        branchIf(condition, offset) {
+          if (!condition) {
+            return 0;
+          }
+
+          const previous = this.pc;
+          this.pc = (this.pc + offset) & 0xffff;
+          return this.pageCrossed(previous, this.pc) ? 2 : 1;
+        }
+
+        adc(value) {
+          const carry = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
+          const sum = this.a + value + carry;
+          const result = sum & 0xff;
+          this.setFlag(CPU_FLAG_CARRY, sum > 0xff);
+          this.setFlag(CPU_FLAG_OVERFLOW, (~(this.a ^ value) & (this.a ^ result) & 0x80) !== 0);
+          this.a = result;
+          this.setZN(this.a);
+        }
+
+        compare(register, value) {
+          const result = (register - value) & 0xff;
+          this.setFlag(CPU_FLAG_CARRY, register >= value);
+          this.setZN(result);
+        }
+
+        step() {
+          if (this.stallCycles > 0) {
+            this.stallCycles -= 1;
+            return 1;
+          }
+
+          if (this.bus.pollNMI()) {
+            this.serviceInterrupt(0xfffa, false);
+            return 7;
+          }
+
+          const opcode = this.read(this.pc);
+          this.pc = (this.pc + 1) & 0xffff;
+          const meta = OPCODES[opcode];
+
+          if (!meta) {
+            throw new Error(
+              `Unsupported opcode 0x${opcode.toString(16).padStart(2, "0")} at 0x${((this.pc - 1) & 0xffff).toString(16).padStart(4, "0")}`
+            );
+          }
+
+          const operand = this[meta.mode]();
+          let extraCycles = 0;
+          const address = operand.addr;
+          const readValue = () => this.read(address);
+          const writeValue = (value) => this.write(address, value);
+
+          switch (meta.name) {
+            case "ADC":
+              this.adc(readValue());
+              break;
+            case "AND":
+              this.a &= readValue();
+              this.setZN(this.a);
+              break;
+            case "ASL":
+              if (meta.mode === "accumulator") {
+                this.setFlag(CPU_FLAG_CARRY, (this.a & 0x80) !== 0);
+                this.a = (this.a << 1) & 0xff;
+                this.setZN(this.a);
+              } else {
+                const value = readValue();
+                this.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
+                const result = (value << 1) & 0xff;
+                writeValue(result);
+                this.setZN(result);
+              }
+              break;
+            case "BCC":
+              extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_CARRY), operand.offset);
+              break;
+            case "BCS":
+              extraCycles = this.branchIf(this.getFlag(CPU_FLAG_CARRY), operand.offset);
+              break;
+            case "BEQ":
+              extraCycles = this.branchIf(this.getFlag(CPU_FLAG_ZERO), operand.offset);
+              break;
+            case "BIT": {
+              const value = readValue();
+              this.setFlag(CPU_FLAG_ZERO, (this.a & value) === 0);
+              this.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
+              this.setFlag(CPU_FLAG_OVERFLOW, (value & 0x40) !== 0);
+              break;
+            }
+            case "BMI":
+              extraCycles = this.branchIf(this.getFlag(CPU_FLAG_NEGATIVE), operand.offset);
+              break;
+            case "BNE":
+              extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_ZERO), operand.offset);
+              break;
+            case "BPL":
+              extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_NEGATIVE), operand.offset);
+              break;
+            case "BRK":
+              this.pc = (this.pc + 1) & 0xffff;
+              this.serviceInterrupt(0xfffe, true);
+              break;
+            case "BVC":
+              extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_OVERFLOW), operand.offset);
+              break;
+            case "BVS":
+              extraCycles = this.branchIf(this.getFlag(CPU_FLAG_OVERFLOW), operand.offset);
+              break;
+            case "CLC":
+              this.setFlag(CPU_FLAG_CARRY, false);
+              break;
+            case "CLD":
+              this.setFlag(CPU_FLAG_DECIMAL, false);
+              break;
+            case "CLI":
+              this.setFlag(CPU_FLAG_INTERRUPT, false);
+              break;
+            case "CLV":
+              this.setFlag(CPU_FLAG_OVERFLOW, false);
+              break;
+            case "CMP":
+              this.compare(this.a, readValue());
+              break;
+            case "CPX":
+              this.compare(this.x, readValue());
+              break;
+            case "CPY":
+              this.compare(this.y, readValue());
+              break;
+            case "DEC": {
+              const result = (readValue() - 1) & 0xff;
+              writeValue(result);
+              this.setZN(result);
+              break;
+            }
+            case "DEX":
+              this.x = (this.x - 1) & 0xff;
+              this.setZN(this.x);
+              break;
+            case "DEY":
+              this.y = (this.y - 1) & 0xff;
+              this.setZN(this.y);
+              break;
+            case "EOR":
+              this.a ^= readValue();
+              this.setZN(this.a);
+              break;
+            case "INC": {
+              const result = (readValue() + 1) & 0xff;
+              writeValue(result);
+              this.setZN(result);
+              break;
+            }
+            case "INX":
+              this.x = (this.x + 1) & 0xff;
+              this.setZN(this.x);
+              break;
+            case "INY":
+              this.y = (this.y + 1) & 0xff;
+              this.setZN(this.y);
+              break;
+            case "JMP":
+              this.pc = address;
+              break;
+            case "JSR":
+              this.push16((this.pc - 1) & 0xffff);
+              this.pc = address;
+              break;
+            case "LDA":
+              this.a = readValue();
+              this.setZN(this.a);
+              break;
+            case "LDX":
+              this.x = readValue();
+              this.setZN(this.x);
+              break;
+            case "LDY":
+              this.y = readValue();
+              this.setZN(this.y);
+              break;
+            case "LSR":
+              if (meta.mode === "accumulator") {
+                this.setFlag(CPU_FLAG_CARRY, (this.a & 0x01) !== 0);
+                this.a = (this.a >> 1) & 0xff;
+                this.setZN(this.a);
+              } else {
+                const value = readValue();
+                this.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
+                const result = (value >> 1) & 0xff;
+                writeValue(result);
+                this.setZN(result);
+              }
+              break;
+            case "NOP":
+              break;
+            case "ORA":
+              this.a |= readValue();
+              this.setZN(this.a);
+              break;
+            case "PHA":
+              this.push(this.a);
+              break;
+            case "PHP":
+              this.push(this.p | CPU_FLAG_BREAK | CPU_FLAG_UNUSED);
+              break;
+            case "PLA":
+              this.a = this.pull();
+              this.setZN(this.a);
+              break;
+            case "PLP":
+              this.p = (this.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
+              break;
+            case "ROL":
+              if (meta.mode === "accumulator") {
+                const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
+                this.setFlag(CPU_FLAG_CARRY, (this.a & 0x80) !== 0);
+                this.a = ((this.a << 1) | carryIn) & 0xff;
+                this.setZN(this.a);
+              } else {
+                const value = readValue();
+                const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
+                this.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
+                const result = ((value << 1) | carryIn) & 0xff;
+                writeValue(result);
+                this.setZN(result);
+              }
+              break;
+            case "ROR":
+              if (meta.mode === "accumulator") {
+                const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 0x80 : 0;
+                this.setFlag(CPU_FLAG_CARRY, (this.a & 0x01) !== 0);
+                this.a = ((this.a >> 1) | carryIn) & 0xff;
+                this.setZN(this.a);
+              } else {
+                const value = readValue();
+                const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 0x80 : 0;
+                this.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
+                const result = ((value >> 1) | carryIn) & 0xff;
+                writeValue(result);
+                this.setZN(result);
+              }
+              break;
+            case "RTI":
+              this.p = (this.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
+              this.pc = this.pull16();
+              break;
+            case "RTS":
+              this.pc = (this.pull16() + 1) & 0xffff;
+              break;
+            case "SBC":
+              this.adc(readValue() ^ 0xff);
+              break;
+            case "SEC":
+              this.setFlag(CPU_FLAG_CARRY, true);
+              break;
+            case "SED":
+              this.setFlag(CPU_FLAG_DECIMAL, true);
+              break;
+            case "SEI":
+              this.setFlag(CPU_FLAG_INTERRUPT, true);
+              break;
+            case "STA":
+              writeValue(this.a);
+              break;
+            case "STX":
+              writeValue(this.x);
+              break;
+            case "STY":
+              writeValue(this.y);
+              break;
+            case "TAX":
+              this.x = this.a;
+              this.setZN(this.x);
+              break;
+            case "TAY":
+              this.y = this.a;
+              this.setZN(this.y);
+              break;
+            case "TSX":
+              this.x = this.s;
+              this.setZN(this.x);
+              break;
+            case "TXA":
+              this.a = this.x;
+              this.setZN(this.a);
+              break;
+            case "TXS":
+              this.s = this.x;
+              break;
+            case "TYA":
+              this.a = this.y;
+              this.setZN(this.a);
+              break;
+            default:
+              throw new Error(`Opcode handler missing for ${meta.name}`);
+          }
+
+          return meta.cycles + extraCycles + (meta.pageCycle && operand.pageCrossed ? 1 : 0);
+        }
+      }
+
+      function defineOpcode(table, opcode, name, mode, cycles, pageCycle = false) {
+        table[opcode] = { name, mode, cycles, pageCycle };
+      }
+
+      const OPCODES = new Array(256);
+
+      defineOpcode(OPCODES, 0x69, "ADC", "immediate", 2);
+      defineOpcode(OPCODES, 0x65, "ADC", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x75, "ADC", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x6d, "ADC", "absolute", 4);
+      defineOpcode(OPCODES, 0x7d, "ADC", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0x79, "ADC", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0x61, "ADC", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0x71, "ADC", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0x29, "AND", "immediate", 2);
+      defineOpcode(OPCODES, 0x25, "AND", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x35, "AND", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x2d, "AND", "absolute", 4);
+      defineOpcode(OPCODES, 0x3d, "AND", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0x39, "AND", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0x21, "AND", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0x31, "AND", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0x0a, "ASL", "accumulator", 2);
+      defineOpcode(OPCODES, 0x06, "ASL", "zeroPage", 5);
+      defineOpcode(OPCODES, 0x16, "ASL", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0x0e, "ASL", "absolute", 6);
+      defineOpcode(OPCODES, 0x1e, "ASL", "absoluteX", 7);
+      defineOpcode(OPCODES, 0x90, "BCC", "relative", 2);
+      defineOpcode(OPCODES, 0xb0, "BCS", "relative", 2);
+      defineOpcode(OPCODES, 0xf0, "BEQ", "relative", 2);
+      defineOpcode(OPCODES, 0x24, "BIT", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x2c, "BIT", "absolute", 4);
+      defineOpcode(OPCODES, 0x30, "BMI", "relative", 2);
+      defineOpcode(OPCODES, 0xd0, "BNE", "relative", 2);
+      defineOpcode(OPCODES, 0x10, "BPL", "relative", 2);
+      defineOpcode(OPCODES, 0x00, "BRK", "implied", 7);
+      defineOpcode(OPCODES, 0x50, "BVC", "relative", 2);
+      defineOpcode(OPCODES, 0x70, "BVS", "relative", 2);
+      defineOpcode(OPCODES, 0x18, "CLC", "implied", 2);
+      defineOpcode(OPCODES, 0xd8, "CLD", "implied", 2);
+      defineOpcode(OPCODES, 0x58, "CLI", "implied", 2);
+      defineOpcode(OPCODES, 0xb8, "CLV", "implied", 2);
+      defineOpcode(OPCODES, 0xc9, "CMP", "immediate", 2);
+      defineOpcode(OPCODES, 0xc5, "CMP", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xd5, "CMP", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0xcd, "CMP", "absolute", 4);
+      defineOpcode(OPCODES, 0xdd, "CMP", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0xd9, "CMP", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0xc1, "CMP", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0xd1, "CMP", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0xe0, "CPX", "immediate", 2);
+      defineOpcode(OPCODES, 0xe4, "CPX", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xec, "CPX", "absolute", 4);
+      defineOpcode(OPCODES, 0xc0, "CPY", "immediate", 2);
+      defineOpcode(OPCODES, 0xc4, "CPY", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xcc, "CPY", "absolute", 4);
+      defineOpcode(OPCODES, 0xc6, "DEC", "zeroPage", 5);
+      defineOpcode(OPCODES, 0xd6, "DEC", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0xce, "DEC", "absolute", 6);
+      defineOpcode(OPCODES, 0xde, "DEC", "absoluteX", 7);
+      defineOpcode(OPCODES, 0xca, "DEX", "implied", 2);
+      defineOpcode(OPCODES, 0x88, "DEY", "implied", 2);
+      defineOpcode(OPCODES, 0x49, "EOR", "immediate", 2);
+      defineOpcode(OPCODES, 0x45, "EOR", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x55, "EOR", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x4d, "EOR", "absolute", 4);
+      defineOpcode(OPCODES, 0x5d, "EOR", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0x59, "EOR", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0x41, "EOR", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0x51, "EOR", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0xe6, "INC", "zeroPage", 5);
+      defineOpcode(OPCODES, 0xf6, "INC", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0xee, "INC", "absolute", 6);
+      defineOpcode(OPCODES, 0xfe, "INC", "absoluteX", 7);
+      defineOpcode(OPCODES, 0xe8, "INX", "implied", 2);
+      defineOpcode(OPCODES, 0xc8, "INY", "implied", 2);
+      defineOpcode(OPCODES, 0x4c, "JMP", "absolute", 3);
+      defineOpcode(OPCODES, 0x6c, "JMP", "indirect", 5);
+      defineOpcode(OPCODES, 0x20, "JSR", "absolute", 6);
+      defineOpcode(OPCODES, 0xa9, "LDA", "immediate", 2);
+      defineOpcode(OPCODES, 0xa5, "LDA", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xb5, "LDA", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0xad, "LDA", "absolute", 4);
+      defineOpcode(OPCODES, 0xbd, "LDA", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0xb9, "LDA", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0xa1, "LDA", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0xb1, "LDA", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0xa2, "LDX", "immediate", 2);
+      defineOpcode(OPCODES, 0xa6, "LDX", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xb6, "LDX", "zeroPageY", 4);
+      defineOpcode(OPCODES, 0xae, "LDX", "absolute", 4);
+      defineOpcode(OPCODES, 0xbe, "LDX", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0xa0, "LDY", "immediate", 2);
+      defineOpcode(OPCODES, 0xa4, "LDY", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xb4, "LDY", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0xac, "LDY", "absolute", 4);
+      defineOpcode(OPCODES, 0xbc, "LDY", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0x4a, "LSR", "accumulator", 2);
+      defineOpcode(OPCODES, 0x46, "LSR", "zeroPage", 5);
+      defineOpcode(OPCODES, 0x56, "LSR", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0x4e, "LSR", "absolute", 6);
+      defineOpcode(OPCODES, 0x5e, "LSR", "absoluteX", 7);
+      defineOpcode(OPCODES, 0xea, "NOP", "implied", 2);
+      defineOpcode(OPCODES, 0x09, "ORA", "immediate", 2);
+      defineOpcode(OPCODES, 0x05, "ORA", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x15, "ORA", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x0d, "ORA", "absolute", 4);
+      defineOpcode(OPCODES, 0x1d, "ORA", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0x19, "ORA", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0x01, "ORA", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0x11, "ORA", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0x48, "PHA", "implied", 3);
+      defineOpcode(OPCODES, 0x08, "PHP", "implied", 3);
+      defineOpcode(OPCODES, 0x68, "PLA", "implied", 4);
+      defineOpcode(OPCODES, 0x28, "PLP", "implied", 4);
+      defineOpcode(OPCODES, 0x2a, "ROL", "accumulator", 2);
+      defineOpcode(OPCODES, 0x26, "ROL", "zeroPage", 5);
+      defineOpcode(OPCODES, 0x36, "ROL", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0x2e, "ROL", "absolute", 6);
+      defineOpcode(OPCODES, 0x3e, "ROL", "absoluteX", 7);
+      defineOpcode(OPCODES, 0x6a, "ROR", "accumulator", 2);
+      defineOpcode(OPCODES, 0x66, "ROR", "zeroPage", 5);
+      defineOpcode(OPCODES, 0x76, "ROR", "zeroPageX", 6);
+      defineOpcode(OPCODES, 0x6e, "ROR", "absolute", 6);
+      defineOpcode(OPCODES, 0x7e, "ROR", "absoluteX", 7);
+      defineOpcode(OPCODES, 0x40, "RTI", "implied", 6);
+      defineOpcode(OPCODES, 0x60, "RTS", "implied", 6);
+      defineOpcode(OPCODES, 0xe9, "SBC", "immediate", 2);
+      defineOpcode(OPCODES, 0xe5, "SBC", "zeroPage", 3);
+      defineOpcode(OPCODES, 0xf5, "SBC", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0xed, "SBC", "absolute", 4);
+      defineOpcode(OPCODES, 0xfd, "SBC", "absoluteX", 4, true);
+      defineOpcode(OPCODES, 0xf9, "SBC", "absoluteY", 4, true);
+      defineOpcode(OPCODES, 0xe1, "SBC", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0xf1, "SBC", "indirectIndexed", 5, true);
+      defineOpcode(OPCODES, 0x38, "SEC", "implied", 2);
+      defineOpcode(OPCODES, 0xf8, "SED", "implied", 2);
+      defineOpcode(OPCODES, 0x78, "SEI", "implied", 2);
+      defineOpcode(OPCODES, 0x85, "STA", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x95, "STA", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x8d, "STA", "absolute", 4);
+      defineOpcode(OPCODES, 0x9d, "STA", "absoluteX", 5);
+      defineOpcode(OPCODES, 0x99, "STA", "absoluteY", 5);
+      defineOpcode(OPCODES, 0x81, "STA", "indexedIndirect", 6);
+      defineOpcode(OPCODES, 0x91, "STA", "indirectIndexed", 6);
+      defineOpcode(OPCODES, 0x86, "STX", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x96, "STX", "zeroPageY", 4);
+      defineOpcode(OPCODES, 0x8e, "STX", "absolute", 4);
+      defineOpcode(OPCODES, 0x84, "STY", "zeroPage", 3);
+      defineOpcode(OPCODES, 0x94, "STY", "zeroPageX", 4);
+      defineOpcode(OPCODES, 0x8c, "STY", "absolute", 4);
+      defineOpcode(OPCODES, 0xaa, "TAX", "implied", 2);
+      defineOpcode(OPCODES, 0xa8, "TAY", "implied", 2);
+      defineOpcode(OPCODES, 0xba, "TSX", "implied", 2);
+      defineOpcode(OPCODES, 0x8a, "TXA", "implied", 2);
+      defineOpcode(OPCODES, 0x9a, "TXS", "implied", 2);
+      defineOpcode(OPCODES, 0x98, "TYA", "implied", 2);
+
+      const unofficialNops = [
+        [0x1a, "implied", 2],
+        [0x3a, "implied", 2],
+        [0x5a, "implied", 2],
+        [0x7a, "implied", 2],
+        [0xda, "implied", 2],
+        [0xfa, "implied", 2],
+        [0x04, "zeroPage", 3],
+        [0x44, "zeroPage", 3],
+        [0x64, "zeroPage", 3],
+        [0x14, "zeroPageX", 4],
+        [0x34, "zeroPageX", 4],
+        [0x54, "zeroPageX", 4],
+        [0x74, "zeroPageX", 4],
+        [0xd4, "zeroPageX", 4],
+        [0xf4, "zeroPageX", 4],
+        [0x0c, "absolute", 4],
+        [0x1c, "absoluteX", 4, true],
+        [0x3c, "absoluteX", 4, true],
+        [0x5c, "absoluteX", 4, true],
+        [0x7c, "absoluteX", 4, true],
+        [0xdc, "absoluteX", 4, true],
+        [0xfc, "absoluteX", 4, true],
+      ];
+
+      for (const [opcode, mode, cycles, pageCycle] of unofficialNops) {
+        defineOpcode(OPCODES, opcode, "NOP", mode, cycles, pageCycle);
+      }
+
+      class Bus {
+        constructor(cartridge) {
+          this.cartridge = cartridge;
+          this.cpuRam = new Uint8Array(0x0800);
+          this.ppu = new PPU(cartridge);
+          this.controller1 = new Controller();
+          this.controller2 = new Controller();
+        }
+
+        reset() {
+          this.cpuRam.fill(0);
+          this.ppu.reset();
+        }
+
+        pollNMI() {
+          return this.ppu.pollNMI();
+        }
+
+        read(addr) {
+          const address = addr & 0xffff;
+
+          if (address < 0x2000) {
+            return this.cpuRam[address & 0x07ff];
+          }
+
+          if (address < 0x4000) {
+            return this.ppu.readRegister(0x2000 | (address & 0x0007));
+          }
+
+          if (address === 0x4016) {
+            return this.controller1.read();
+          }
+
+          if (address === 0x4017) {
+            return this.controller2.read();
+          }
+
+          if (address >= 0x8000) {
+            return this.cartridge.readPrg(address);
+          }
+
+          return 0;
+        }
+
+        write(addr, value) {
+          const address = addr & 0xffff;
+
+          if (address < 0x2000) {
+            this.cpuRam[address & 0x07ff] = value;
+            return 0;
+          }
+
+          if (address < 0x4000) {
+            this.ppu.writeRegister(0x2000 | (address & 0x0007), value);
+            return 0;
+          }
+
+          if (address === 0x4014) {
+            const page = value << 8;
+            const buffer = new Uint8Array(256);
+            for (let i = 0; i < 256; i += 1) {
+              buffer[i] = this.read(page + i);
+            }
+            this.ppu.writeOamDma(buffer);
+            return 513;
+          }
+
+          if (address === 0x4016) {
+            this.controller1.write(value);
+            this.controller2.write(value);
+            return 0;
+          }
+
+          return 0;
+        }
+      }
+
+      class NES {
+        constructor(cartridge, canvas) {
+          this.bus = new Bus(cartridge);
+          this.cpu = new CPU6502(this.bus);
+          this.canvas = canvas;
+          this.context = canvas.getContext("2d");
+          this.imageData = this.context.createImageData(256, 240);
+          this.context.imageSmoothingEnabled = false;
+
+          this.bus.reset();
+          this.cpu.reset();
+        }
+
+        setButton(button, pressed) {
+          this.bus.controller1.setButton(button, pressed);
+        }
+
+        releaseAllButtons() {
+          for (const button of ["a", "b", "select", "start", "up", "down", "left", "right"]) {
+            this.bus.controller1.setButton(button, false);
+          }
+        }
+
+        runFrame() {
+          this.bus.ppu.frameReady = false;
+
+          while (!this.bus.ppu.frameReady) {
+            const cpuCycles = this.cpu.step();
+
+            for (let i = 0; i < cpuCycles * 3; i += 1) {
+              this.bus.ppu.step();
+            }
+          }
+        }
+
+        present() {
+          this.imageData.data.set(this.bus.ppu.framebuffer);
+          this.context.putImageData(this.imageData, 0, 0);
+        }
+      }
+
+      const canvas = document.getElementById("screen");
+      const context = canvas.getContext("2d");
+      const dropzone = document.getElementById("dropzone");
+      const loaderCopy = document.getElementById("loader-copy");
+      const pickRomButton = document.getElementById("pick-rom");
+      const romInput = document.getElementById("rom-input");
+      const romName = document.getElementById("rom-name");
+      const status = document.getElementById("status");
+
+      const BUTTON_MAP = new Map([
+        ["KeyZ", "b"],
+        ["KeyX", "a"],
+        ["ShiftLeft", "select"],
+        ["ShiftRight", "select"],
+        ["Enter", "start"],
+        ["ArrowUp", "up"],
+        ["ArrowDown", "down"],
+        ["ArrowLeft", "left"],
+        ["ArrowRight", "right"],
+      ]);
+
+      let activeNES = null;
+      let frameHandle = 0;
+      let loopGeneration = 0;
+
+      function setStatus(message) {
+        status.textContent = message;
+      }
+
+      function setLoaderMessage(message) {
+        loaderCopy.textContent = message;
+      }
+
+      function setLoadedState(loaded, name = "No ROM loaded") {
+        dropzone.classList.toggle("loaded", loaded);
+        romName.textContent = name;
+      }
+
+      function drawPlaceholder() {
+        context.fillStyle = "#000";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#2b2b2b";
+        context.fillRect(12, 12, canvas.width - 24, canvas.height - 24);
+        context.fillStyle = "#f5d76e";
+        context.font = '14px "IBM Plex Mono", monospace';
+        context.fillText("DROP A .NES ROM", 56, 108);
+        context.fillStyle = "#dadada";
+        context.fillText("or click Choose ROM", 44, 132);
+      }
+
+      function stopActiveLoop() {
+        loopGeneration += 1;
+        if (frameHandle) {
+          cancelAnimationFrame(frameHandle);
+          frameHandle = 0;
+        }
+        if (activeNES) {
+          activeNES.releaseAllButtons();
+        }
+        activeNES = null;
+      }
+
+      function bootNES(nes) {
+        stopActiveLoop();
+        activeNES = nes;
+        activeNES.present();
+
+        let previousFrameTime = performance.now();
+        let lag = 0;
+        const frameDuration = 1000 / 60;
+        const generation = loopGeneration;
+
+        const frame = (now) => {
+          if (generation !== loopGeneration || activeNES !== nes) {
+            return;
+          }
+
+          try {
+            lag += Math.min(100, now - previousFrameTime);
+            previousFrameTime = now;
+
+            while (lag >= frameDuration) {
+              nes.runFrame();
+              lag -= frameDuration;
+            }
+
+            nes.present();
+            frameHandle = requestAnimationFrame(frame);
+          } catch (error) {
+            console.error(error);
+            setStatus(error instanceof Error ? error.message : String(error));
+            setLoaderMessage("Emulation halted. Drop another ROM to try again.");
+            setLoadedState(true, romName.textContent);
+            stopActiveLoop();
+            drawPlaceholder();
+          }
+        };
+
+        frameHandle = requestAnimationFrame(frame);
+      }
+
+      async function loadRomFile(file) {
+        if (!file) {
+          return;
+        }
+
+        try {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const cartridge = Cartridge.fromINES(bytes);
+          const nes = new NES(cartridge, canvas);
+          bootNES(nes);
+          setLoadedState(true, file.name);
+          setLoaderMessage("ROM loaded. Drag another ROM into the viewport to replace it.");
+          setStatus(`Loaded ${file.name}. Press Enter to start.`);
+          pickRomButton.blur();
+          canvas.focus({ preventScroll: true });
+        } catch (error) {
+          console.error(error);
+          stopActiveLoop();
+          drawPlaceholder();
+          setLoadedState(false, "No ROM loaded");
+          setLoaderMessage("Drop a `.nes` ROM anywhere on this window, or choose one manually.");
+          setStatus(error instanceof Error ? error.message : String(error));
+        } finally {
+          romInput.value = "";
+        }
+      }
+
+      function isFileDrag(event) {
+        return Array.from(event.dataTransfer?.types || []).includes("Files");
+      }
+
+      function setButton(pressed, event) {
+        if (!activeNES) {
+          return;
+        }
+
+        const button = BUTTON_MAP.get(event.code);
+        if (!button) {
+          return;
+        }
+
+        event.preventDefault();
+        activeNES.setButton(button, pressed);
+      }
+
+      pickRomButton.addEventListener("click", () => romInput.click());
+      dropzone.addEventListener("click", (event) => {
+        if (event.target === pickRomButton) {
+          return;
+        }
+        romInput.click();
+      });
+
+      romInput.addEventListener("change", async () => {
+        await loadRomFile(romInput.files?.[0]);
+      });
+
+      window.addEventListener("keydown", (event) => setButton(true, event));
+      window.addEventListener("keyup", (event) => setButton(false, event));
+      window.addEventListener("blur", () => activeNES?.releaseAllButtons());
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          activeNES?.releaseAllButtons();
+        }
+      });
+
+      window.addEventListener("dragenter", (event) => {
+        if (!isFileDrag(event)) {
+          return;
+        }
+        event.preventDefault();
+        dropzone.classList.add("dragging");
+      });
+
+      window.addEventListener("dragover", (event) => {
+        if (!isFileDrag(event)) {
+          return;
+        }
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        dropzone.classList.add("dragging");
+      });
+
+      window.addEventListener("dragleave", (event) => {
+        if (event.relatedTarget === null || event.target === document.documentElement) {
+          dropzone.classList.remove("dragging");
+        }
+      });
+
+      window.addEventListener("drop", async (event) => {
+        if (!isFileDrag(event)) {
+          return;
+        }
+        event.preventDefault();
+        dropzone.classList.remove("dragging");
+        await loadRomFile(event.dataTransfer.files[0]);
+      });
+
+      drawPlaceholder();
+      setLoadedState(false, "No ROM loaded");
+    </script>
   </body>
 </html>
