@@ -236,12 +236,6 @@ strong,
   line-height: 1;
 }
 
-.stat-copy {
-  font-size: clamp(16px, 1.8vw, 20px);
-  line-height: 1.1;
-  color: #f6f1d2;
-}
-
 .input-card {
   text-align: right;
 }

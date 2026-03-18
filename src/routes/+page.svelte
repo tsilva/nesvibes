@@ -272,10 +272,6 @@
             <span class="input-badge-key wide">Enter</span>
           </span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Load</span>
-          <span class="stat-value stat-copy">Drop ROM or click prompt</span>
-        </div>
       </div>
     </div>
   </header>
