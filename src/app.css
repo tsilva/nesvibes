@@ -209,8 +209,9 @@ strong,
 
 .hero-stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(320px, max-content);
   gap: 8px;
+  justify-content: end;
 }
 
 .stat-card,
@@ -242,7 +243,7 @@ strong,
 
 .input-badge-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
   justify-content: flex-end;
