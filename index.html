@@ -202,6 +202,39 @@
         line-height: 1;
       }
 
+      .input-badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input-badge-key {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 10px;
+        color: #f7f7f7;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02)),
+          #111111;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow:
+          inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+          0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+
+      .input-badge-key.accent {
+        border-color: rgba(228, 0, 15, 0.48);
+        box-shadow:
+          inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+          0 0 0 1px rgba(228, 0, 15, 0.2),
+          0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+
       .content-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.7fr);
@@ -657,31 +690,19 @@
         <div class="hero-grid">
           <div>
             <p class="eyebrow">8-bit ROM lab</p>
-            <h1 class="hero-title">NES Vibes</h1>
-            <p class="hero-lede">Boot classic cartridges in a loud, arcade-styled browser shell.</p>
+            <h1 class="hero-title">NESVibes</h1>
+            <p class="hero-lede">Play NES directly in your browser.</p>
             <p class="hero-meta">Plain JavaScript. Vibecoded with GPT-5.4.</p>
-            <div class="hero-badges" aria-label="Feature summary">
-              <span class="badge">Drag + Drop ROM</span>
-              <span class="badge alt">Keyboard Controls</span>
-              <span class="badge">Mappers 0-4</span>
-            </div>
           </div>
           <div class="hero-stats" aria-label="Runtime stats">
             <div class="stat-card">
-              <span class="stat-label">Display</span>
-              <span class="stat-value">256 x 240</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Frame Rate</span>
-              <span class="stat-value">60 FPS</span>
-            </div>
-            <div class="stat-card">
               <span class="stat-label">Input</span>
-              <span class="stat-value">Z X Shift Enter</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Library</span>
-              <span id="library-stat" class="stat-value">Syncing…</span>
+              <span class="stat-value input-badge-row" aria-label="Keyboard controls">
+                <span class="input-badge-key accent">Z</span>
+                <span class="input-badge-key accent">X</span>
+                <span class="input-badge-key">Shift</span>
+                <span class="input-badge-key">Enter</span>
+              </span>
             </div>
           </div>
         </div>
@@ -705,20 +726,10 @@
         <aside class="side-rail" aria-label="Setup notes">
           <article class="launcher-shell" aria-label="Bundled public domain quicklaunch">
             <div class="launcher-header">
-              <h2>Quicklaunch</h2>
+              <h2>Public Domain ROMs</h2>
             </div>
             <p id="quicklaunch-status" class="launcher-status" data-tone="ready">Loading bundled ROM catalog…</p>
             <div id="quicklaunch-grid" class="launcher-grid" role="list"></div>
-          </article>
-
-          <article class="side-card">
-            <h2>Controls</h2>
-            <div class="button-row" aria-label="Keyboard controls">
-              <span class="button-key">Z = B</span>
-              <span class="button-key">X = A</span>
-              <span class="button-key alt">Shift = Select</span>
-              <span class="button-key alt">Enter = Start</span>
-            </div>
           </article>
         </aside>
       </main>
@@ -2784,7 +2795,6 @@
       const dropzone = document.getElementById("dropzone");
       const loaderTitle = document.getElementById("loader-title");
       const loaderCopy = document.getElementById("loader-copy");
-      const libraryStat = document.getElementById("library-stat");
       const quicklaunchStatus = document.getElementById("quicklaunch-status");
       const quicklaunchGrid = document.getElementById("quicklaunch-grid");
 
@@ -3003,7 +3013,6 @@
 
       async function loadBundledCatalog() {
         if (location.protocol === "file:") {
-          libraryStat.textContent = "Drag only";
           clearQuicklaunchGrid("Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.");
           setQuicklaunchStatus("Bundled ROM fetch is disabled in file mode. Drag-and-drop still works.", "error");
           return;
@@ -3016,19 +3025,10 @@
           }
 
           romCatalog = await response.json();
-          const supportedCount = romCatalog.filter((entry) => entry.supported).length;
-          const unsupportedCount = romCatalog.length - supportedCount;
-          libraryStat.textContent = `${supportedCount}/${romCatalog.length}`;
           renderQuicklaunch();
-          setQuicklaunchStatus(
-            unsupportedCount > 0
-              ? `${supportedCount} ROMs can boot here now. ${unsupportedCount} remain visible but disabled.`
-              : `${supportedCount} ROMs are ready to boot.`,
-            "ready"
-          );
+          setQuicklaunchStatus("Select a bundled ROM to boot it instantly.", "ready");
         } catch (error) {
           console.error(error);
-          libraryStat.textContent = "Offline";
           clearQuicklaunchGrid("Bundled ROM catalog failed to load. Drag-and-drop remains available.");
           setQuicklaunchStatus(
             `Catalog load failed: ${error instanceof Error ? error.message : String(error)}`,
