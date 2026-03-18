@@ -1,2 +1,4 @@
 *.nes
+!roms/pdroms/nes/library/**/*.nes
+!roms/pdroms/nes/library/**/*.NES
 .vercel
