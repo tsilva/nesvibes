@@ -19,68 +19,27 @@
       body {
         margin: 0;
         min-height: 100vh;
-        display: grid;
-        place-items: center;
-        background:
-          radial-gradient(circle at top, rgba(255, 216, 134, 0.16), transparent 30%),
-          linear-gradient(180deg, #191919, #080808 70%);
-      }
-
-      main {
-        width: min(980px, calc(100vw - 32px));
-        display: grid;
-        gap: 16px;
-        padding: 24px 0;
-      }
-
-      h1,
-      p {
-        margin: 0;
-      }
-
-      .row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .shell {
-        border: 2px solid #3d3d3d;
-        background: rgba(0, 0, 0, 0.72);
-        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
-      }
-
-      .badge,
-      button {
-        padding: 6px 10px;
-        border: 1px solid #4d4d4d;
-        background: rgba(255, 255, 255, 0.05);
-        color: inherit;
-        font: inherit;
-      }
-
-      button {
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: #000;
       }
 
       .stage {
         position: relative;
+        width: 100vw;
+        height: 100vh;
         overflow: hidden;
+        background:
+          radial-gradient(circle at top, rgba(255, 216, 134, 0.12), transparent 30%),
+          #000;
       }
 
       .stage.dragging {
-        border-color: #f5d76e;
-        box-shadow: 0 0 0 2px rgba(245, 215, 110, 0.35), 0 24px 48px rgba(0, 0, 0, 0.45);
+        box-shadow: inset 0 0 0 3px rgba(245, 215, 110, 0.65);
       }
 
       canvas {
-        width: 100%;
-        aspect-ratio: 256 / 240;
+        width: 100vw;
+        height: 100vh;
+        object-fit: contain;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
         display: block;
@@ -89,89 +48,62 @@
 
       .overlay {
         position: absolute;
-        inset: auto 16px 16px 16px;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
         display: grid;
-        gap: 10px;
-        padding: 14px;
+        gap: 12px;
+        width: min(480px, calc(100vw - 32px));
+        padding: 18px 20px;
+        text-align: center;
         background: rgba(7, 7, 7, 0.82);
         border: 1px solid rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(8px);
+        transition: opacity 180ms ease;
       }
 
       .stage.loaded .overlay {
-        inset: auto 12px 12px auto;
-        width: min(360px, calc(100% - 24px));
-        background: rgba(7, 7, 7, 0.72);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .stage.loaded.dragging .overlay,
+      .stage.empty .overlay,
+      .stage.error .overlay {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .overlay strong {
+        font-size: clamp(22px, 4vw, 34px);
+        line-height: 1;
       }
 
       .overlay p {
-        line-height: 1.4;
+        margin: 0;
+        line-height: 1.45;
+        color: #d9d9d9;
       }
 
-      .meta {
-        display: grid;
-        gap: 10px;
-        padding: 16px;
-      }
-
-      #status {
-        min-height: 1lh;
+      #loader-copy {
         color: #f5d76e;
       }
 
-      .dim {
-        color: #c5c5c5;
-      }
-
-      #rom-input {
-        display: none;
-      }
-
       @media (max-width: 720px) {
-        main {
-          width: calc(100vw - 20px);
-          padding: 10px 0 18px;
-        }
-
         .overlay {
-          inset: auto 10px 10px 10px;
+          width: calc(100vw - 24px);
+          padding: 16px;
         }
       }
     </style>
   </head>
   <body>
-    <main>
-      <div class="row">
-        <h1>NES Vibes</h1>
-        <div class="badge">Single-file build</div>
-        <div class="badge">Mapper 0 / NROM</div>
-        <div class="badge">Open directly from disk</div>
+    <section id="dropzone" class="stage empty" aria-label="ROM drop zone">
+      <canvas id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
+      <div class="overlay">
+        <strong id="loader-title">Drop a `.nes` ROM</strong>
+        <p id="loader-copy">Mapper 0 / NROM only. Drag a ROM anywhere into the window to begin.</p>
       </div>
-
-      <section id="dropzone" class="shell stage" aria-label="ROM drop zone">
-        <canvas id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
-        <div class="overlay">
-          <p id="loader-copy">Drop a `.nes` ROM anywhere on this window, or choose one manually.</p>
-          <div class="row">
-            <button id="pick-rom" type="button">Choose ROM</button>
-            <span class="badge" id="rom-name">No ROM loaded</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="shell meta">
-        <p id="status">Open this file directly in your browser, then drop a mapper 0 ROM into the viewport.</p>
-        <div class="row dim">
-          <span class="badge">Arrows: D-pad</span>
-          <span class="badge">Z: B</span>
-          <span class="badge">X: A</span>
-          <span class="badge">Enter: Start</span>
-          <span class="badge">Shift: Select</span>
-        </div>
-      </section>
-
-      <input id="rom-input" type="file" accept=".nes,application/octet-stream">
-    </main>
+    </section>
 
     <script>
       const CPU_FLAG_CARRY = 0x01;
@@ -1587,11 +1519,8 @@
       const canvas = document.getElementById("screen");
       const context = canvas.getContext("2d");
       const dropzone = document.getElementById("dropzone");
+      const loaderTitle = document.getElementById("loader-title");
       const loaderCopy = document.getElementById("loader-copy");
-      const pickRomButton = document.getElementById("pick-rom");
-      const romInput = document.getElementById("rom-input");
-      const romName = document.getElementById("rom-name");
-      const status = document.getElementById("status");
 
       const BUTTON_MAP = new Map([
         ["KeyZ", "b"],
@@ -1609,29 +1538,19 @@
       let frameHandle = 0;
       let loopGeneration = 0;
 
-      function setStatus(message) {
-        status.textContent = message;
-      }
-
-      function setLoaderMessage(message) {
+      function setOverlay(title, message) {
+        loaderTitle.textContent = title;
         loaderCopy.textContent = message;
       }
 
-      function setLoadedState(loaded, name = "No ROM loaded") {
-        dropzone.classList.toggle("loaded", loaded);
-        romName.textContent = name;
+      function setStageMode(mode) {
+        dropzone.classList.remove("empty", "loaded", "error");
+        dropzone.classList.add(mode);
       }
 
       function drawPlaceholder() {
         context.fillStyle = "#000";
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = "#2b2b2b";
-        context.fillRect(12, 12, canvas.width - 24, canvas.height - 24);
-        context.fillStyle = "#f5d76e";
-        context.font = '14px "IBM Plex Mono", monospace';
-        context.fillText("DROP A .NES ROM", 56, 108);
-        context.fillStyle = "#dadada";
-        context.fillText("or click Choose ROM", 44, 132);
       }
 
       function stopActiveLoop() {
@@ -1674,11 +1593,13 @@
             frameHandle = requestAnimationFrame(frame);
           } catch (error) {
             console.error(error);
-            setStatus(error instanceof Error ? error.message : String(error));
-            setLoaderMessage("Emulation halted. Drop another ROM to try again.");
-            setLoadedState(true, romName.textContent);
             stopActiveLoop();
             drawPlaceholder();
+            setStageMode("error");
+            setOverlay(
+              "Emulation halted",
+              error instanceof Error ? error.message : String(error)
+            );
           }
         };
 
@@ -1695,20 +1616,18 @@
           const cartridge = Cartridge.fromINES(bytes);
           const nes = new NES(cartridge, canvas);
           bootNES(nes);
-          setLoadedState(true, file.name);
-          setLoaderMessage("ROM loaded. Drag another ROM into the viewport to replace it.");
-          setStatus(`Loaded ${file.name}. Press Enter to start.`);
-          pickRomButton.blur();
+          setStageMode("loaded");
+          setOverlay("Drop another ROM", `${file.name} loaded. Drag a new ROM into the window to replace it.`);
           canvas.focus({ preventScroll: true });
         } catch (error) {
           console.error(error);
           stopActiveLoop();
           drawPlaceholder();
-          setLoadedState(false, "No ROM loaded");
-          setLoaderMessage("Drop a `.nes` ROM anywhere on this window, or choose one manually.");
-          setStatus(error instanceof Error ? error.message : String(error));
-        } finally {
-          romInput.value = "";
+          setStageMode("error");
+          setOverlay(
+            "ROM load failed",
+            error instanceof Error ? error.message : String(error)
+          );
         }
       }
 
@@ -1729,18 +1648,6 @@
         event.preventDefault();
         activeNES.setButton(button, pressed);
       }
-
-      pickRomButton.addEventListener("click", () => romInput.click());
-      dropzone.addEventListener("click", (event) => {
-        if (event.target === pickRomButton) {
-          return;
-        }
-        romInput.click();
-      });
-
-      romInput.addEventListener("change", async () => {
-        await loadRomFile(romInput.files?.[0]);
-      });
 
       window.addEventListener("keydown", (event) => setButton(true, event));
       window.addEventListener("keyup", (event) => setButton(false, event));
@@ -1784,7 +1691,8 @@
       });
 
       drawPlaceholder();
-      setLoadedState(false, "No ROM loaded");
+      setStageMode("empty");
+      setOverlay("Drop a `.nes` ROM", "Mapper 0 / NROM only. Drag a ROM anywhere into the window to begin.");
     </script>
   </body>
 </html>
