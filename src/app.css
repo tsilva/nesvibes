@@ -9,7 +9,9 @@
   --accent-2: #c7c7c7;
   --accent-3: #3b6fd8;
   --shadow: rgba(0, 0, 0, 0.45);
-  font-family: "VT323", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --font-body: "Menlo", "Monaco", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", monospace;
+  --font-display: "Courier New", "Lucida Console", "Monaco", monospace;
+  font-family: var(--font-body);
   background:
     radial-gradient(circle at top, rgba(228, 0, 15, 0.16), transparent 24%),
     radial-gradient(circle at 20% 20%, rgba(59, 111, 216, 0.12), transparent 25%),
@@ -51,7 +53,7 @@ strong,
 .stat-label,
 .loader-kicker,
 .button-key {
-  font-family: "Press Start 2P", "VT323", monospace;
+  font-family: var(--font-display);
   letter-spacing: 0.04em;
 }
 
@@ -474,8 +476,14 @@ canvas {
   display: grid;
   gap: 6px;
   min-height: 0;
-  padding-right: 4px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  list-style: none;
   overflow: auto;
+}
+
+.launcher-list-item {
+  list-style: none;
 }
 
 .launcher-grid::-webkit-scrollbar {

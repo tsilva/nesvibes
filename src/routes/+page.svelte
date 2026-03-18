@@ -1,12 +1,14 @@
 <script>
   import { onMount } from "svelte";
   import "../app.css";
-  import { createNesEmulator } from "$lib/emu/nes-emulator.js";
+
+  export let data;
 
   const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
 
   let canvas;
   let emulator;
+  let emulatorPromise;
   let filePicker;
   let romCatalog = [];
   let activeCatalogId = "";
@@ -33,8 +35,37 @@
     return path.startsWith("/") ? path : `/${path}`;
   }
 
+  async function ensureEmulator() {
+    if (emulator) {
+      return emulator;
+    }
+
+    if (!canvas) {
+      throw new Error("The emulator display is not ready yet.");
+    }
+
+    if (!emulatorPromise) {
+      emulatorPromise = import("$lib/emu/nes-emulator.js")
+        .then(({ createNesEmulator }) => {
+          emulator = createNesEmulator({
+            canvas,
+            onRuntimeError: handleEmulatorRuntimeError
+          });
+          return emulator;
+        })
+        .catch((error) => {
+          emulatorPromise = undefined;
+          handleEmulatorRuntimeError(error);
+          throw error;
+        });
+    }
+
+    return emulatorPromise;
+  }
+
   async function enableAudio() {
-    return emulator?.enableAudio() ?? false;
+    const runtime = await ensureEmulator();
+    return runtime.enableAudio();
   }
 
   function handleEmulatorRuntimeError(error) {
@@ -122,6 +153,7 @@
   }
 
   function openRomPicker() {
+    void ensureEmulator();
     void enableAudio();
     filePicker?.click();
   }
@@ -133,11 +165,6 @@
   }
 
   onMount(() => {
-    emulator = createNesEmulator({
-      canvas,
-      onRuntimeError: handleEmulatorRuntimeError
-    });
-
     const handleKeydown = (event) => {
       if (emulator?.setButtonByCode(event.code, true)) {
         event.preventDefault();
@@ -216,21 +243,22 @@
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       emulator?.destroy();
+      emulator = undefined;
+      emulatorPromise = undefined;
     };
   });
 </script>
 
 <svelte:head>
   <title>NES Vibes</title>
+  <meta
+    name="description"
+    content="Play public-domain and homebrew NES ROMs directly in your browser with drag-and-drop loading and a bundled quicklaunch library."
+  />
+  <meta name="theme-color" content="#252525" />
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23252525'/%3E%3Crect x='8' y='10' width='48' height='44' rx='4' fill='%23c7c7c7'/%3E%3Crect x='14' y='16' width='36' height='18' fill='%23070707'/%3E%3Crect x='18' y='20' width='28' height='10' fill='%233b6fd8'/%3E%3Crect x='14' y='40' width='12' height='4' fill='%23e4000f'/%3E%3Crect x='30' y='40' width='20' height='4' fill='%23909090'/%3E%3C/svg%3E"
-  />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
-    rel="stylesheet"
   />
 </svelte:head>
 
@@ -268,7 +296,7 @@
         <p class="eyebrow">8-bit ROM lab</p>
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
-        <p class="hero-meta">Svelte shell. Emulator isolated in one module. Tuned for Vercel.</p>
+        <p class="hero-meta">{data.emulatorLocLabel}</p>
       </div>
     </div>
   </header>
@@ -306,21 +334,23 @@
         {#if catalogMessage}
           <p class="launcher-empty">{catalogMessage}</p>
         {:else}
-          <div class="launcher-grid" role="list">
+          <ul class="launcher-grid" aria-label="Bundled ROM list">
             {#each romCatalog as entry (entry.id)}
-              <button
-                type="button"
-                class={`launcher-item ${entry.id === activeCatalogId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
-                disabled={!entry.supported}
-                title={entry.supported
-                  ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)}`
-                  : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
-                on:click={() => void loadBundledRom(entry)}
-              >
-                <strong>{entry.title}</strong>
-              </button>
+              <li class="launcher-list-item">
+                <button
+                  type="button"
+                  class={`launcher-item ${entry.id === activeCatalogId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
+                  disabled={!entry.supported}
+                  title={entry.supported
+                    ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)}`
+                    : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
+                  on:click={() => void loadBundledRom(entry)}
+                >
+                  <strong>{entry.title}</strong>
+                </button>
+              </li>
             {/each}
-          </div>
+          </ul>
         {/if}
       </article>
     </aside>
