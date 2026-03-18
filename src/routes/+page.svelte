@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import "@fontsource/silkscreen/latin.css";
   import "../app.css";
 
   export let data;

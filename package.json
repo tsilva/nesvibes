@@ -10,6 +10,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json"
   },
   "dependencies": {
+    "@fontsource/silkscreen": "^5.2.8",
     "svelte": "latest"
   },
   "devDependencies": {

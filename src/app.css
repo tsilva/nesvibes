@@ -10,7 +10,7 @@
   --accent-3: #3b6fd8;
   --shadow: rgba(0, 0, 0, 0.45);
   --font-body: "Menlo", "Monaco", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", monospace;
-  --font-display: "Courier New", "Lucida Console", "Monaco", monospace;
+  --font-display: "Silkscreen", "Courier New", "Lucida Console", monospace;
   font-family: var(--font-body);
   background:
     radial-gradient(circle at top, rgba(228, 0, 15, 0.16), transparent 24%),
@@ -27,6 +27,7 @@ body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: hidden;
   background:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
@@ -661,16 +662,19 @@ canvas {
 
 @media (max-width: 980px) {
   body {
-    overflow: auto;
+    overflow-y: auto;
   }
 
   .page-shell {
+    width: min(100%, 1240px);
     height: auto;
     min-height: auto;
+    padding-inline: 16px;
     overflow: visible;
   }
 
   .hero-banner {
+    padding: 16px 18px;
     padding-right: 18px;
   }
 
@@ -681,11 +685,26 @@ canvas {
 
   .hero-controls {
     position: static;
-    display: block;
+    display: grid;
+    gap: 10px;
+    justify-items: start;
   }
 
   .hero-lede {
     max-width: none;
+  }
+
+  .content-grid {
+    height: auto;
+    overflow: visible;
+  }
+
+  .side-rail {
+    align-items: start;
+  }
+
+  .launcher-shell {
+    height: min(58dvh, 720px);
   }
 
   .stage {
@@ -696,19 +715,20 @@ canvas {
 
 @media (max-width: 720px) {
   .page-shell {
-    width: min(100vw - 20px, 1240px);
+    width: 100%;
     min-height: auto;
     height: auto;
-    padding: 20px 0 28px;
+    padding: 16px 10px 24px;
     display: block;
   }
 
   .hero-banner,
   .stage-shell,
+  .launcher-shell,
   .stat-card,
   .side-card {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .hero-github-link {
@@ -716,9 +736,10 @@ canvas {
     height: 40px;
   }
 
-  .hero-controls {
-    display: grid;
+  .hero-banner {
     gap: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
   }
 
   .hero-stats {
@@ -727,16 +748,21 @@ canvas {
 
   .input-card {
     width: 100%;
-    text-align: right;
+    text-align: left;
   }
 
   .input-badge-row {
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .overlay {
     width: calc(100% - 22px);
-    padding: 16px;
+    padding: 14px;
+  }
+
+  .launcher-shell {
+    height: min(54dvh, 640px);
   }
 }
 
@@ -807,11 +833,11 @@ canvas {
 
 @media (max-width: 560px) {
   .hero-title {
-    font-size: 34px;
+    font-size: 30px;
   }
 
   .hero-lede {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .hero-stats {
@@ -824,18 +850,18 @@ canvas {
   }
 
   .overlay {
-    gap: 10px;
+    gap: 8px;
   }
 
   .overlay strong {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .overlay p,
   .side-card p,
   .side-card li,
   .cartridge span {
-    font-size: 20px;
+    font-size: 18px;
   }
 }
     
