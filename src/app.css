@@ -72,7 +72,7 @@ strong,
   position: relative;
   display: grid;
   gap: 12px;
-  padding: 16px 240px 16px 18px;
+  padding: 16px 520px 16px 18px;
   background:
     linear-gradient(135deg, rgba(228, 0, 15, 0.18), rgba(199, 199, 199, 0.16)),
     var(--panel-strong);
@@ -84,11 +84,17 @@ strong,
   animation: banner-rise 720ms steps(6, end) both;
 }
 
-.hero-github-link {
+.hero-controls {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hero-github-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -186,13 +192,6 @@ strong,
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.hero-stats {
-  position: absolute;
-  top: 14px;
-  right: 66px;
-  z-index: 2;
 }
 
 .stat-card,
@@ -672,9 +671,9 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .hero-stats {
+  .hero-controls {
     position: static;
-    width: max-content;
+    display: block;
   }
 
   .hero-lede {
@@ -705,10 +704,13 @@ canvas {
   }
 
   .hero-github-link {
-    top: 12px;
-    right: 12px;
     width: 40px;
     height: 40px;
+  }
+
+  .hero-controls {
+    display: grid;
+    gap: 10px;
   }
 
   .hero-stats {
@@ -742,7 +744,7 @@ canvas {
   }
 
   .hero-banner {
-    padding: 14px 240px 14px 16px;
+    padding: 14px 420px 14px 16px;
   }
 
   .hero-grid {
