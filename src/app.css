@@ -85,6 +85,45 @@ strong,
   animation: banner-rise 720ms steps(6, end) both;
 }
 
+.hero-github-link {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)),
+    rgba(17, 17, 17, 0.94);
+  border: 3px solid rgba(199, 199, 199, 0.72);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.28);
+  transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.hero-github-link:hover,
+.hero-github-link:focus-visible {
+  color: #f8b800;
+  border-color: rgba(248, 184, 0, 0.72);
+  transform: translateY(-1px);
+}
+
+.hero-github-link:focus-visible {
+  outline: 2px solid rgba(248, 184, 0, 0.65);
+  outline-offset: 3px;
+}
+
+.hero-github-link svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
 .hero-banner::after {
   content: "";
   position: absolute;
@@ -703,6 +742,13 @@ canvas {
   .side-card {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .hero-github-link {
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
   }
 
   .overlay {
