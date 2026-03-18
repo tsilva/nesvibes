@@ -750,6 +750,13 @@
         [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0],
       ];
 
+      function wrapIndex(index, size) {
+        if (size <= 0) {
+          return 0;
+        }
+        return index % size;
+      }
+
       class Cartridge {
         static fromINES(bytes) {
           if (bytes.length < 16) {
@@ -771,12 +778,6 @@
           const flags7 = bytes[7];
           const mapper = (flags6 >> 4) | (flags7 & 0xf0);
 
-          if (mapper !== 0) {
-            throw new Error(
-              `Unsupported mapper ${mapper}. This build only supports NROM (mapper 0).`
-            );
-          }
-
           if (flags6 & 0x04) {
             throw new Error("Trainer ROMs are not supported");
           }
@@ -787,41 +788,85 @@
           const prgRom = bytes.slice(offset, offset + prgSize);
           const chrOffset = offset + prgSize;
           const chrRom = chrSize > 0 ? bytes.slice(chrOffset, chrOffset + chrSize) : new Uint8Array(0x2000);
-
-          return new Cartridge({
+          const common = {
             prgRom,
             chrRom,
             hasChrRam: chrSize === 0,
             mirroring: flags6 & 0x01 ? "vertical" : "horizontal",
-          });
+            fourScreen: (flags6 & 0x08) !== 0,
+            prgRamSize: (bytes[8] || 1) * 0x2000,
+          };
+
+          if (mapper === 0) {
+            return new NROMCartridge(common);
+          }
+
+          if (mapper === 4) {
+            return new MMC3Cartridge(common);
+          }
+
+          throw new Error(
+            `Unsupported mapper ${mapper}. This build supports NROM (mapper 0) and MMC3 (mapper 4).`
+          );
         }
 
-        constructor({ prgRom, chrRom, hasChrRam, mirroring }) {
+        constructor({ prgRom, chrRom, hasChrRam, mirroring, fourScreen = false, prgRamSize = 0 }) {
           this.prgRom = prgRom;
           this.chrRom = chrRom;
           this.hasChrRam = hasChrRam;
           this.mirroring = mirroring;
+          this.fourScreen = fourScreen;
+          this.prgRam = new Uint8Array(prgRamSize);
+          this.prgRamEnabled = this.prgRam.length > 0;
+          this.prgRamWriteProtected = false;
         }
 
-        readPrg(addr) {
-          let index = addr - 0x8000;
-          if (this.prgRom.length === 0x4000) {
-            index &= 0x3fff;
+        reset() {
+          this.prgRamEnabled = this.prgRam.length > 0;
+          this.prgRamWriteProtected = false;
+        }
+
+        getNametableRamSize() {
+          return this.fourScreen ? 0x1000 : 0x0800;
+        }
+
+        readPrg() {
+          return 0;
+        }
+
+        writePrg() {}
+
+        readPrgRam(addr) {
+          if (!this.prgRamEnabled || this.prgRam.length === 0) {
+            return 0;
           }
-          return this.prgRom[index];
+
+          return this.prgRam[wrapIndex(addr - 0x6000, this.prgRam.length)];
+        }
+
+        writePrgRam(addr, value) {
+          if (!this.prgRamEnabled || this.prgRamWriteProtected || this.prgRam.length === 0) {
+            return;
+          }
+
+          this.prgRam[wrapIndex(addr - 0x6000, this.prgRam.length)] = value & 0xff;
         }
 
         readChr(addr) {
-          return this.chrRom[addr & 0x1fff];
+          return this.chrRom[wrapIndex(addr & 0x1fff, this.chrRom.length)];
         }
 
         writeChr(addr, value) {
           if (this.hasChrRam) {
-            this.chrRom[addr & 0x1fff] = value;
+            this.chrRom[wrapIndex(addr & 0x1fff, this.chrRom.length)] = value;
           }
         }
 
         mirrorNametableAddress(addr) {
+          if (this.fourScreen) {
+            return addr & 0x0fff;
+          }
+
           const index = addr & 0x0fff;
           const table = index >> 10;
           const offset = index & 0x03ff;
@@ -831,6 +876,300 @@
           }
 
           return ((table >> 1) & 0x01) * 0x0400 + offset;
+        }
+
+        clockScanline() {}
+
+        hasIRQ() {
+          return false;
+        }
+      }
+
+      class NROMCartridge extends Cartridge {
+        readPrg(addr) {
+          let index = addr - 0x8000;
+          if (this.prgRom.length === 0x4000) {
+            index &= 0x3fff;
+          }
+          return this.prgRom[index];
+        }
+      }
+
+      class MMC3Cartridge extends Cartridge {
+        constructor(options) {
+          super(options);
+          this.bankSelect = 0;
+          this.prgMode = 0;
+          this.chrMode = 0;
+          this.bankRegisters = new Uint8Array(8);
+          this.irqLatch = 0;
+          this.irqCounter = 0;
+          this.irqReload = false;
+          this.irqEnabled = false;
+          this.irqPending = false;
+          this.reset();
+        }
+
+        reset() {
+          super.reset();
+          this.bankSelect = 0;
+          this.prgMode = 0;
+          this.chrMode = 0;
+          this.bankRegisters.fill(0);
+          this.bankRegisters[6] = 0;
+          this.bankRegisters[7] = 1;
+          this.irqLatch = 0;
+          this.irqCounter = 0;
+          this.irqReload = false;
+          this.irqEnabled = false;
+          this.irqPending = false;
+        }
+
+        getPrgBankCount() {
+          return Math.max(1, this.prgRom.length >> 13);
+        }
+
+        getChrBankCount() {
+          return Math.max(1, this.chrRom.length >> 10);
+        }
+
+        resolvePrgBank(bank) {
+          return wrapIndex(bank, this.getPrgBankCount());
+        }
+
+        resolveChrBank(bank) {
+          return wrapIndex(bank, this.getChrBankCount());
+        }
+
+        readPrg(addr) {
+          const slot = (addr - 0x8000) >> 13;
+          const lastBank = this.getPrgBankCount() - 1;
+          const secondLastBank = Math.max(0, lastBank - 1);
+
+          let bank = lastBank;
+          switch (slot) {
+            case 0:
+              bank = this.prgMode ? secondLastBank : this.bankRegisters[6];
+              break;
+            case 1:
+              bank = this.bankRegisters[7];
+              break;
+            case 2:
+              bank = this.prgMode ? this.bankRegisters[6] : secondLastBank;
+              break;
+            default:
+              bank = lastBank;
+              break;
+          }
+
+          const index = this.resolvePrgBank(bank) * 0x2000 + (addr & 0x1fff);
+          return this.prgRom[index];
+        }
+
+        writePrg(addr, value) {
+          const address = addr & 0xffff;
+
+          if (address < 0xa000) {
+            if ((address & 1) === 0) {
+              this.bankSelect = value & 0x07;
+              this.prgMode = (value >> 6) & 0x01;
+              this.chrMode = (value >> 7) & 0x01;
+            } else {
+              this.writeBankData(value);
+            }
+            return;
+          }
+
+          if (address < 0xc000) {
+            if ((address & 1) === 0) {
+              if (!this.fourScreen) {
+                this.mirroring = (value & 0x01) === 0 ? "vertical" : "horizontal";
+              }
+            } else {
+              this.prgRamWriteProtected = (value & 0x40) !== 0;
+              this.prgRamEnabled = (value & 0x80) !== 0;
+            }
+            return;
+          }
+
+          if (address < 0xe000) {
+            if ((address & 1) === 0) {
+              this.irqLatch = value & 0xff;
+            } else {
+              this.irqReload = true;
+            }
+            return;
+          }
+
+          if ((address & 1) === 0) {
+            this.irqEnabled = false;
+            this.irqPending = false;
+          } else {
+            this.irqEnabled = true;
+          }
+        }
+
+        writeBankData(value) {
+          switch (this.bankSelect) {
+            case 0:
+            case 1:
+              this.bankRegisters[this.bankSelect] = value & 0xfe;
+              break;
+            default:
+              this.bankRegisters[this.bankSelect] = value & 0xff;
+              break;
+          }
+        }
+
+        readChr(addr) {
+          const slot = (addr & 0x1fff) >> 10;
+          const offset = addr & 0x03ff;
+          let bank;
+
+          if (this.chrMode === 0) {
+            switch (slot) {
+              case 0:
+                bank = this.bankRegisters[0];
+                break;
+              case 1:
+                bank = this.bankRegisters[0] + 1;
+                break;
+              case 2:
+                bank = this.bankRegisters[1];
+                break;
+              case 3:
+                bank = this.bankRegisters[1] + 1;
+                break;
+              case 4:
+                bank = this.bankRegisters[2];
+                break;
+              case 5:
+                bank = this.bankRegisters[3];
+                break;
+              case 6:
+                bank = this.bankRegisters[4];
+                break;
+              default:
+                bank = this.bankRegisters[5];
+                break;
+            }
+          } else {
+            switch (slot) {
+              case 0:
+                bank = this.bankRegisters[2];
+                break;
+              case 1:
+                bank = this.bankRegisters[3];
+                break;
+              case 2:
+                bank = this.bankRegisters[4];
+                break;
+              case 3:
+                bank = this.bankRegisters[5];
+                break;
+              case 4:
+                bank = this.bankRegisters[0];
+                break;
+              case 5:
+                bank = this.bankRegisters[0] + 1;
+                break;
+              case 6:
+                bank = this.bankRegisters[1];
+                break;
+              default:
+                bank = this.bankRegisters[1] + 1;
+                break;
+            }
+          }
+
+          const index = this.resolveChrBank(bank) * 0x0400 + offset;
+          return this.chrRom[index];
+        }
+
+        writeChr(addr, value) {
+          if (!this.hasChrRam) {
+            return;
+          }
+
+          const slot = (addr & 0x1fff) >> 10;
+          const offset = addr & 0x03ff;
+          let bank;
+
+          if (this.chrMode === 0) {
+            switch (slot) {
+              case 0:
+                bank = this.bankRegisters[0];
+                break;
+              case 1:
+                bank = this.bankRegisters[0] + 1;
+                break;
+              case 2:
+                bank = this.bankRegisters[1];
+                break;
+              case 3:
+                bank = this.bankRegisters[1] + 1;
+                break;
+              case 4:
+                bank = this.bankRegisters[2];
+                break;
+              case 5:
+                bank = this.bankRegisters[3];
+                break;
+              case 6:
+                bank = this.bankRegisters[4];
+                break;
+              default:
+                bank = this.bankRegisters[5];
+                break;
+            }
+          } else {
+            switch (slot) {
+              case 0:
+                bank = this.bankRegisters[2];
+                break;
+              case 1:
+                bank = this.bankRegisters[3];
+                break;
+              case 2:
+                bank = this.bankRegisters[4];
+                break;
+              case 3:
+                bank = this.bankRegisters[5];
+                break;
+              case 4:
+                bank = this.bankRegisters[0];
+                break;
+              case 5:
+                bank = this.bankRegisters[0] + 1;
+                break;
+              case 6:
+                bank = this.bankRegisters[1];
+                break;
+              default:
+                bank = this.bankRegisters[1] + 1;
+                break;
+            }
+          }
+
+          const index = this.resolveChrBank(bank) * 0x0400 + offset;
+          this.chrRom[index] = value & 0xff;
+        }
+
+        clockScanline() {
+          if (this.irqCounter === 0 || this.irqReload) {
+            this.irqCounter = this.irqLatch;
+            this.irqReload = false;
+          } else {
+            this.irqCounter = (this.irqCounter - 1) & 0xff;
+          }
+
+          if (this.irqCounter === 0 && this.irqEnabled) {
+            this.irqPending = true;
+          }
+        }
+
+        hasIRQ() {
+          return this.irqPending;
         }
       }
 
@@ -893,7 +1232,7 @@
       class PPU {
         constructor(cartridge) {
           this.cartridge = cartridge;
-          this.nametableRam = new Uint8Array(0x0800);
+          this.nametableRam = new Uint8Array(cartridge.getNametableRamSize());
           this.paletteRam = new Uint8Array(0x20);
           this.oam = new Uint8Array(0x100);
           this.framebuffer = new Uint8ClampedArray(256 * 240 * 4);
@@ -1358,6 +1697,10 @@
             }
           }
 
+          if (rendering && this.scanline >= 0 && this.scanline < 240 && this.cycle === 260) {
+            this.cartridge.clockScanline();
+          }
+
           this.cycle += 1;
           if (this.cycle > 340) {
             this.cycle = 0;
@@ -1577,6 +1920,11 @@
 
           if (this.bus.pollNMI()) {
             this.serviceInterrupt(0xfffa, false);
+            return 7;
+          }
+
+          if (!this.getFlag(CPU_FLAG_INTERRUPT) && this.bus.hasIRQ()) {
+            this.serviceInterrupt(0xfffe, false);
             return 7;
           }
 
@@ -2089,11 +2437,16 @@
 
         reset() {
           this.cpuRam.fill(0);
+          this.cartridge.reset();
           this.ppu.reset();
         }
 
         pollNMI() {
           return this.ppu.pollNMI();
+        }
+
+        hasIRQ() {
+          return this.cartridge.hasIRQ();
         }
 
         read(addr) {
@@ -2113,6 +2466,10 @@
 
           if (address === 0x4017) {
             return this.controller2.read();
+          }
+
+          if (address >= 0x6000 && address < 0x8000) {
+            return this.cartridge.readPrgRam(address);
           }
 
           if (address >= 0x8000) {
@@ -2148,6 +2505,16 @@
           if (address === 0x4016) {
             this.controller1.write(value);
             this.controller2.write(value);
+            return 0;
+          }
+
+          if (address >= 0x6000 && address < 0x8000) {
+            this.cartridge.writePrgRam(address, value);
+            return 0;
+          }
+
+          if (address >= 0x8000) {
+            this.cartridge.writePrg(address, value);
             return 0;
           }
 

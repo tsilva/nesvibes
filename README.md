@@ -6,7 +6,7 @@ This repository now ships as a single self-contained [`index.html`](/Users/tsilv
 
 - Single-file emulator with no HTTP server requirement
 - Drag-and-drop or manual ROM selection
-- Mapper 0 / NROM iNES support
+- Mapper 0 / NROM and Mapper 4 / MMC3 iNES support
 - 6502 CPU core with official opcodes and common unofficial NOPs
 - PPU rendering with scrolling, sprites, OAM DMA, NMI, palette RAM, and nametable mirroring
 - Keyboard controller input
@@ -25,5 +25,5 @@ Open [`index.html`](/Users/tsilva/repos/romhacking/index.html) directly in your 
 
 ## Notes
 
-- This build intentionally targets mapper 0 ROMs only.
+- This build currently targets mapper 0 and mapper 4 ROMs.
 - Audio is not implemented.
