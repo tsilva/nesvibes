@@ -356,8 +356,8 @@
 
       .launcher-shell {
         display: grid;
-        gap: 12px;
-        padding: 14px;
+        gap: 10px;
+        padding: 12px;
         background:
           linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%),
           rgba(14, 14, 14, 0.9);
@@ -368,58 +368,28 @@
       }
 
       .launcher-header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: end;
-        justify-content: space-between;
-        gap: 12px;
+        display: grid;
+        gap: 4px;
       }
 
       .launcher-header h2 {
-        margin: 0 0 8px;
+        margin: 0;
         font-size: 14px;
         line-height: 1.4;
         color: var(--accent-2);
       }
 
-      .launcher-header p,
       .launcher-status,
-      .launcher-empty,
-      .launcher-item em {
+      .launcher-empty {
         margin: 0;
-        font-size: clamp(18px, 2vw, 22px);
-        line-height: 1.05;
+        font-size: 18px;
+        line-height: 1;
         color: #efe6ff;
-      }
-
-      .launcher-search {
-        display: grid;
-        gap: 6px;
-        min-width: min(100%, 280px);
-      }
-
-      .launcher-search span {
-        font-size: 10px;
-        color: var(--accent-2);
-      }
-
-      .launcher-search input {
-        width: 100%;
-        padding: 10px 12px;
-        border: 2px solid rgba(255, 255, 255, 0.16);
-        background: rgba(0, 0, 0, 0.42);
-        color: var(--ink);
-        font: inherit;
-      }
-
-      .launcher-search input:focus {
-        outline: 2px solid var(--accent-3);
-        outline-offset: 2px;
       }
 
       .launcher-status,
       .launcher-empty {
-        padding: 11px 12px;
+        padding: 9px 10px;
         background: rgba(255, 255, 255, 0.05);
         border: 2px solid rgba(255, 255, 255, 0.1);
       }
@@ -436,10 +406,9 @@
 
       .launcher-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 10px;
-        max-height: 420px;
-        padding-right: 6px;
+        gap: 6px;
+        max-height: 620px;
+        padding-right: 4px;
         overflow: auto;
       }
 
@@ -452,12 +421,11 @@
       }
 
       .launcher-item {
-        display: grid;
-        gap: 8px;
+        display: block;
         width: 100%;
-        padding: 14px;
+        padding: 9px 10px;
         text-align: left;
-        border: 3px solid rgba(255, 255, 255, 0.12);
+        border: 2px solid rgba(255, 255, 255, 0.12);
         background:
           linear-gradient(135deg, rgba(59, 111, 216, 0.12), rgba(255, 255, 255, 0.03)),
           rgba(18, 18, 18, 0.9);
@@ -492,16 +460,8 @@
       .launcher-item strong {
         display: block;
         margin: 0;
-        font-size: 12px;
-        line-height: 1.35;
-      }
-
-      .launcher-item span {
-        display: block;
-        margin: 0;
-        font-size: 18px;
-        line-height: 1.05;
-        color: var(--accent-2);
+        font-size: 10px;
+        line-height: 1.5;
       }
 
       .side-card h2 {
@@ -740,24 +700,17 @@
               </div>
             </section>
           </div>
+        </section>
 
+        <aside class="side-rail" aria-label="Setup notes">
           <article class="launcher-shell" aria-label="Bundled public domain quicklaunch">
             <div class="launcher-header">
-              <div>
-                <h2>Quicklaunch</h2>
-                <p id="quicklaunch-summary">Bundled Zophar public-domain carts, ready for one-click boot.</p>
-              </div>
-              <label class="launcher-search" for="quicklaunch-filter">
-                <span>Filter library</span>
-                <input id="quicklaunch-filter" type="search" placeholder="Search title, archive, or author">
-              </label>
+              <h2>Quicklaunch</h2>
             </div>
             <p id="quicklaunch-status" class="launcher-status" data-tone="ready">Loading bundled ROM catalog…</p>
             <div id="quicklaunch-grid" class="launcher-grid" role="list"></div>
           </article>
-        </section>
 
-        <aside class="side-rail" aria-label="Setup notes">
           <article class="side-card">
             <h2>Controls</h2>
             <div class="button-row" aria-label="Keyboard controls">
@@ -765,34 +718,6 @@
               <span class="button-key">X = A</span>
               <span class="button-key alt">Shift = Select</span>
               <span class="button-key alt">Enter = Start</span>
-            </div>
-          </article>
-
-          <article class="side-card">
-            <h2>D-Pad</h2>
-            <p>Arrow keys drive movement. The canvas keeps focus after boot so inputs feel immediate.</p>
-          </article>
-
-          <article class="side-card highlight">
-            <h2>Boot Sequence</h2>
-            <p>Use Quicklaunch for bundled public-domain carts, or drag any `.nes` file into the cabinet to hot-swap it instantly.</p>
-          </article>
-
-          <article class="side-card">
-            <h2>Cartridge Bay</h2>
-            <div class="cartridge-stack">
-              <div class="cartridge">
-                <strong>1. Load</strong>
-                <span>Grab a `.nes` file and toss it onto the page.</span>
-              </div>
-              <div class="cartridge">
-                <strong>2. Play</strong>
-                <span>Use `Z`, `X`, `Shift`, `Enter`, and arrow keys.</span>
-              </div>
-              <div class="cartridge">
-                <strong>3. Swap</strong>
-                <span>Drop a new ROM at any time to replace the current one.</span>
-              </div>
             </div>
           </article>
         </aside>
@@ -2860,10 +2785,8 @@
       const loaderTitle = document.getElementById("loader-title");
       const loaderCopy = document.getElementById("loader-copy");
       const libraryStat = document.getElementById("library-stat");
-      const quicklaunchSummary = document.getElementById("quicklaunch-summary");
       const quicklaunchStatus = document.getElementById("quicklaunch-status");
       const quicklaunchGrid = document.getElementById("quicklaunch-grid");
-      const quicklaunchFilter = document.getElementById("quicklaunch-filter");
 
       const BUTTON_MAP = new Map([
         ["KeyZ", "b"],
@@ -3013,34 +2936,14 @@
       }
 
       function renderQuicklaunch() {
-        const query = quicklaunchFilter.value.trim().toLowerCase();
-        const filtered = romCatalog.filter((entry) => {
-          if (!query) {
-            return true;
-          }
-
-          return [
-            entry.title,
-            entry.archiveTitle,
-            entry.author,
-            entry.description,
-          ].some((value) => value && value.toLowerCase().includes(query));
-        });
-
         quicklaunchGrid.replaceChildren();
 
-        if (filtered.length === 0) {
-          clearQuicklaunchGrid("No ROMs match that filter.");
-          quicklaunchSummary.textContent = `0 matches in the ${romCatalog.length}-ROM library.`;
+        if (romCatalog.length === 0) {
+          clearQuicklaunchGrid("No bundled ROMs available.");
           return;
         }
 
-        const supportedCount = romCatalog.filter((entry) => entry.supported).length;
-        quicklaunchSummary.textContent = query
-          ? `${filtered.length} matches in the ${romCatalog.length}-ROM library.`
-          : `${supportedCount} playable ROMs from Zophar's NES public-domain archive.`;
-
-        for (const entry of filtered) {
+        for (const entry of romCatalog) {
           const button = document.createElement("button");
           button.type = "button";
           button.className = "launcher-item";
@@ -3057,22 +2960,10 @@
 
           const title = document.createElement("strong");
           title.textContent = entry.title;
-
-          const meta = document.createElement("span");
-          const metaParts = [
-            entry.archiveTitle !== entry.title ? entry.archiveTitle : "",
-            entry.author || "",
-            `Mapper ${entry.mapper}`,
-            formatRomSize(entry.sizeBytes),
-          ].filter(Boolean);
-          meta.textContent = metaParts.join(" • ");
-
-          const status = document.createElement("em");
-          status.textContent = entry.supported
-            ? "Click to boot"
-            : `Unavailable in this build (mapper ${entry.mapper})`;
-
-          button.append(title, meta, status);
+          button.title = entry.supported
+            ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)}`
+            : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`;
+          button.append(title);
 
           if (entry.supported) {
             button.addEventListener("click", () => {
@@ -3204,8 +3095,6 @@
         dropzone.classList.remove("dragging");
         await loadRomFile(event.dataTransfer.files[0]);
       });
-
-      quicklaunchFilter.addEventListener("input", renderQuicklaunch);
 
       drawPlaceholder();
       setStageMode("empty");
