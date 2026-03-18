@@ -519,6 +519,21 @@
           this.v = (this.v & ~0x7be0) | (this.t & 0x7be0);
         }
 
+        rewindHorizontalTiles(addr, count) {
+          let value = addr;
+
+          for (let i = 0; i < count; i += 1) {
+            if ((value & 0x001f) === 0) {
+              value = (value & ~0x001f) | 31;
+              value ^= 0x0400;
+            } else {
+              value -= 1;
+            }
+          }
+
+          return value;
+        }
+
         decodeBackgroundPixel(screenX) {
           if (!this.backgroundEnabled()) {
             return { pixel: 0, palette: 0 };
@@ -695,7 +710,10 @@
           }
 
           if (this.scanline >= 0 && this.scanline < 240 && this.cycle === 0) {
-            this.lineBaseV = this.v;
+            // `v` has already advanced through the two background prefetch tiles
+            // for the next scanline. This renderer samples pixels directly rather
+            // than through shift registers, so rewind those tiles here.
+            this.lineBaseV = this.rewindHorizontalTiles(this.v, 2);
             this.evaluateSpritesForScanline(this.scanline);
           }
 
