@@ -548,7 +548,7 @@
             <div class="hero-badges" aria-label="Feature summary">
               <span class="badge">Drag + Drop ROM</span>
               <span class="badge alt">Keyboard Controls</span>
-              <span class="badge">NROM Mapper 0</span>
+              <span class="badge">Mappers 0-4</span>
             </div>
           </div>
           <div class="hero-stats" aria-label="Runtime stats">
@@ -580,7 +580,7 @@
               <div class="overlay">
                 <p class="loader-kicker">PLAYER ONE READY</p>
                 <strong id="loader-title">Drop a `.nes` ROM</strong>
-                <p id="loader-copy">Mapper 0 / NROM only. Drag a ROM anywhere into the window to begin.</p>
+                <p id="loader-copy">Supports mappers 0, 1, 2, 3, and 4. Drag a ROM anywhere into the window to begin.</p>
                 <p class="overlay-note">When a game boots, the overlay clears and the cabinet stays live.</p>
               </div>
             </section>
@@ -709,12 +709,24 @@
             return new NROMCartridge(common);
           }
 
+          if (mapper === 1) {
+            return new MMC1Cartridge(common);
+          }
+
+          if (mapper === 2) {
+            return new UxROMCartridge(common);
+          }
+
+          if (mapper === 3) {
+            return new CNROMCartridge(common);
+          }
+
           if (mapper === 4) {
             return new MMC3Cartridge(common);
           }
 
           throw new Error(
-            `Unsupported mapper ${mapper}. This build supports NROM (mapper 0) and MMC3 (mapper 4).`
+            `Unsupported mapper ${mapper}. This build supports mappers 0, 1, 2, 3, and 4.`
           );
         }
 
@@ -779,6 +791,14 @@
           const table = index >> 10;
           const offset = index & 0x03ff;
 
+          if (this.mirroring === "single-screen-lower") {
+            return offset;
+          }
+
+          if (this.mirroring === "single-screen-upper") {
+            return 0x0400 + offset;
+          }
+
           if (this.mirroring === "vertical") {
             return (table & 0x01) * 0x0400 + offset;
           }
@@ -800,6 +820,199 @@
             index &= 0x3fff;
           }
           return this.prgRom[index];
+        }
+      }
+
+      class UxROMCartridge extends Cartridge {
+        constructor(options) {
+          super(options);
+          this.prgBank = 0;
+          this.reset();
+        }
+
+        reset() {
+          super.reset();
+          this.prgBank = 0;
+        }
+
+        getPrgBankCount() {
+          return Math.max(1, this.prgRom.length >> 14);
+        }
+
+        readPrg(addr) {
+          const slot = (addr - 0x8000) >> 14;
+          const lastBank = this.getPrgBankCount() - 1;
+          const bank = slot === 0 ? wrapIndex(this.prgBank, this.getPrgBankCount()) : lastBank;
+          const index = bank * 0x4000 + (addr & 0x3fff);
+          return this.prgRom[index];
+        }
+
+        writePrg(addr, value) {
+          this.prgBank = value & 0xff;
+        }
+      }
+
+      class CNROMCartridge extends NROMCartridge {
+        constructor(options) {
+          super(options);
+          this.chrBank = 0;
+          this.reset();
+        }
+
+        reset() {
+          super.reset();
+          this.chrBank = 0;
+        }
+
+        getChrBankCount() {
+          return Math.max(1, this.chrRom.length >> 13);
+        }
+
+        readChr(addr) {
+          const bank = wrapIndex(this.chrBank, this.getChrBankCount());
+          const index = bank * 0x2000 + (addr & 0x1fff);
+          return this.chrRom[index];
+        }
+
+        writeChr(addr, value) {
+          if (!this.hasChrRam) {
+            return;
+          }
+
+          const bank = wrapIndex(this.chrBank, this.getChrBankCount());
+          const index = bank * 0x2000 + (addr & 0x1fff);
+          this.chrRom[index] = value & 0xff;
+        }
+
+        writePrg(addr, value) {
+          this.chrBank = value & 0xff;
+        }
+      }
+
+      class MMC1Cartridge extends Cartridge {
+        constructor(options) {
+          super(options);
+          this.shiftRegister = 0x10;
+          this.control = 0x0c;
+          this.chrBank0 = 0;
+          this.chrBank1 = 0;
+          this.prgBank = 0;
+          this.reset();
+        }
+
+        reset() {
+          super.reset();
+          this.shiftRegister = 0x10;
+          this.control = 0x0c;
+          this.chrBank0 = 0;
+          this.chrBank1 = 0;
+          this.prgBank = 0;
+          if (!this.fourScreen) {
+            this.mirroring = "horizontal";
+          }
+        }
+
+        getPrgBankCount() {
+          return Math.max(1, this.prgRom.length >> 14);
+        }
+
+        getChrBankCount() {
+          return Math.max(1, this.chrRom.length >> 12);
+        }
+
+        readPrg(addr) {
+          const mode = (this.control >> 2) & 0x03;
+          const slot = (addr - 0x8000) >> 14;
+          const lastBank = this.getPrgBankCount() - 1;
+          let bank;
+
+          if (mode <= 1) {
+            bank = (this.prgBank & 0x0e) + slot;
+          } else if (mode === 2) {
+            bank = slot === 0 ? 0 : this.prgBank;
+          } else {
+            bank = slot === 0 ? this.prgBank : lastBank;
+          }
+
+          const index = wrapIndex(bank, this.getPrgBankCount()) * 0x4000 + (addr & 0x3fff);
+          return this.prgRom[index];
+        }
+
+        writePrg(addr, value) {
+          if (value & 0x80) {
+            this.shiftRegister = 0x10;
+            this.control |= 0x0c;
+            this.updateMirroring();
+            return;
+          }
+
+          const commit = (this.shiftRegister & 0x01) !== 0;
+          this.shiftRegister = (this.shiftRegister >> 1) | ((value & 0x01) << 4);
+
+          if (!commit) {
+            return;
+          }
+
+          const data = this.shiftRegister & 0x1f;
+          if (addr < 0xa000) {
+            this.control = data;
+            this.updateMirroring();
+          } else if (addr < 0xc000) {
+            this.chrBank0 = data;
+          } else if (addr < 0xe000) {
+            this.chrBank1 = data;
+          } else {
+            this.prgBank = data & 0x0f;
+            this.prgRamEnabled = this.prgRam.length > 0 && (data & 0x10) === 0;
+          }
+
+          this.shiftRegister = 0x10;
+        }
+
+        readChr(addr) {
+          const bank = this.resolveChrBank(addr);
+          const index = bank * 0x1000 + (addr & 0x0fff);
+          return this.chrRom[index];
+        }
+
+        writeChr(addr, value) {
+          if (!this.hasChrRam) {
+            return;
+          }
+
+          const bank = this.resolveChrBank(addr);
+          const index = bank * 0x1000 + (addr & 0x0fff);
+          this.chrRom[index] = value & 0xff;
+        }
+
+        resolveChrBank(addr) {
+          if (((this.control >> 4) & 0x01) === 0) {
+            return wrapIndex((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), this.getChrBankCount());
+          }
+
+          const bank = (addr & 0x1000) === 0 ? this.chrBank0 : this.chrBank1;
+          return wrapIndex(bank, this.getChrBankCount());
+        }
+
+        updateMirroring() {
+          if (this.fourScreen) {
+            return;
+          }
+
+          switch (this.control & 0x03) {
+            case 0:
+              this.mirroring = "single-screen-lower";
+              break;
+            case 1:
+              this.mirroring = "single-screen-upper";
+              break;
+            case 2:
+              this.mirroring = "vertical";
+              break;
+            default:
+              this.mirroring = "horizontal";
+              break;
+          }
         }
       }
 
@@ -2647,7 +2860,7 @@
 
       drawPlaceholder();
       setStageMode("empty");
-      setOverlay("Drop a `.nes` ROM", "Mapper 0 / NROM only. Drag a ROM anywhere into the window to begin.");
+      setOverlay("Drop a `.nes` ROM", "Supports mappers 0, 1, 2, 3, and 4. Drag a ROM anywhere into the window to begin.");
     </script>
   </body>
 </html>
