@@ -987,8 +987,8 @@ canvas {
   }
 
   .hero-banner {
-    padding: 16px 18px;
-    padding-right: 18px;
+    padding: 16px 18px 14px;
+    padding-right: 64px;
   }
 
   .hero-grid,
@@ -997,12 +997,15 @@ canvas {
   }
 
   .hero-controls {
-    position: static;
-    justify-items: start;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    justify-items: end;
   }
 
   .hero-lede {
     max-width: none;
+    font-size: clamp(15px, 2.3vw, 19px);
   }
 
   .content-grid {
@@ -1057,9 +1060,8 @@ canvas {
   }
 
   .hero-banner {
-    gap: 10px;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    gap: 8px;
+    padding: 12px 58px 12px 14px;
   }
 
   .overlay {
@@ -1227,7 +1229,8 @@ canvas {
   }
 
   .hero-lede {
-    font-size: 20px;
+    font-size: 16px;
+    line-height: 1.05;
   }
 
   .launcher-grid {
