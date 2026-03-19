@@ -376,9 +376,6 @@
             <div class="memory-search-stats">
               <span>{memorySearch?.captureCount ?? 0} snapshots</span>
               <span>{memorySearch?.lastMatchCount ?? 0} matched last capture</span>
-              {#if memorySearchActive}
-                <span>{memorySearchResults.length} highlighted</span>
-              {/if}
             </div>
 
             <div

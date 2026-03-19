@@ -709,6 +709,9 @@
             <p class="loader-kicker">PLAYER ONE READY</p>
             <strong>{overlayTitle}</strong>
             <p id="loader-copy">{overlayCopy}</p>
+            {#if overlayVariant === "empty"}
+              <p class="overlay-note">Try the Super Mario Bros ROM if you have it :)</p>
+            {/if}
           </button>
           {#if showCanvasControls}
             <div class={`touch-controls active ${canvasControlsMode === "keys" ? "keys-mode" : ""}`.trim()}>

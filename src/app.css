@@ -536,7 +536,10 @@ canvas:focus-visible {
 }
 
 .overlay-note {
+  font-size: clamp(10px, 1vw, 12px) !important;
+  line-height: 1.2;
   color: #bdbdbd;
+  opacity: 0.92;
 }
 
 .touch-controls {
