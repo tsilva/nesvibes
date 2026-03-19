@@ -1,4 +1,6 @@
 <script>
+  import { Bug, Pause, Play, RefreshCw, StepForward } from "lucide-svelte";
+
   export let debuggerController;
 
   const REGISTER_FIELDS = [
@@ -49,10 +51,11 @@
     class={`debugger-toggle ${state.open ? "open" : ""}`.trim()}
     aria-controls="emulator-debugger-panel"
     aria-expanded={state.open}
+    aria-label={state.open ? "Close debugger" : "Open debugger"}
     on:click={() => debuggerController.toggleOpen()}
   >
     <span class={`debugger-status ${state.hasRom ? (state.paused ? "paused" : "running") : "idle"}`.trim()} aria-hidden="true"></span>
-    <span>Debugger</span>
+    <Bug size={16} strokeWidth={2.25} aria-hidden="true" />
   </button>
 
   {#if state.open}
@@ -64,19 +67,37 @@
         </div>
       {:else}
         <div class="debugger-toolbar">
-          <button type="button" class="debugger-action" on:click={() => debuggerController.toggleRunning()}>
-            {state.paused ? "Play" : "Pause"}
+          <button
+            type="button"
+            class="debugger-action"
+            aria-label={state.paused ? "Play" : "Pause"}
+            title={state.paused ? "Play" : "Pause"}
+            on:click={() => debuggerController.toggleRunning()}
+          >
+            {#if state.paused}
+              <Play size={15} strokeWidth={2.25} aria-hidden="true" />
+            {:else}
+              <Pause size={15} strokeWidth={2.25} aria-hidden="true" />
+            {/if}
           </button>
           <button
             type="button"
             class="debugger-action"
             disabled={!state.paused}
+            aria-label="Step"
+            title="Step"
             on:click={() => debuggerController.stepInstruction()}
           >
-            Step
+            <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
           </button>
-          <button type="button" class="debugger-action ghost" on:click={() => debuggerController.refresh()}>
-            Refresh
+          <button
+            type="button"
+            class="debugger-action ghost"
+            aria-label="Refresh"
+            title="Refresh"
+            on:click={() => debuggerController.refresh()}
+          >
+            <RefreshCw size={15} strokeWidth={2.25} aria-hidden="true" />
           </button>
         </div>
 
@@ -162,14 +183,8 @@
 <style>
   .debugger-dock {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 3;
-    display: grid;
-    gap: 0;
-    align-items: start;
-    justify-items: end;
     pointer-events: none;
   }
 
@@ -183,10 +198,16 @@
   }
 
   .debugger-toggle {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    margin: 24px 24px 0 0;
+    margin: 0;
+    min-width: 44px;
+    min-height: 44px;
     padding: 10px 14px;
     color: #f4f0d8;
     background:
@@ -241,12 +262,17 @@
   }
 
   .debugger-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
     pointer-events: auto;
-    width: min(440px, calc(100vw - 24px));
+    width: min(560px, calc(100vw - 24px));
     height: 100dvh;
-    max-height: 100dvh;
+    min-height: 100dvh;
+    max-height: none;
     overflow: auto;
-    padding: 20px 20px 28px;
+    padding: 88px 20px 28px;
     color: #eef0cf;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 14%),
@@ -310,6 +336,9 @@
   }
 
   .debugger-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 9px 10px;
     color: #112500;
     background: linear-gradient(180deg, #d7f66b 0%, #8ec63f 100%);
@@ -466,16 +495,23 @@
 
   @media (max-width: 720px) {
     .debugger-dock {
-      top: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
+    }
+
+    .debugger-toggle {
+      top: 14px;
+      right: 14px;
     }
 
     .debugger-panel {
+      top: 0;
+      right: 0;
+      bottom: 0;
       width: min(100vw - 12px, 420px);
       height: 100dvh;
-      max-height: 100dvh;
-      padding: 14px;
+      min-height: 100dvh;
+      max-height: none;
+      padding: 72px 14px 14px;
     }
 
     .debugger-meta,
