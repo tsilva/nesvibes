@@ -19,6 +19,7 @@
 
   const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
   const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
+  const DESKTOP_CANVAS_CONTROL_MODES = CANVAS_CONTROL_MODES.filter((mode) => mode !== "gamepad");
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
   const DIRECTIONAL_BUTTONS = ["up", "down", "left", "right"];
   const KEYBOARD_BUTTON_MAP = new Map([
@@ -97,7 +98,11 @@
   let requestedRomMode = null;
   let canvasControlsMode = "controls";
 
-  $: effectiveCanvasControlsMode = isMobileMode ? "gamepad" : canvasControlsMode;
+  $: effectiveCanvasControlsMode = isMobileMode
+    ? "gamepad"
+    : canvasControlsMode === "gamepad"
+      ? "controls"
+      : canvasControlsMode;
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad" && (hasTouchInput || isMobileMode);
@@ -162,9 +167,13 @@
   }
 
   function cycleCanvasControlsMode() {
-    const currentIndex = CANVAS_CONTROL_MODES.indexOf(canvasControlsMode);
-    const nextIndex = (currentIndex + 1) % CANVAS_CONTROL_MODES.length;
-    setCanvasControlsMode(CANVAS_CONTROL_MODES[nextIndex]);
+    const availableModes = isMobileMode ? CANVAS_CONTROL_MODES : DESKTOP_CANVAS_CONTROL_MODES;
+    const currentMode = availableModes.includes(effectiveCanvasControlsMode)
+      ? effectiveCanvasControlsMode
+      : availableModes[0];
+    const currentIndex = availableModes.indexOf(currentMode);
+    const nextIndex = (currentIndex + 1) % availableModes.length;
+    setCanvasControlsMode(availableModes[nextIndex]);
   }
 
   function getCanvasControlsModeLabel(mode) {
@@ -630,6 +639,10 @@
       const nextIsMobileMode = !debuggerQuery.matches;
 
       isMobileMode = nextIsMobileMode;
+      if (!nextIsMobileMode && canvasControlsMode === "gamepad") {
+        releaseJoystick();
+        canvasControlsMode = "controls";
+      }
       syncOverlayForViewport();
 
       if (debuggerQuery.matches) {
