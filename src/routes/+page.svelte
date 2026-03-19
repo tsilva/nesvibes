@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { Maximize2, Minimize2 } from "lucide-svelte";
   import "@fontsource/silkscreen/latin.css";
   import "../app.css";
 
@@ -46,6 +47,9 @@
   let overlayTitle = "Drop a `.nes` ROM";
   let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
   let pressedButtons = createPressedButtons();
+  let canToggleFullscreen = false;
+
+  $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -257,7 +261,7 @@
   }
 
   async function toggleFullscreenMode() {
-    if (!fullscreenSupported || !stageElement) {
+    if (!canToggleFullscreen || !stageElement) {
       return;
     }
 
@@ -309,7 +313,7 @@
     };
 
     const handleKeydown = (event) => {
-      if (event.code === "KeyF" && !event.repeat) {
+      if (event.code === "KeyF" && !event.repeat && canToggleFullscreen) {
         void toggleFullscreenMode();
         event.preventDefault();
         return;
@@ -481,18 +485,23 @@
         on:change={handleFilePickerChange}
       />
       <div class="stage-shell">
-        {#if debuggerComponent && debuggerController}
+        {#if debuggerComponent && debuggerController && stageMode === "loaded"}
           <svelte:component this={debuggerComponent} debuggerController={debuggerController} />
         {/if}
-        {#if fullscreenSupported}
+        {#if canToggleFullscreen}
           <button
             type="button"
             class="fullscreen-toggle"
             aria-pressed={isFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             on:click={() => void toggleFullscreenMode()}
           >
-            {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            {#if isFullscreen}
+              <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+            {:else}
+              <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+            {/if}
           </button>
         {/if}
         <section

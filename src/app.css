@@ -327,22 +327,27 @@ strong,
   top: 24px;
   right: 24px;
   z-index: 2;
-  min-width: 124px;
-  padding: 10px 14px;
-  font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   color: var(--ink);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
     rgba(12, 12, 12, 0.9);
   border: 3px solid rgba(199, 199, 199, 0.72);
+  border-radius: 999px;
   box-shadow:
     inset 0 0 0 2px rgba(255, 255, 255, 0.04),
     0 10px 18px rgba(0, 0, 0, 0.26);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.fullscreen-toggle :global(svg) {
+  display: block;
 }
 
 .fullscreen-toggle:hover,
@@ -1317,9 +1322,8 @@ canvas:focus-visible {
   .fullscreen-toggle {
     top: 18px;
     right: 18px;
-    min-width: auto;
-    padding: 9px 12px;
-    font-size: 9px;
+    width: 40px;
+    height: 40px;
   }
 }
 
