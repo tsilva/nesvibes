@@ -22,6 +22,7 @@
     Z: "Zero",
     C: "Carry",
   };
+  const MEMORY_SEARCH_RANGE = "0000-07FF";
 
   function chunk(bytes, size) {
     const rows = [];
@@ -51,6 +52,14 @@
     debuggerController.applyMemoryInput();
   }
 
+  function captureMemorySearch() {
+    debuggerController.captureMemorySearch();
+  }
+
+  function resetMemorySearch() {
+    debuggerController.resetMemorySearch();
+  }
+
   function registerTooltip(field, value) {
     return `${field.description} (${field.label}): ${formatHex(value, field.width)}`;
   }
@@ -61,8 +70,17 @@
   }
 
   $: state = $debuggerController;
+  $: memorySearch = state.memorySearch;
   $: snapshot = state.snapshot;
   $: memoryRows = snapshot ? chunk(snapshot.memory.bytes, 16) : [];
+  $: memorySearchResults = memorySearch?.results ?? [];
+  $: memorySearchSummary = !memorySearch?.baselineCaptured
+    ? "Capture a baseline, reproduce the event, then capture again. Only addresses that changed every time remain."
+    : memorySearch.comparisonCount === 0
+      ? "Baseline saved. Reproduce the state change and capture again to keep only the bytes that moved."
+      : memorySearch.candidateCount === 0
+        ? `No shared changes remain after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`
+        : `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} changed across all ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`;
 </script>
 
 <div class="debugger-dock">
@@ -201,7 +219,62 @@
               <p class="memory-error">{state.memoryError}</p>
             {/if}
 
-            <div class="memory-grid" role="table" aria-label="Memory bytes">
+            <div class="memory-search-panel" aria-label="RAM search snapshots">
+              <div class="memory-search-header">
+                <div class="memory-search-copy">
+                  <strong>RAM Search</strong>
+                  <p>{memorySearchSummary}</p>
+                </div>
+
+                <div class="memory-search-actions">
+                  <button type="button" class="debugger-action" on:click={captureMemorySearch}>
+                    Capture
+                  </button>
+                  <button
+                    type="button"
+                    class="debugger-action ghost"
+                    disabled={!memorySearch?.baselineCaptured}
+                    on:click={resetMemorySearch}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <div class="memory-search-stats">
+                <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
+                <span>{memorySearch?.captureCount ?? 0} snapshots</span>
+                <span>{memorySearch?.lastDiffCount ?? 0} changed last capture</span>
+              </div>
+
+              {#if memorySearch?.comparisonCount > 0}
+                {#if memorySearchResults.length > 0}
+                  <div class="memory-search-grid" role="table" aria-label="Changed RAM addresses">
+                    <div class="memory-search-row memory-search-heading" role="row">
+                      <span role="columnheader">Addr</span>
+                      <span role="columnheader">Was</span>
+                      <span role="columnheader">Now</span>
+                      <span role="columnheader">Hits</span>
+                    </div>
+
+                    {#each memorySearchResults as result (`search-${result.address}`)}
+                      <div class="memory-search-row" role="row">
+                        <span role="cell">{formatHex(result.address, 4)}</span>
+                        <span role="cell">{formatHex(result.previousValue, 2)}</span>
+                        <span role="cell">{formatHex(result.currentValue, 2)}</span>
+                        <span role="cell">{result.changeCount}</span>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <p class="memory-search-empty">
+                    No addresses survived the latest filter. Reset to start a new search.
+                  </p>
+                {/if}
+              {/if}
+            </div>
+
+            <div class="memory-grid" role="table" aria-label="Live memory bytes">
               {#each memoryRows as row, rowIndex (`row-${rowIndex}`)}
                 <div class="memory-row" role="row">
                   <span class="memory-address" role="cell">
@@ -377,6 +450,9 @@
   .memory-error,
   .debugger-meta,
   .memory-form span,
+  .memory-search-copy p,
+  .memory-search-row,
+  .memory-search-stats,
   .register-label,
   .memory-address,
   .memory-ascii,
@@ -574,7 +650,88 @@
   }
 
   .debugger-memory-section {
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  .memory-search-panel {
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(213, 255, 118, 0.14);
+  }
+
+  .memory-search-header,
+  .memory-search-stats,
+  .memory-search-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .memory-search-header {
+    justify-content: space-between;
+  }
+
+  .memory-search-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .memory-search-copy strong {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .memory-search-copy p,
+  .memory-search-empty {
+    margin: 0;
+    color: rgba(235, 243, 196, 0.78);
+  }
+
+  .memory-search-actions {
+    flex-shrink: 0;
+  }
+
+  .memory-search-actions .debugger-action {
+    min-width: 96px;
+  }
+
+  .memory-search-stats {
+    flex-wrap: wrap;
+    color: rgba(235, 243, 196, 0.72);
+  }
+
+  .memory-search-grid {
+    display: grid;
+    gap: 6px;
+    max-height: min(28dvh, 240px);
+    min-height: 0;
+    padding-right: 6px;
+    overflow: auto;
+  }
+
+  .memory-search-row {
+    display: grid;
+    grid-template-columns: 5ch 4ch 4ch 4ch;
+    gap: 12px;
+    align-items: center;
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    white-space: pre;
+  }
+
+  .memory-search-heading {
+    color: #b9cf81;
+    text-transform: uppercase;
+  }
+
+  .memory-search-empty {
+    padding: 2px 0;
   }
 
   .memory-grid {
@@ -657,6 +814,25 @@
       grid-template-columns: 1fr;
       width: 100%;
       min-width: 0;
+    }
+
+    .memory-search-header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .memory-search-actions {
+      width: 100%;
+    }
+
+    .memory-search-actions .debugger-action {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .memory-search-row {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .memory-bytes {

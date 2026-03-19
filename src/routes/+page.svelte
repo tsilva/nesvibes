@@ -209,6 +209,7 @@
   function loadRomBytes(bytes, successMessage) {
     try {
       emulator.loadRomBytes(bytes);
+      debuggerController?.resetMemorySearch();
       refreshDebugger();
       setStageMode("loaded");
       setLoadedOverlay(successMessage);
