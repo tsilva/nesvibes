@@ -523,14 +523,15 @@ canvas {
 
 .controller-shell {
   position: relative;
-  width: min(100%, 640px);
-  padding: 20px 24px 28px;
-  background: linear-gradient(180deg, #f4f2ed 0%, #e8e4dc 64%, #dad4cb 100%);
-  border: 2px solid #d6d0c8;
-  border-radius: 10px;
+  width: min(100%, 648px);
+  padding: 18px 24px 28px;
+  background: linear-gradient(180deg, #f7f4ee 0%, #eee9e0 68%, #ddd7cd 100%);
+  border: 2px solid #d4cec5;
+  border-radius: 6px;
   box-shadow:
-    0 0 0 2px #f8f6f1,
-    0 10px 24px rgba(0, 0, 0, 0.18);
+    inset 0 -6px 0 rgba(203, 196, 186, 0.72),
+    0 0 0 1px #faf8f4,
+    0 10px 20px rgba(0, 0, 0, 0.16);
   overflow: visible;
   animation: banner-rise 720ms steps(6, end) 120ms both;
 }
@@ -544,7 +545,9 @@ canvas {
 
 .controller-shell::before {
   inset: 16px 18px 14px;
-  background: linear-gradient(180deg, #3b3d45 0%, #24262d 100%);
+  background:
+    linear-gradient(90deg, #2f3139 0 28%, #353841 28% 59%, #2c2e36 59% 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%);
   border-radius: 4px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -553,28 +556,31 @@ canvas {
 }
 
 .controller-shell::after {
-  inset: 16px 18px 14px;
+  top: 26px;
+  bottom: 24px;
+  left: 50%;
+  width: 182px;
+  transform: translateX(-50%);
   background:
-    linear-gradient(90deg, transparent 0 30%, rgba(130, 136, 148, 0.8) 30% 62%, transparent 62%),
-    linear-gradient(180deg, transparent 0 10%, rgba(130, 136, 148, 0.82) 10% 21%, transparent 21% 38%, rgba(130, 136, 148, 0.82) 38% 49%, transparent 49% 74%, rgba(130, 136, 148, 0.82) 74% 85%, transparent 85% 100%);
+    linear-gradient(180deg, transparent 0 3%, rgba(128, 134, 145, 0.92) 3% 13%, transparent 13% 28%, rgba(128, 134, 145, 0.92) 28% 38%, transparent 38% 76%, rgba(128, 134, 145, 0.92) 76% 86%, transparent 86% 100%);
   border-radius: 4px;
-  opacity: 0.92;
+  opacity: 0.88;
 }
 
 .controller-body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 148px minmax(150px, 1fr) 148px;
+  grid-template-columns: 156px minmax(156px, 1fr) 156px;
   align-items: center;
-  gap: 24px;
+  gap: 18px;
 }
 
 .dpad-cluster {
   position: relative;
   justify-self: start;
-  width: 116px;
-  height: 116px;
+  width: 126px;
+  height: 126px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -586,11 +592,11 @@ canvas {
 .dpad-cluster::before {
   content: "";
   position: absolute;
-  inset: 8px;
+  inset: 6px;
   background:
-    linear-gradient(90deg, transparent 0 31%, rgba(236, 236, 242, 0.92) 31% 69%, transparent 69%),
-    linear-gradient(transparent 0 31%, rgba(236, 236, 242, 0.92) 31% 69%, transparent 69%);
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
+    linear-gradient(90deg, transparent 0 29%, rgba(244, 244, 247, 0.98) 29% 71%, transparent 71%),
+    linear-gradient(transparent 0 29%, rgba(244, 244, 247, 0.98) 29% 71%, transparent 71%);
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28));
   opacity: 0.95;
 }
 
@@ -618,8 +624,8 @@ canvas {
   position: relative;
   grid-column: 2;
   grid-row: 2;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 2px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%),
@@ -632,7 +638,7 @@ canvas {
 .dpad-core::after {
   content: "";
   position: absolute;
-  inset: 11px;
+  inset: 13px;
   background: radial-gradient(circle, #656872 0%, #2d3038 72%, transparent 74%);
 }
 
@@ -640,12 +646,12 @@ canvas {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .controller-badge {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: center;
   width: 100%;
   text-align: center;
@@ -653,9 +659,9 @@ canvas {
 
 .controller-stripe {
   display: block;
-  width: min(100%, 128px);
-  height: 12px;
-  border-radius: 6px;
+  width: min(100%, 138px);
+  height: 10px;
+  border-radius: 4px;
   background: linear-gradient(180deg, #808691 0%, #696e79 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
@@ -664,7 +670,7 @@ canvas {
 
 .controller-badge-text {
   display: flex;
-  gap: 18px;
+  gap: 22px;
   align-items: center;
   justify-content: center;
 }
@@ -677,13 +683,13 @@ canvas {
 }
 
 .controller-brand {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   color: #c8463c;
 }
 
 .controller-player {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   color: #c8463c;
 }
@@ -693,11 +699,11 @@ canvas {
   justify-self: center;
   display: flex;
   justify-content: center;
-  gap: 20px;
-  padding: 14px 18px 12px;
-  background: linear-gradient(180deg, #f4f4f2 0%, #ddddda 100%);
+  gap: 18px;
+  padding: 11px 18px 10px;
+  background: linear-gradient(180deg, #f8f7f3 0%, #e7e3dc 100%);
   border: 2px solid #cbc8c2;
-  border-radius: 4px;
+  border-radius: 3px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
     0 2px 8px rgba(0, 0, 0, 0.12);
@@ -708,8 +714,8 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 22px;
-  padding-right: 10px;
+  gap: 18px;
+  padding-right: 8px;
 }
 
 .pad-button {
@@ -755,8 +761,8 @@ canvas {
 }
 
 .dpad-button {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   margin: 0;
   border-radius: 2px;
   z-index: 1;
@@ -775,28 +781,28 @@ canvas {
 }
 
 .dpad-button.up::before {
-  border-width: 0 6px 9px 6px;
+  border-width: 0 7px 10px 7px;
   border-color: transparent transparent #5e646f transparent;
 }
 
 .dpad-button.left::before {
-  border-width: 6px 9px 6px 0;
+  border-width: 7px 10px 7px 0;
   border-color: transparent #5e646f transparent transparent;
 }
 
 .dpad-button.right::before {
-  border-width: 6px 0 6px 9px;
+  border-width: 7px 0 7px 10px;
   border-color: transparent transparent transparent #5e646f;
 }
 
 .dpad-button.down::before {
-  border-width: 9px 6px 0 6px;
+  border-width: 10px 7px 0 7px;
   border-color: #5e646f transparent transparent transparent;
 }
 
 .system-button {
-  min-width: 42px;
-  min-height: 18px;
+  min-width: 40px;
+  min-height: 16px;
   border-radius: 999px;
   transform: none;
 }
@@ -848,8 +854,8 @@ canvas {
 
 .action-button {
   position: relative;
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   gap: 0;
@@ -864,11 +870,11 @@ canvas {
 .action-button::before {
   content: "";
   position: absolute;
-  inset: -8px;
+  inset: -10px;
   z-index: -1;
   background: linear-gradient(180deg, #faf9f4 0%, #d7d3cc 100%);
   border: 2px solid #c4c0ba;
-  border-radius: 4px;
+  border-radius: 2px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 2px 6px rgba(0, 0, 0, 0.12);
@@ -889,7 +895,7 @@ canvas {
 .action-button-label {
   font-family: var(--font-display);
   position: absolute;
-  bottom: -22px;
+  bottom: -24px;
   font-size: 10px;
   line-height: 1;
   letter-spacing: 0.08em;
@@ -909,6 +915,14 @@ canvas {
     0 0 0 2px rgba(255, 255, 255, 0.18),
     0 0 10px rgba(228, 0, 15, 0.16),
     0 4px 6px rgba(0, 0, 0, 0.16);
+}
+
+.action-button.secondary {
+  transform: translateY(2px);
+}
+
+.action-button.secondary.pressed {
+  transform: translateY(3px) scale(0.98);
 }
 
 .launcher-shell {

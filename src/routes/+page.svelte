@@ -26,11 +26,15 @@
     { button: "b", label: "B", key: "Z", tone: "secondary" },
     { button: "a", label: "A", key: "X", tone: "primary" },
   ];
+  const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
 
   let canvas;
   let stageElement;
   let emulator;
   let emulatorPromise;
+  let debuggerComponent = null;
+  let debuggerController = null;
+  let debuggerEnabled = false;
   let filePicker;
   let romCatalog = [];
   let activeCatalogId = "";
@@ -42,6 +46,37 @@
   let overlayTitle = "Drop a `.nes` ROM";
   let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
   let pressedButtons = createPressedButtons();
+
+  function refreshDebugger() {
+    debuggerController?.refresh();
+  }
+
+  async function enableDesktopDebugger() {
+    if (debuggerEnabled || typeof window === "undefined") {
+      return;
+    }
+
+    const [{ default: EmulatorDebugger }, { createEmulatorDebugger }] = await Promise.all([
+      import("$lib/components/EmulatorDebugger.svelte"),
+      import("$lib/debugger/create-emulator-debugger.js"),
+    ]);
+
+    debuggerController = createEmulatorDebugger();
+    debuggerComponent = EmulatorDebugger;
+    debuggerEnabled = true;
+
+    if (emulator) {
+      debuggerController.attachEmulator(emulator);
+      refreshDebugger();
+    }
+  }
+
+  function disableDesktopDebugger() {
+    debuggerController?.detachEmulator();
+    debuggerController = null;
+    debuggerComponent = null;
+    debuggerEnabled = false;
+  }
 
   function createPressedButtons() {
     return BUTTON_ORDER.reduce((state, button) => {
@@ -83,6 +118,9 @@
             canvas,
             onRuntimeError: handleEmulatorRuntimeError
           });
+          if (debuggerEnabled) {
+            debuggerController?.attachEmulator(emulator);
+          }
           return emulator;
         })
         .catch((error) => {
@@ -101,6 +139,7 @@
   }
 
   function handleEmulatorRuntimeError(error) {
+    refreshDebugger();
     setStageMode("error");
     setOverlay(
       "Emulation halted",
@@ -111,9 +150,11 @@
   function loadRomBytes(bytes, successMessage) {
     try {
       emulator.loadRomBytes(bytes);
+      refreshDebugger();
       setStageMode("loaded");
       setOverlay("Drop another ROM", successMessage);
     } catch (error) {
+      refreshDebugger();
       setStageMode("error");
       setOverlay(
         "ROM load failed",
@@ -251,9 +292,21 @@
   }
 
   onMount(() => {
+    const debuggerQuery = window.matchMedia(DESKTOP_DEBUGGER_QUERY);
+
     fullscreenSupported = typeof document.fullscreenEnabled === "boolean"
       ? document.fullscreenEnabled
       : typeof stageElement?.requestFullscreen === "function";
+
+    const syncDebuggerMode = () => {
+      if (debuggerQuery.matches) {
+        void enableDesktopDebugger().catch((error) => {
+          console.error(error);
+        });
+      } else {
+        disableDesktopDebugger();
+      }
+    };
 
     const handleKeydown = (event) => {
       if (event.code === "KeyF" && !event.repeat) {
@@ -347,6 +400,8 @@
 
     void loadBundledCatalog();
     syncFullscreenState();
+    syncDebuggerMode();
+    debuggerQuery.addEventListener("change", syncDebuggerMode);
 
     return () => {
       window.removeEventListener("keydown", handleKeydown);
@@ -358,7 +413,9 @@
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      debuggerQuery.removeEventListener("change", syncDebuggerMode);
       releaseAllInputs();
+      disableDesktopDebugger();
       emulator?.destroy();
       emulator = undefined;
       emulatorPromise = undefined;
@@ -424,6 +481,9 @@
         on:change={handleFilePickerChange}
       />
       <div class="stage-shell">
+        {#if debuggerComponent && debuggerController}
+          <svelte:component this={debuggerComponent} debuggerController={debuggerController} />
+        {/if}
         {#if fullscreenSupported}
           <button
             type="button"

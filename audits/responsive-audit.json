@@ -1,0 +1,1812 @@
+[
+  {
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "status": 200,
+    "consoleMessages": [],
+    "pageErrors": [],
+    "title": "NES Vibes",
+    "h1": "NESVibes",
+    "scrollWidth": 320,
+    "clientWidth": 320,
+    "scrollHeight": 930,
+    "overflow": 0,
+    "overflowingElements": [],
+    "interactive": [
+      {
+        "tag": "a",
+        "text": "Open NESVibes on GitHub",
+        "width": 40,
+        "height": 40,
+        "top": 117,
+        "left": 28,
+        "right": 68
+      },
+      {
+        "tag": "button",
+        "text": "PLAYER ONE READY Drop a `.nes` ROM Drop a ROM here, or click",
+        "width": 236,
+        "height": 188,
+        "top": 352,
+        "left": 42,
+        "right": 278
+      },
+      {
+        "tag": "button",
+        "text": "Bingo",
+        "width": 260,
+        "height": 34,
+        "top": 645,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "BombSweeper for NES",
+        "width": 260,
+        "height": 34,
+        "top": 684,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "CMC'80s",
+        "width": 260,
+        "height": 34,
+        "top": 724,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Elite",
+        "width": 260,
+        "height": 34,
+        "top": 763,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Flame",
+        "width": 260,
+        "height": 34,
+        "top": 803,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Flying Megaman",
+        "width": 260,
+        "height": 34,
+        "top": 842,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Game Genie",
+        "width": 260,
+        "height": 34,
+        "top": 882,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Greys",
+        "width": 260,
+        "height": 34,
+        "top": 921,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Halloween",
+        "width": 260,
+        "height": 34,
+        "top": 961,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Joystick Demo",
+        "width": 260,
+        "height": 34,
+        "top": 1000,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Motion",
+        "width": 260,
+        "height": 34,
+        "top": 1040,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterChromaLuma",
+        "width": 260,
+        "height": 34,
+        "top": 1079,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest1",
+        "width": 260,
+        "height": 34,
+        "top": 1119,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest2",
+        "width": 260,
+        "height": 34,
+        "top": 1158,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3",
+        "width": 260,
+        "height": 34,
+        "top": 1198,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3a",
+        "width": 260,
+        "height": 34,
+        "top": 1237,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3b",
+        "width": 260,
+        "height": 34,
+        "top": 1277,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3c",
+        "width": 260,
+        "height": 34,
+        "top": 1316,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3d",
+        "width": 260,
+        "height": 34,
+        "top": 1356,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3e",
+        "width": 260,
+        "height": 34,
+        "top": 1395,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Sack of Flour, Heart of Gold",
+        "width": 260,
+        "height": 34,
+        "top": 1435,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Sayoonara!",
+        "width": 260,
+        "height": 34,
+        "top": 1474,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "SNOW",
+        "width": 260,
+        "height": 34,
+        "top": 1514,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Solar Wars",
+        "width": 260,
+        "height": 34,
+        "top": 1553,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Sounds Demo",
+        "width": 260,
+        "height": 34,
+        "top": 1593,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Stars",
+        "width": 260,
+        "height": 34,
+        "top": 1632,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Stars Biology",
+        "width": 260,
+        "height": 34,
+        "top": 1672,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Stars Field",
+        "width": 260,
+        "height": 34,
+        "top": 1711,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Stretch",
+        "width": 260,
+        "height": 34,
+        "top": 1751,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Super Fighter",
+        "width": 260,
+        "height": 34,
+        "top": 1790,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Super Mario Clouds",
+        "width": 260,
+        "height": 34,
+        "top": 1830,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Tetramino",
+        "width": 260,
+        "height": 34,
+        "top": 1869,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "TMNT Demo",
+        "width": 260,
+        "height": 34,
+        "top": 1909,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Wall",
+        "width": 260,
+        "height": 34,
+        "top": 1948,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "Wavy",
+        "width": 260,
+        "height": 34,
+        "top": 1988,
+        "left": 28,
+        "right": 288
+      },
+      {
+        "tag": "button",
+        "text": "XMas 2001 Demo",
+        "width": 260,
+        "height": 34,
+        "top": 2027,
+        "left": 28,
+        "right": 288
+      }
+    ],
+    "fixed": [],
+    "textSample": "Input\nZ\nX\nShift\nEnter\n\n8-BIT ROM LAB\n\nNESVibes\n\nPlay NES directly in your browser.\n\nSingle javascript file (~2.9k LOC)\n\nPLAYER ONE READY\n\nDrop a `.nes` ROM\n\nDrop a ROM here, or click this prompt to choose one.\n\nPublic Domain ROMs\nBingo\nBombSweeper for NES\nCMC'80s\nElite\nFlame\nFlying Megaman\nGame Genie\nGreys\nHalloween\nJoystick Demo\nMotion\nRasterChromaLuma\nRasterTest1\nRasterTest2\nRasterTest3\nRasterTest3a\nRasterTest3b\nRasterTest3c\nRasterTest3d\nRasterTest3e\nSack of Flour, Heart of Gold\nSayoonara!\nSNOW\nSolar Wars\nSounds Demo\nStars\nStars Biology\nStars Field\nStretch\nSuper Fighter\nSuper Mario Clouds\nTetramino\nTMNT Demo\nWall\nWavy\nXMas 2001 Demo"
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "consoleMessages": [],
+    "pageErrors": [],
+    "title": "NES Vibes",
+    "h1": "NESVibes",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 1128,
+    "overflow": 0,
+    "overflowingElements": [],
+    "interactive": [
+      {
+        "tag": "a",
+        "text": "Open NESVibes on GitHub",
+        "width": 40,
+        "height": 40,
+        "top": 117,
+        "left": 28,
+        "right": 68
+      },
+      {
+        "tag": "button",
+        "text": "PLAYER ONE READY Drop a `.nes` ROM Drop a ROM here, or click",
+        "width": 306,
+        "height": 129,
+        "top": 399,
+        "left": 42,
+        "right": 348
+      },
+      {
+        "tag": "button",
+        "text": "Bingo",
+        "width": 330,
+        "height": 34,
+        "top": 694,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "BombSweeper for NES",
+        "width": 330,
+        "height": 34,
+        "top": 734,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "CMC'80s",
+        "width": 330,
+        "height": 34,
+        "top": 773,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Elite",
+        "width": 330,
+        "height": 34,
+        "top": 813,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Flame",
+        "width": 330,
+        "height": 34,
+        "top": 852,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Flying Megaman",
+        "width": 330,
+        "height": 34,
+        "top": 892,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Game Genie",
+        "width": 330,
+        "height": 34,
+        "top": 931,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Greys",
+        "width": 330,
+        "height": 34,
+        "top": 971,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Halloween",
+        "width": 330,
+        "height": 34,
+        "top": 1010,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Joystick Demo",
+        "width": 330,
+        "height": 34,
+        "top": 1050,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Motion",
+        "width": 330,
+        "height": 34,
+        "top": 1089,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterChromaLuma",
+        "width": 330,
+        "height": 34,
+        "top": 1129,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest1",
+        "width": 330,
+        "height": 34,
+        "top": 1168,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest2",
+        "width": 330,
+        "height": 34,
+        "top": 1208,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3",
+        "width": 330,
+        "height": 34,
+        "top": 1247,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3a",
+        "width": 330,
+        "height": 34,
+        "top": 1287,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3b",
+        "width": 330,
+        "height": 34,
+        "top": 1326,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3c",
+        "width": 330,
+        "height": 34,
+        "top": 1366,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3d",
+        "width": 330,
+        "height": 34,
+        "top": 1405,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3e",
+        "width": 330,
+        "height": 34,
+        "top": 1445,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Sack of Flour, Heart of Gold",
+        "width": 330,
+        "height": 34,
+        "top": 1484,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Sayoonara!",
+        "width": 330,
+        "height": 34,
+        "top": 1524,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "SNOW",
+        "width": 330,
+        "height": 34,
+        "top": 1563,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Solar Wars",
+        "width": 330,
+        "height": 34,
+        "top": 1603,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Sounds Demo",
+        "width": 330,
+        "height": 34,
+        "top": 1642,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Stars",
+        "width": 330,
+        "height": 34,
+        "top": 1682,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Stars Biology",
+        "width": 330,
+        "height": 34,
+        "top": 1721,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Stars Field",
+        "width": 330,
+        "height": 34,
+        "top": 1761,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Stretch",
+        "width": 330,
+        "height": 34,
+        "top": 1800,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Super Fighter",
+        "width": 330,
+        "height": 34,
+        "top": 1840,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Super Mario Clouds",
+        "width": 330,
+        "height": 34,
+        "top": 1879,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Tetramino",
+        "width": 330,
+        "height": 34,
+        "top": 1919,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "TMNT Demo",
+        "width": 330,
+        "height": 34,
+        "top": 1958,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Wall",
+        "width": 330,
+        "height": 34,
+        "top": 1998,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "Wavy",
+        "width": 330,
+        "height": 34,
+        "top": 2037,
+        "left": 28,
+        "right": 358
+      },
+      {
+        "tag": "button",
+        "text": "XMas 2001 Demo",
+        "width": 330,
+        "height": 34,
+        "top": 2077,
+        "left": 28,
+        "right": 358
+      }
+    ],
+    "fixed": [],
+    "textSample": "Input\nZ\nX\nShift\nEnter\n\n8-BIT ROM LAB\n\nNESVibes\n\nPlay NES directly in your browser.\n\nSingle javascript file (~2.9k LOC)\n\nPLAYER ONE READY\n\nDrop a `.nes` ROM\n\nDrop a ROM here, or click this prompt to choose one.\n\nPublic Domain ROMs\nBingo\nBombSweeper for NES\nCMC'80s\nElite\nFlame\nFlying Megaman\nGame Genie\nGreys\nHalloween\nJoystick Demo\nMotion\nRasterChromaLuma\nRasterTest1\nRasterTest2\nRasterTest3\nRasterTest3a\nRasterTest3b\nRasterTest3c\nRasterTest3d\nRasterTest3e\nSack of Flour, Heart of Gold\nSayoonara!\nSNOW\nSolar Wars\nSounds Demo\nStars\nStars Biology\nStars Field\nStretch\nSuper Fighter\nSuper Mario Clouds\nTetramino\nTMNT Demo\nWall\nWavy\nXMas 2001 Demo"
+  },
+  {
+    "viewport": {
+      "width": 768,
+      "height": 1024
+    },
+    "status": 200,
+    "consoleMessages": [],
+    "pageErrors": [],
+    "title": "NES Vibes",
+    "h1": "NESVibes",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "scrollHeight": 1610,
+    "overflow": 0,
+    "overflowingElements": [],
+    "interactive": [
+      {
+        "tag": "a",
+        "text": "Open NESVibes on GitHub",
+        "width": 44,
+        "height": 44,
+        "top": 117,
+        "left": 38,
+        "right": 82
+      },
+      {
+        "tag": "button",
+        "text": "PLAYER ONE READY Drop a `.nes` ROM Drop a ROM here, or click",
+        "width": 500,
+        "height": 122,
+        "top": 582,
+        "left": 134,
+        "right": 634
+      },
+      {
+        "tag": "button",
+        "text": "Bingo",
+        "width": 700,
+        "height": 34,
+        "top": 1048,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "BombSweeper for NES",
+        "width": 700,
+        "height": 34,
+        "top": 1087,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "CMC'80s",
+        "width": 700,
+        "height": 34,
+        "top": 1127,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Elite",
+        "width": 700,
+        "height": 34,
+        "top": 1166,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Flame",
+        "width": 700,
+        "height": 34,
+        "top": 1206,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Flying Megaman",
+        "width": 700,
+        "height": 34,
+        "top": 1245,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Game Genie",
+        "width": 700,
+        "height": 34,
+        "top": 1285,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Greys",
+        "width": 700,
+        "height": 34,
+        "top": 1324,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Halloween",
+        "width": 700,
+        "height": 34,
+        "top": 1364,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Joystick Demo",
+        "width": 700,
+        "height": 34,
+        "top": 1403,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Motion",
+        "width": 700,
+        "height": 34,
+        "top": 1443,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterChromaLuma",
+        "width": 700,
+        "height": 34,
+        "top": 1482,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest1",
+        "width": 700,
+        "height": 34,
+        "top": 1522,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest2",
+        "width": 700,
+        "height": 34,
+        "top": 1561,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3",
+        "width": 700,
+        "height": 34,
+        "top": 1601,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3a",
+        "width": 700,
+        "height": 34,
+        "top": 1640,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3b",
+        "width": 700,
+        "height": 34,
+        "top": 1680,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3c",
+        "width": 700,
+        "height": 34,
+        "top": 1719,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3d",
+        "width": 700,
+        "height": 34,
+        "top": 1759,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3e",
+        "width": 700,
+        "height": 34,
+        "top": 1798,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Sack of Flour, Heart of Gold",
+        "width": 700,
+        "height": 34,
+        "top": 1838,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Sayoonara!",
+        "width": 700,
+        "height": 34,
+        "top": 1877,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "SNOW",
+        "width": 700,
+        "height": 34,
+        "top": 1917,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Solar Wars",
+        "width": 700,
+        "height": 34,
+        "top": 1956,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Sounds Demo",
+        "width": 700,
+        "height": 34,
+        "top": 1996,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Stars",
+        "width": 700,
+        "height": 34,
+        "top": 2035,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Stars Biology",
+        "width": 700,
+        "height": 34,
+        "top": 2075,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Stars Field",
+        "width": 700,
+        "height": 34,
+        "top": 2114,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Stretch",
+        "width": 700,
+        "height": 34,
+        "top": 2154,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Super Fighter",
+        "width": 700,
+        "height": 34,
+        "top": 2193,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Super Mario Clouds",
+        "width": 700,
+        "height": 34,
+        "top": 2233,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Tetramino",
+        "width": 700,
+        "height": 34,
+        "top": 2272,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "TMNT Demo",
+        "width": 700,
+        "height": 34,
+        "top": 2312,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Wall",
+        "width": 700,
+        "height": 34,
+        "top": 2351,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "Wavy",
+        "width": 700,
+        "height": 34,
+        "top": 2391,
+        "left": 32,
+        "right": 732
+      },
+      {
+        "tag": "button",
+        "text": "XMas 2001 Demo",
+        "width": 700,
+        "height": 34,
+        "top": 2430,
+        "left": 32,
+        "right": 732
+      }
+    ],
+    "fixed": [],
+    "textSample": "Input\nZ\nX\nShift\nEnter\n\n8-BIT ROM LAB\n\nNESVibes\n\nPlay NES directly in your browser.\n\nSingle javascript file (~2.9k LOC)\n\nPLAYER ONE READY\n\nDrop a `.nes` ROM\n\nDrop a ROM here, or click this prompt to choose one.\n\nPublic Domain ROMs\nBingo\nBombSweeper for NES\nCMC'80s\nElite\nFlame\nFlying Megaman\nGame Genie\nGreys\nHalloween\nJoystick Demo\nMotion\nRasterChromaLuma\nRasterTest1\nRasterTest2\nRasterTest3\nRasterTest3a\nRasterTest3b\nRasterTest3c\nRasterTest3d\nRasterTest3e\nSack of Flour, Heart of Gold\nSayoonara!\nSNOW\nSolar Wars\nSounds Demo\nStars\nStars Biology\nStars Field\nStretch\nSuper Fighter\nSuper Mario Clouds\nTetramino\nTMNT Demo\nWall\nWavy\nXMas 2001 Demo"
+  },
+  {
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    },
+    "status": 200,
+    "consoleMessages": [],
+    "pageErrors": [],
+    "title": "NES Vibes",
+    "h1": "NESVibes",
+    "scrollWidth": 1024,
+    "clientWidth": 1024,
+    "scrollHeight": 768,
+    "overflow": 0,
+    "overflowingElements": [],
+    "interactive": [
+      {
+        "tag": "a",
+        "text": "Open NESVibes on GitHub",
+        "width": 44,
+        "height": 44,
+        "top": 28,
+        "left": 948,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "PLAYER ONE READY Drop a `.nes` ROM Drop a ROM here, or click",
+        "width": 500,
+        "height": 112,
+        "top": 391,
+        "left": 102,
+        "right": 602
+      },
+      {
+        "tag": "button",
+        "text": "Bingo",
+        "width": 278,
+        "height": 34,
+        "top": 182,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "BombSweeper for NES",
+        "width": 278,
+        "height": 34,
+        "top": 222,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "CMC'80s",
+        "width": 278,
+        "height": 34,
+        "top": 261,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Elite",
+        "width": 278,
+        "height": 34,
+        "top": 301,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Flame",
+        "width": 278,
+        "height": 34,
+        "top": 340,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Flying Megaman",
+        "width": 278,
+        "height": 34,
+        "top": 380,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Game Genie",
+        "width": 278,
+        "height": 34,
+        "top": 419,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Greys",
+        "width": 278,
+        "height": 34,
+        "top": 459,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Halloween",
+        "width": 278,
+        "height": 34,
+        "top": 498,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Joystick Demo",
+        "width": 278,
+        "height": 34,
+        "top": 538,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Motion",
+        "width": 278,
+        "height": 34,
+        "top": 577,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterChromaLuma",
+        "width": 278,
+        "height": 34,
+        "top": 617,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest1",
+        "width": 278,
+        "height": 34,
+        "top": 656,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest2",
+        "width": 278,
+        "height": 34,
+        "top": 696,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3",
+        "width": 278,
+        "height": 34,
+        "top": 735,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3a",
+        "width": 278,
+        "height": 34,
+        "top": 775,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3b",
+        "width": 278,
+        "height": 34,
+        "top": 814,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3c",
+        "width": 278,
+        "height": 34,
+        "top": 854,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3d",
+        "width": 278,
+        "height": 34,
+        "top": 893,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3e",
+        "width": 278,
+        "height": 34,
+        "top": 933,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Sack of Flour, Heart of Gold",
+        "width": 278,
+        "height": 34,
+        "top": 972,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Sayoonara!",
+        "width": 278,
+        "height": 34,
+        "top": 1012,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "SNOW",
+        "width": 278,
+        "height": 34,
+        "top": 1051,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Solar Wars",
+        "width": 278,
+        "height": 34,
+        "top": 1091,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Sounds Demo",
+        "width": 278,
+        "height": 34,
+        "top": 1130,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Stars",
+        "width": 278,
+        "height": 34,
+        "top": 1170,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Stars Biology",
+        "width": 278,
+        "height": 34,
+        "top": 1209,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Stars Field",
+        "width": 278,
+        "height": 34,
+        "top": 1249,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Stretch",
+        "width": 278,
+        "height": 34,
+        "top": 1288,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Super Fighter",
+        "width": 278,
+        "height": 34,
+        "top": 1328,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Super Mario Clouds",
+        "width": 278,
+        "height": 34,
+        "top": 1367,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Tetramino",
+        "width": 278,
+        "height": 34,
+        "top": 1407,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "TMNT Demo",
+        "width": 278,
+        "height": 34,
+        "top": 1446,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Wall",
+        "width": 278,
+        "height": 34,
+        "top": 1486,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "Wavy",
+        "width": 278,
+        "height": 34,
+        "top": 1525,
+        "left": 714,
+        "right": 992
+      },
+      {
+        "tag": "button",
+        "text": "XMas 2001 Demo",
+        "width": 278,
+        "height": 34,
+        "top": 1565,
+        "left": 714,
+        "right": 992
+      }
+    ],
+    "fixed": [],
+    "textSample": "Input\nZ\nX\nShift\nEnter\n\n8-BIT ROM LAB\n\nNESVibes\n\nPlay NES directly in your browser.\n\nSingle javascript file (~2.9k LOC)\n\nPLAYER ONE READY\n\nDrop a `.nes` ROM\n\nDrop a ROM here, or click this prompt to choose one.\n\nPublic Domain ROMs\nBingo\nBombSweeper for NES\nCMC'80s\nElite\nFlame\nFlying Megaman\nGame Genie\nGreys\nHalloween\nJoystick Demo\nMotion\nRasterChromaLuma\nRasterTest1\nRasterTest2\nRasterTest3\nRasterTest3a\nRasterTest3b\nRasterTest3c\nRasterTest3d\nRasterTest3e\nSack of Flour, Heart of Gold\nSayoonara!\nSNOW\nSolar Wars\nSounds Demo\nStars\nStars Biology\nStars Field\nStretch\nSuper Fighter\nSuper Mario Clouds\nTetramino\nTMNT Demo\nWall\nWavy\nXMas 2001 Demo"
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "consoleMessages": [],
+    "pageErrors": [],
+    "title": "NES Vibes",
+    "h1": "NESVibes",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "scrollHeight": 900,
+    "overflow": 0,
+    "overflowingElements": [],
+    "interactive": [
+      {
+        "tag": "a",
+        "text": "Open NESVibes on GitHub",
+        "width": 44,
+        "height": 44,
+        "top": 32,
+        "left": 1278,
+        "right": 1322
+      },
+      {
+        "tag": "button",
+        "text": "PLAYER ONE READY Drop a `.nes` ROM Drop a ROM here, or click",
+        "width": 500,
+        "height": 162,
+        "top": 451,
+        "left": 259,
+        "right": 759
+      },
+      {
+        "tag": "button",
+        "text": "Bingo",
+        "width": 373,
+        "height": 34,
+        "top": 225,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "BombSweeper for NES",
+        "width": 373,
+        "height": 34,
+        "top": 265,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "CMC'80s",
+        "width": 373,
+        "height": 34,
+        "top": 304,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Elite",
+        "width": 373,
+        "height": 34,
+        "top": 344,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Flame",
+        "width": 373,
+        "height": 34,
+        "top": 383,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Flying Megaman",
+        "width": 373,
+        "height": 34,
+        "top": 423,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Game Genie",
+        "width": 373,
+        "height": 34,
+        "top": 462,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Greys",
+        "width": 373,
+        "height": 34,
+        "top": 502,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Halloween",
+        "width": 373,
+        "height": 34,
+        "top": 541,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Joystick Demo",
+        "width": 373,
+        "height": 34,
+        "top": 581,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Motion",
+        "width": 373,
+        "height": 34,
+        "top": 620,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterChromaLuma",
+        "width": 373,
+        "height": 34,
+        "top": 660,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest1",
+        "width": 373,
+        "height": 34,
+        "top": 699,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest2",
+        "width": 373,
+        "height": 34,
+        "top": 739,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3",
+        "width": 373,
+        "height": 34,
+        "top": 778,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3a",
+        "width": 373,
+        "height": 34,
+        "top": 818,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3b",
+        "width": 373,
+        "height": 34,
+        "top": 857,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3c",
+        "width": 373,
+        "height": 34,
+        "top": 897,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3d",
+        "width": 373,
+        "height": 34,
+        "top": 936,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "RasterTest3e",
+        "width": 373,
+        "height": 34,
+        "top": 976,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Sack of Flour, Heart of Gold",
+        "width": 373,
+        "height": 34,
+        "top": 1015,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Sayoonara!",
+        "width": 373,
+        "height": 34,
+        "top": 1055,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "SNOW",
+        "width": 373,
+        "height": 34,
+        "top": 1094,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Solar Wars",
+        "width": 373,
+        "height": 34,
+        "top": 1134,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Sounds Demo",
+        "width": 373,
+        "height": 34,
+        "top": 1173,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Stars",
+        "width": 373,
+        "height": 34,
+        "top": 1213,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Stars Biology",
+        "width": 373,
+        "height": 34,
+        "top": 1252,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Stars Field",
+        "width": 373,
+        "height": 34,
+        "top": 1292,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Stretch",
+        "width": 373,
+        "height": 34,
+        "top": 1331,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Super Fighter",
+        "width": 373,
+        "height": 34,
+        "top": 1371,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Super Mario Clouds",
+        "width": 373,
+        "height": 34,
+        "top": 1410,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Tetramino",
+        "width": 373,
+        "height": 34,
+        "top": 1450,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "TMNT Demo",
+        "width": 373,
+        "height": 34,
+        "top": 1489,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Wall",
+        "width": 373,
+        "height": 34,
+        "top": 1529,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "Wavy",
+        "width": 373,
+        "height": 34,
+        "top": 1568,
+        "left": 947,
+        "right": 1320
+      },
+      {
+        "tag": "button",
+        "text": "XMas 2001 Demo",
+        "width": 373,
+        "height": 34,
+        "top": 1608,
+        "left": 947,
+        "right": 1320
+      }
+    ],
+    "fixed": [],
+    "textSample": "Input\nZ\nX\nShift\nEnter\n\n8-BIT ROM LAB\n\nNESVibes\n\nPlay NES directly in your browser.\n\nSingle javascript file (~2.9k LOC)\n\nPLAYER ONE READY\n\nDrop a `.nes` ROM\n\nDrop a ROM here, or click this prompt to choose one.\n\nPublic Domain ROMs\nBingo\nBombSweeper for NES\nCMC'80s\nElite\nFlame\nFlying Megaman\nGame Genie\nGreys\nHalloween\nJoystick Demo\nMotion\nRasterChromaLuma\nRasterTest1\nRasterTest2\nRasterTest3\nRasterTest3a\nRasterTest3b\nRasterTest3c\nRasterTest3d\nRasterTest3e\nSack of Flour, Heart of Gold\nSayoonara!\nSNOW\nSolar Wars\nSounds Demo\nStars\nStars Biology\nStars Field\nStretch\nSuper Fighter\nSuper Mario Clouds\nTetramino\nTMNT Demo\nWall\nWavy\nXMas 2001 Demo"
+  }
+]

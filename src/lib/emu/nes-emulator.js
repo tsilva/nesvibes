@@ -2808,7 +2808,89 @@ export function createNesEmulator({
   const audioDriver = new AudioDriver(onAudioStatus);
   let activeNES = null;
   let frameHandle = 0;
+  let isPaused = false;
   let loopGeneration = 0;
+
+  function stepCpuInstruction(nes) {
+    const cpuCycles = nes.cpu.step();
+
+    for (let i = 0; i < cpuCycles; i += 1) {
+      nes.bus.apu.stepCpuCycle();
+    }
+
+    for (let i = 0; i < cpuCycles * 3; i += 1) {
+      nes.bus.ppu.step();
+    }
+  }
+
+  function getDebugByte(nes, address) {
+    const normalizedAddress = address & 0xffff;
+
+    if (normalizedAddress < 0x2000) {
+      return nes.bus.cpuRam[normalizedAddress & 0x07ff];
+    }
+
+    if (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000) {
+      return nes.bus.cartridge.readPrgRam(normalizedAddress);
+    }
+
+    if (normalizedAddress >= 0x8000) {
+      return nes.bus.cartridge.readPrg(normalizedAddress);
+    }
+
+    return null;
+  }
+
+  function getDebugSnapshot({
+    length = 0x80,
+    startAddress = 0x0000,
+  } = {}) {
+    if (!activeNES) {
+      return null;
+    }
+
+    const safeLength = Math.min(0x100, Math.max(0x10, length | 0));
+    const baseAddress = startAddress & 0xffff;
+    const memory = new Array(safeLength);
+
+    for (let index = 0; index < safeLength; index += 1) {
+      memory[index] = getDebugByte(activeNES, baseAddress + index);
+    }
+
+    return {
+      memory: {
+        bytes: memory,
+        length: safeLength,
+        startAddress: baseAddress,
+      },
+      paused: isPaused,
+      cpu: {
+        a: activeNES.cpu.a,
+        flags: [
+          { label: "N", enabled: activeNES.cpu.getFlag(CPU_FLAG_NEGATIVE) },
+          { label: "V", enabled: activeNES.cpu.getFlag(CPU_FLAG_OVERFLOW) },
+          { label: "U", enabled: activeNES.cpu.getFlag(CPU_FLAG_UNUSED) },
+          { label: "B", enabled: activeNES.cpu.getFlag(CPU_FLAG_BREAK) },
+          { label: "D", enabled: activeNES.cpu.getFlag(CPU_FLAG_DECIMAL) },
+          { label: "I", enabled: activeNES.cpu.getFlag(CPU_FLAG_INTERRUPT) },
+          { label: "Z", enabled: activeNES.cpu.getFlag(CPU_FLAG_ZERO) },
+          { label: "C", enabled: activeNES.cpu.getFlag(CPU_FLAG_CARRY) },
+        ],
+        p: activeNES.cpu.p,
+        pc: activeNES.cpu.pc,
+        s: activeNES.cpu.s,
+        stallCycles: activeNES.cpu.stallCycles,
+        x: activeNES.cpu.x,
+        y: activeNES.cpu.y,
+      },
+      ppu: {
+        cycle: activeNES.bus.ppu.cycle,
+        frameReady: activeNES.bus.ppu.frameReady,
+        scanline: activeNES.bus.ppu.scanline,
+        status: activeNES.bus.ppu.status,
+      },
+    };
+  }
 
   function drawPlaceholder() {
     context.fillStyle = "#000";
@@ -2824,6 +2906,7 @@ export function createNesEmulator({
     if (activeNES) {
       activeNES.releaseAllButtons();
     }
+    isPaused = false;
     activeNES = null;
     audioDriver.clear();
   }
@@ -2831,6 +2914,7 @@ export function createNesEmulator({
   function bootNES(nes) {
     stopActiveLoop();
     activeNES = nes;
+    isPaused = false;
     activeNES.present();
 
     let previousFrameTime = performance.now();
@@ -2844,6 +2928,14 @@ export function createNesEmulator({
       }
 
       try {
+        if (isPaused) {
+          previousFrameTime = now;
+          lag = 0;
+          nes.present();
+          frameHandle = requestAnimationFrame(frame);
+          return;
+        }
+
         lag += Math.min(100, now - previousFrameTime);
         previousFrameTime = now;
 
@@ -2906,6 +2998,45 @@ export function createNesEmulator({
     activeNES?.releaseAllButtons();
   }
 
+  function pause() {
+    if (!activeNES) {
+      return false;
+    }
+
+    isPaused = true;
+    activeNES.releaseAllButtons();
+    return true;
+  }
+
+  function resume() {
+    if (!activeNES) {
+      return false;
+    }
+
+    isPaused = false;
+    return true;
+  }
+
+  function stepInstruction() {
+    if (!activeNES) {
+      return null;
+    }
+
+    isPaused = true;
+
+    try {
+      stepCpuInstruction(activeNES);
+      activeNES.present();
+      return getDebugSnapshot();
+    } catch (error) {
+      console.error(error);
+      stopActiveLoop();
+      drawPlaceholder();
+      onRuntimeError(error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  }
+
   function destroy() {
     stopActiveLoop();
   }
@@ -2916,11 +3047,16 @@ export function createNesEmulator({
     destroy,
     drawPlaceholder,
     enableAudio,
+    getDebugSnapshot,
     hasActiveRom: () => activeNES !== null,
+    isPaused: () => isPaused,
     loadRomBytes,
+    pause,
     releaseAllButtons,
+    resume,
     setButton,
     setButtonByCode,
+    stepInstruction,
     stop: stopActiveLoop,
   };
 }
