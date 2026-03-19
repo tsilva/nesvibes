@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+Host: https://nesvibes.tsilva.eu
+Sitemap: https://nesvibes.tsilva.eu/sitemap.xml

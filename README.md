@@ -5,7 +5,7 @@
   [![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://nesvibes.tsilva.eu)
   [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-  **🎮 Play NES classics right in your browser — no downloads, no plugins, pure vibes 🕹️**
+  **Play public-domain and homebrew NES games right in your browser. No downloads, no plugins, just instant retro play.**
 
   [Live Demo](https://nesvibes.tsilva.eu) · [GitHub](https://github.com/tsilva/nesvibes)
 </div>
@@ -16,7 +16,7 @@
 
 **The Pain:** Setting up NES emulators means downloading apps, hunting for ROMs, and fiddling with configs — just to play a quick round of a retro game.
 
-**The Solution:** nesvibes is a browser-native NES emulator built with SvelteKit. It ships with 35 public-domain ROMs ready to play, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
+**The Solution:** nesvibes is a browser-native NES emulator built with SvelteKit. It ships with 35 playable public-domain ROMs, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
 
 **The Result:** Open a URL, pick a game, play. Zero setup, works on desktop and mobile.
 
@@ -60,6 +60,12 @@ Build for production:
 
 ```bash
 npm run build
+```
+
+Run the project checks:
+
+```bash
+npm run check
 ```
 
 ## 🎮 Controls

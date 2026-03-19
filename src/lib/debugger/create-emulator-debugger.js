@@ -1,7 +1,7 @@
 import { get, writable } from "svelte/store";
 
 const DEFAULT_MEMORY_ADDRESS = 0x0000;
-const DEFAULT_MEMORY_LENGTH = 0x80;
+const DEFAULT_MEMORY_LENGTH = 0x100;
 const POLL_INTERVAL_MS = 150;
 
 function createInitialState() {

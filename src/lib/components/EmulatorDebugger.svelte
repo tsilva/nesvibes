@@ -114,85 +114,89 @@
       </div>
 
       {#if !state.hasRom}
-        <div class="debugger-empty">
-          <strong>No ROM loaded</strong>
-          <p>Load a cartridge to inspect registers and CPU memory.</p>
+        <div class="debugger-body">
+          <div class="debugger-empty">
+            <strong>No ROM loaded</strong>
+            <p>Load a cartridge to inspect registers and CPU memory.</p>
+          </div>
         </div>
       {:else}
-        <div class="debugger-meta">
-          <span>{state.paused ? "Paused" : "Running"}</span>
-          <span>Scanline {snapshot.ppu.scanline}</span>
-          <span>Cycle {snapshot.ppu.cycle}</span>
-          <span>Stall {snapshot.cpu.stallCycles}</span>
-        </div>
-
-        <section class="debugger-section" aria-label="CPU registers">
-          <div class="debugger-section-header">
-            <h2>Registers</h2>
-            <span class="debugger-chip">6502</span>
+        <div class="debugger-body debugger-body-loaded">
+          <div class="debugger-meta">
+            <span>{state.paused ? "Paused" : "Running"}</span>
+            <span>Scanline {snapshot.ppu.scanline}</span>
+            <span>Cycle {snapshot.ppu.cycle}</span>
+            <span>Stall {snapshot.cpu.stallCycles}</span>
           </div>
 
-          <div class="register-grid">
-            {#each REGISTER_FIELDS as field (field.key)}
-              <div class="register-card">
-                <span class="register-label">{field.label}</span>
-                <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
-              </div>
-            {/each}
-          </div>
+          <section class="debugger-section" aria-label="CPU registers">
+            <div class="debugger-section-header">
+              <h2>Registers</h2>
+              <span class="debugger-chip">6502</span>
+            </div>
 
-          <div class="flag-row" aria-label="CPU flags">
-            {#each snapshot.cpu.flags as flag (flag.label)}
-              <span class={`flag-chip ${flag.enabled ? "active" : ""}`.trim()}>
-                {flag.label}
-              </span>
-            {/each}
-          </div>
-        </section>
-
-        <section class="debugger-section" aria-label="CPU RAM monitor">
-          <div class="debugger-section-header">
-            <h2>RAM Monitor</h2>
-            <span class="debugger-chip">CPU bus</span>
-          </div>
-
-          <form class="memory-form" on:submit|preventDefault={submitMemoryAddress}>
-            <label>
-              <span>Address</span>
-              <input
-                type="text"
-                inputmode="text"
-                maxlength="6"
-                spellcheck="false"
-                value={state.memoryInput}
-                on:input={(event) => debuggerController.setMemoryInput(event.currentTarget.value)}
-              />
-            </label>
-            <button type="submit" class="debugger-action">Go</button>
-          </form>
-
-          {#if state.memoryError}
-            <p class="memory-error">{state.memoryError}</p>
-          {/if}
-
-          <div class="memory-grid" role="table" aria-label="Memory bytes">
-            {#each memoryRows as row, rowIndex (`row-${rowIndex}`)}
-              <div class="memory-row" role="row">
-                <span class="memory-address" role="cell">
-                  {formatHex(snapshot.memory.startAddress + rowIndex * 16, 4)}
-                </span>
-                <div class="memory-bytes" role="cell">
-                  {#each row as value, byteIndex (`byte-${rowIndex}-${byteIndex}`)}
-                    <span>{formatHex(value, 2)}</span>
-                  {/each}
+            <div class="register-grid">
+              {#each REGISTER_FIELDS as field (field.key)}
+                <div class="register-card">
+                  <span class="register-label">{field.label}</span>
+                  <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
                 </div>
-                <span class="memory-ascii" role="cell">
-                  {row.map(formatAscii).join("")}
+              {/each}
+            </div>
+
+            <div class="flag-row" aria-label="CPU flags">
+              {#each snapshot.cpu.flags as flag (flag.label)}
+                <span class={`flag-chip ${flag.enabled ? "active" : ""}`.trim()}>
+                  {flag.label}
                 </span>
-              </div>
-            {/each}
-          </div>
-        </section>
+              {/each}
+            </div>
+          </section>
+
+          <section class="debugger-section debugger-memory-section" aria-label="CPU RAM monitor">
+            <div class="debugger-section-header">
+              <h2>RAM Monitor</h2>
+              <span class="debugger-chip">CPU bus</span>
+            </div>
+
+            <form class="memory-form" on:submit|preventDefault={submitMemoryAddress}>
+              <label>
+                <span>Address</span>
+                <input
+                  type="text"
+                  inputmode="text"
+                  maxlength="6"
+                  spellcheck="false"
+                  value={state.memoryInput}
+                  on:input={(event) => debuggerController.setMemoryInput(event.currentTarget.value)}
+                />
+              </label>
+              <button type="submit" class="debugger-action">Go</button>
+            </form>
+
+            {#if state.memoryError}
+              <p class="memory-error">{state.memoryError}</p>
+            {/if}
+
+            <div class="memory-grid" role="table" aria-label="Memory bytes">
+              {#each memoryRows as row, rowIndex (`row-${rowIndex}`)}
+                <div class="memory-row" role="row">
+                  <span class="memory-address" role="cell">
+                    {formatHex(snapshot.memory.startAddress + rowIndex * 16, 4)}
+                  </span>
+                  <div class="memory-bytes" role="cell">
+                    {#each row as value, byteIndex (`byte-${rowIndex}-${byteIndex}`)}
+                      <span>{formatHex(value, 2)}</span>
+                    {/each}
+                  </div>
+                  <span class="memory-ascii" role="cell">
+                    {row.map(formatAscii).join("")}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </section>
+        </div>
       {/if}
     </section>
   {/if}
@@ -283,12 +287,15 @@
     top: 0;
     right: 0;
     bottom: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px;
     pointer-events: auto;
     width: min(720px, calc(100vw - 24px));
     height: 100dvh;
     min-height: 100dvh;
     max-height: none;
-    overflow: auto;
+    overflow: hidden;
     padding: 18px 24px 28px;
     color: #eef0cf;
     background:
@@ -332,6 +339,7 @@
   .debugger-empty {
     display: grid;
     gap: 8px;
+    align-content: start;
   }
 
   .debugger-empty strong,
@@ -357,6 +365,7 @@
   }
 
   .debugger-toolbar,
+  .debugger-body,
   .debugger-meta,
   .debugger-section,
   .register-grid,
@@ -367,6 +376,15 @@
 
   .debugger-toolbar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .debugger-body {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .debugger-body-loaded {
+    grid-template-rows: auto auto minmax(0, 1fr);
   }
 
   .debugger-action {
@@ -392,9 +410,9 @@
     width: 34px;
     height: 34px;
     padding: 0;
-    color: rgba(241, 244, 214, 0.84);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(212, 255, 118, 0.18);
+    color: rgba(241, 244, 214, 0.72);
+    background: transparent;
+    border: 1px solid transparent;
     cursor: pointer;
     transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
   }
@@ -402,7 +420,7 @@
   .debugger-close:hover,
   .debugger-close:focus-visible {
     color: #fcffef;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
     border-color: rgba(212, 255, 118, 0.34);
   }
 
@@ -425,6 +443,7 @@
   .debugger-section {
     padding-top: 12px;
     border-top: 1px solid rgba(212, 255, 118, 0.16);
+    min-height: 0;
   }
 
   .debugger-section-header {
@@ -514,24 +533,34 @@
     color: #ff8b75;
   }
 
+  .debugger-memory-section {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+
   .memory-grid {
     gap: 6px;
+    min-height: 0;
     padding: 10px;
     background: rgba(0, 0, 0, 0.22);
     border: 1px solid rgba(213, 255, 118, 0.12);
+    overflow: auto;
   }
 
   .memory-row {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 100px;
+    grid-template-columns: 4ch auto 16ch;
     gap: 10px;
     align-items: center;
+    width: max-content;
+    min-width: 100%;
   }
 
   .memory-address,
   .memory-ascii,
   .memory-bytes {
     font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    white-space: pre;
   }
 
   .memory-address {
@@ -540,12 +569,19 @@
 
   .memory-bytes {
     display: grid;
-    grid-template-columns: repeat(16, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(16, 2ch);
+    justify-content: start;
+    gap: 1.1ch;
     color: #fffce8;
   }
 
+  .memory-bytes span,
   .memory-ascii {
+    display: block;
+  }
+
+  .memory-ascii {
+    min-width: 16ch;
     color: rgba(235, 243, 196, 0.68);
     letter-spacing: 0.08em;
   }
@@ -564,6 +600,7 @@
       top: 0;
       right: 0;
       bottom: 0;
+      gap: 8px;
       width: min(100vw - 12px, 420px);
       height: 100dvh;
       min-height: 100dvh;
@@ -578,10 +615,12 @@
 
     .memory-row {
       grid-template-columns: 1fr;
+      width: 100%;
+      min-width: 0;
     }
 
     .memory-bytes {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-columns: repeat(8, 2ch);
     }
   }
 </style>

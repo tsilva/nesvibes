@@ -18,3 +18,7 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Verification: `npm run check` passed. Browser validation with a loaded ROM confirmed the debugger opens with the panel flush to the top and the close affordance rendered inside the panel header.
 
 - Tooling note: retried the `develop-web-game` Playwright client after the debugger update and hit the same Chromium `SEGV_ACCERR` launch crash, so browser-tool inspection remained the reliable verification path.
+
+- RAM monitor layout: converted the debugger panel to a fixed header plus flexible body, made the RAM section consume remaining vertical space, moved memory overflow to the table viewport itself, and widened the memory fetch window from 0x80 to 0x100 so the panel can show up to 16 rows.
+
+- Verification: `npm run check` passed after the RAM monitor sizing update. Browser-tool verification is still blocked by the existing Chrome session launch issue, so this pass was validated statically.
