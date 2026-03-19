@@ -6,6 +6,26 @@
   export let data;
 
   const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
+  const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
+  const KEYBOARD_BUTTON_MAP = new Map([
+    ["KeyZ", "b"],
+    ["KeyX", "a"],
+    ["ShiftLeft", "select"],
+    ["ShiftRight", "select"],
+    ["Enter", "start"],
+    ["ArrowUp", "up"],
+    ["ArrowDown", "down"],
+    ["ArrowLeft", "left"],
+    ["ArrowRight", "right"],
+  ]);
+  const SYSTEM_BUTTONS = [
+    { button: "select", label: "Select", key: "SHIFT" },
+    { button: "start", label: "Start", key: "ENTER" },
+  ];
+  const ACTION_BUTTONS = [
+    { button: "b", label: "B", key: "Z", tone: "secondary" },
+    { button: "a", label: "A", key: "X", tone: "primary" },
+  ];
 
   let canvas;
   let emulator;
@@ -18,6 +38,14 @@
   let isDragging = false;
   let overlayTitle = "Drop a `.nes` ROM";
   let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
+  let pressedButtons = createPressedButtons();
+
+  function createPressedButtons() {
+    return BUTTON_ORDER.reduce((state, button) => {
+      state[button] = false;
+      return state;
+    }, {});
+  }
 
   function setOverlay(title, message) {
     overlayTitle = title;
@@ -159,6 +187,39 @@
     filePicker?.click();
   }
 
+  function setPressedButton(button, pressed) {
+    if (!button || pressedButtons[button] === undefined) {
+      return false;
+    }
+
+    if (pressedButtons[button] !== pressed) {
+      pressedButtons = {
+        ...pressedButtons,
+        [button]: pressed,
+      };
+    }
+
+    emulator?.setButton(button, pressed);
+    return true;
+  }
+
+  function releaseAllInputs() {
+    pressedButtons = createPressedButtons();
+    emulator?.releaseAllButtons();
+  }
+
+  function handleControllerPress(button, event) {
+    event.preventDefault();
+    event.currentTarget?.setPointerCapture?.(event.pointerId);
+    void enableAudio().catch(() => {});
+    setPressedButton(button, true);
+  }
+
+  function handleControllerRelease(button, event) {
+    event.preventDefault();
+    setPressedButton(button, false);
+  }
+
   async function handleFilePickerChange(event) {
     const [file] = event.currentTarget.files ?? [];
     await loadRomFile(file);
@@ -167,24 +228,32 @@
 
   onMount(() => {
     const handleKeydown = (event) => {
-      if (emulator?.setButtonByCode(event.code, true)) {
-        event.preventDefault();
+      const button = KEYBOARD_BUTTON_MAP.get(event.code);
+      if (!button) {
+        return;
       }
+
+      setPressedButton(button, true);
+      event.preventDefault();
     };
 
     const handleKeyup = (event) => {
-      if (emulator?.setButtonByCode(event.code, false)) {
-        event.preventDefault();
+      const button = KEYBOARD_BUTTON_MAP.get(event.code);
+      if (!button) {
+        return;
       }
+
+      setPressedButton(button, false);
+      event.preventDefault();
     };
 
     const handleBlur = () => {
-      emulator?.releaseAllButtons();
+      releaseAllInputs();
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        emulator?.releaseAllButtons();
+        releaseAllInputs();
       }
     };
 
@@ -243,6 +312,7 @@
       window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      releaseAllInputs();
       emulator?.destroy();
       emulator = undefined;
       emulatorPromise = undefined;
@@ -266,17 +336,6 @@
 <div class="page-shell">
   <header class="hero-banner" aria-label="Landing page intro">
     <div class="hero-controls">
-      <div class="hero-stats" aria-label="Runtime stats">
-        <div class="stat-card input-card">
-          <span class="stat-label">Input</span>
-          <span class="stat-value input-badge-row" aria-label="Keyboard controls">
-            <span class="input-badge-key accent">Z</span>
-            <span class="input-badge-key accent">X</span>
-            <span class="input-badge-key wide">Shift</span>
-            <span class="input-badge-key wide">Enter</span>
-          </span>
-        </div>
-      </div>
       <a
         class="hero-github-link"
         href="https://github.com/tsilva/nesvibes"
@@ -324,6 +383,115 @@
           </button>
         </section>
       </div>
+
+      <section class="controller-dock" aria-label="Live NES controller">
+        <div class="controller-shell">
+          <div class="controller-header">
+            <div>
+              <p class="controller-kicker">Player One Controller</p>
+              <p class="controller-copy">Keyboard and taps light up the same inputs live.</p>
+            </div>
+          </div>
+
+          <div class="controller-body">
+            <div class="dpad-cluster" role="group" aria-label="Directional pad">
+              <button
+                type="button"
+                class={`pad-button dpad-button up ${pressedButtons.up ? "pressed" : ""}`.trim()}
+                aria-label="Up"
+                aria-pressed={pressedButtons.up}
+                on:pointerdown={(event) => handleControllerPress("up", event)}
+                on:pointerup={(event) => handleControllerRelease("up", event)}
+                on:pointercancel={(event) => handleControllerRelease("up", event)}
+                on:lostpointercapture={() => setPressedButton("up", false)}
+              >
+                <span class="pad-button-face">Up</span>
+                <span class="pad-button-key">Up</span>
+              </button>
+
+              <button
+                type="button"
+                class={`pad-button dpad-button left ${pressedButtons.left ? "pressed" : ""}`.trim()}
+                aria-label="Left"
+                aria-pressed={pressedButtons.left}
+                on:pointerdown={(event) => handleControllerPress("left", event)}
+                on:pointerup={(event) => handleControllerRelease("left", event)}
+                on:pointercancel={(event) => handleControllerRelease("left", event)}
+                on:lostpointercapture={() => setPressedButton("left", false)}
+              >
+                <span class="pad-button-face">Left</span>
+                <span class="pad-button-key">Left</span>
+              </button>
+
+              <div class="dpad-core" aria-hidden="true"></div>
+
+              <button
+                type="button"
+                class={`pad-button dpad-button right ${pressedButtons.right ? "pressed" : ""}`.trim()}
+                aria-label="Right"
+                aria-pressed={pressedButtons.right}
+                on:pointerdown={(event) => handleControllerPress("right", event)}
+                on:pointerup={(event) => handleControllerRelease("right", event)}
+                on:pointercancel={(event) => handleControllerRelease("right", event)}
+                on:lostpointercapture={() => setPressedButton("right", false)}
+              >
+                <span class="pad-button-face">Right</span>
+                <span class="pad-button-key">Right</span>
+              </button>
+
+              <button
+                type="button"
+                class={`pad-button dpad-button down ${pressedButtons.down ? "pressed" : ""}`.trim()}
+                aria-label="Down"
+                aria-pressed={pressedButtons.down}
+                on:pointerdown={(event) => handleControllerPress("down", event)}
+                on:pointerup={(event) => handleControllerRelease("down", event)}
+                on:pointercancel={(event) => handleControllerRelease("down", event)}
+                on:lostpointercapture={() => setPressedButton("down", false)}
+              >
+                <span class="pad-button-face">Down</span>
+                <span class="pad-button-key">Down</span>
+              </button>
+            </div>
+
+            <div class="system-button-group" role="group" aria-label="System buttons">
+              {#each SYSTEM_BUTTONS as control (control.button)}
+                <button
+                  type="button"
+                  class={`pad-button system-button ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                  aria-label={control.label}
+                  aria-pressed={pressedButtons[control.button]}
+                  on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                  on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                  on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                  on:lostpointercapture={() => setPressedButton(control.button, false)}
+                >
+                  <span class="pad-button-face">{control.label}</span>
+                  <span class="pad-button-key">{control.key}</span>
+                </button>
+              {/each}
+            </div>
+
+            <div class="action-cluster" role="group" aria-label="Action buttons">
+              {#each ACTION_BUTTONS as control (control.button)}
+                <button
+                  type="button"
+                  class={`pad-button action-button ${control.tone} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                  aria-label={control.label}
+                  aria-pressed={pressedButtons[control.button]}
+                  on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                  on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                  on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                  on:lostpointercapture={() => setPressedButton(control.button, false)}
+                >
+                  <span class="action-button-label">{control.label}</span>
+                  <span class="pad-button-key">{control.key}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
+        </div>
+      </section>
     </section>
 
     <aside class="side-rail" aria-label="Setup notes">

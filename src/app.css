@@ -75,7 +75,7 @@ strong,
   position: relative;
   display: grid;
   gap: 12px;
-  padding: 16px 520px 16px 18px;
+  padding: 16px 86px 16px 18px;
   background:
     linear-gradient(135deg, rgba(228, 0, 15, 0.18), rgba(199, 199, 199, 0.16)),
     var(--panel-strong);
@@ -92,9 +92,7 @@ strong,
   top: 14px;
   right: 14px;
   z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  display: grid;
 }
 
 .hero-github-link {
@@ -281,6 +279,10 @@ strong,
   min-height: 0;
 }
 
+.cabinet {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
 .stage-shell {
   position: relative;
   display: grid;
@@ -307,8 +309,8 @@ strong,
 
 .stage {
   position: relative;
-  width: min(100%, calc((100dvh - 260px) * 256 / 240));
-  max-height: calc(100dvh - 260px);
+  width: min(100%, calc((100dvh - 430px) * 256 / 240));
+  max-height: calc(100dvh - 430px);
   aspect-ratio: 256 / 240;
   overflow: hidden;
   background:
@@ -430,6 +432,283 @@ canvas {
 
 .overlay-note {
   color: #bdbdbd;
+}
+
+.controller-dock {
+  display: grid;
+  place-items: center;
+  padding: 0 12px 12px;
+}
+
+.controller-shell {
+  position: relative;
+  width: min(100%, 860px);
+  padding: 18px 22px 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06)),
+    linear-gradient(180deg, #bfbfbf 0%, #8d8d8d 40%, #676767 100%);
+  border: 4px solid rgba(224, 224, 224, 0.92);
+  border-radius: 38px 38px 58px 58px;
+  box-shadow:
+    0 0 0 4px #171717,
+    0 18px 30px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
+  animation: banner-rise 720ms steps(6, end) 120ms both;
+}
+
+.controller-shell::before,
+.controller-shell::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.controller-shell::before {
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.26), transparent 28%),
+    radial-gradient(circle at 85% 0%, rgba(255, 255, 255, 0.18), transparent 24%);
+  opacity: 0.85;
+}
+
+.controller-shell::after {
+  inset: 18px 22px auto;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(228, 0, 15, 0), rgba(228, 0, 15, 0.65), rgba(228, 0, 15, 0));
+}
+
+.controller-header,
+.controller-body {
+  position: relative;
+  z-index: 1;
+}
+
+.controller-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.controller-kicker,
+.controller-copy {
+  margin: 0;
+}
+
+.controller-kicker {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4c4c4c;
+}
+
+.controller-copy {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #232323;
+}
+
+.controller-body {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.dpad-cluster {
+  justify-self: start;
+  width: min(100%, 220px);
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.dpad-button.up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-button.left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-button.right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-button.down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.dpad-core {
+  grid-column: 2;
+  grid-row: 2;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 22%),
+    #181818;
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.35),
+    0 8px 14px rgba(0, 0, 0, 0.2);
+}
+
+.system-button-group {
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.action-cluster {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.pad-button {
+  appearance: none;
+  border: 2px solid transparent;
+  user-select: none;
+  touch-action: none;
+  cursor: pointer;
+  color: #f7f7f7;
+  transition:
+    transform 110ms ease,
+    box-shadow 110ms ease,
+    filter 110ms ease;
+}
+
+.pad-button:focus-visible {
+  outline: 2px solid rgba(248, 184, 0, 0.8);
+  outline-offset: 4px;
+}
+
+.pad-button.pressed {
+  transform: translateY(5px) scale(0.95);
+}
+
+.pad-button.pressed .pad-button-key {
+  background: #f8b800;
+  color: #111111;
+}
+
+.dpad-button,
+.system-button {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 20%),
+    #181818;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.35),
+    0 9px 14px rgba(0, 0, 0, 0.22);
+}
+
+.dpad-button {
+  border-radius: 18px;
+}
+
+.system-button {
+  min-width: 104px;
+  padding-inline: 16px;
+  border-radius: 999px;
+  transform: rotate(-13deg);
+}
+
+.system-button.pressed {
+  transform: rotate(-13deg) translateY(3px) scale(0.98);
+}
+
+.dpad-button.pressed,
+.system-button.pressed {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 24%),
+    #2a2a2a;
+  border-color: rgba(248, 184, 0, 0.78);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 0 0 3px rgba(248, 184, 0, 0.18),
+    0 6px 10px rgba(0, 0, 0, 0.18);
+}
+
+.pad-button-face {
+  font-family: var(--font-display);
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pad-button-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 24px;
+  padding: 4px 8px;
+  font-size: 9px;
+  line-height: 1;
+  color: #171717;
+  background: rgba(232, 232, 232, 0.92);
+  border-radius: 999px;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.action-button {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border-width: 3px;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.22),
+    0 14px 18px rgba(0, 0, 0, 0.2);
+}
+
+.action-button.primary {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.26), transparent 26%),
+    linear-gradient(180deg, #ff5561 0%, #d81420 68%, #980913 100%);
+}
+
+.action-button.secondary {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.18), transparent 26%),
+    linear-gradient(180deg, #f08086 0%, #b11a24 68%, #7b0911 100%);
+}
+
+.action-button-label {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.24);
+}
+
+.action-button.pressed {
+  border-color: rgba(255, 255, 255, 0.52);
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16),
+    0 0 0 3px rgba(255, 255, 255, 0.18),
+    0 0 24px rgba(228, 0, 15, 0.32),
+    0 8px 12px rgba(0, 0, 0, 0.18);
 }
 
 .launcher-shell {
@@ -653,6 +932,7 @@ canvas {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-banner,
+  .controller-shell,
   .hero-banner::after,
   .stage::before,
   .overlay {
@@ -685,8 +965,6 @@ canvas {
 
   .hero-controls {
     position: static;
-    display: grid;
-    gap: 10px;
     justify-items: start;
   }
 
@@ -711,6 +989,14 @@ canvas {
     width: 100%;
     max-height: none;
   }
+
+  .controller-dock {
+    padding: 0 0 12px;
+  }
+
+  .controller-shell {
+    width: 100%;
+  }
 }
 
 @media (max-width: 720px) {
@@ -724,6 +1010,7 @@ canvas {
 
   .hero-banner,
   .stage-shell,
+  .controller-shell,
   .launcher-shell,
   .stat-card,
   .side-card {
@@ -742,20 +1029,6 @@ canvas {
     padding-bottom: 14px;
   }
 
-  .hero-stats {
-    width: 100%;
-  }
-
-  .input-card {
-    width: 100%;
-    text-align: left;
-  }
-
-  .input-badge-row {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
   .overlay {
     width: calc(100% - 22px);
     padding: 14px;
@@ -763,6 +1036,45 @@ canvas {
 
   .launcher-shell {
     height: min(54dvh, 640px);
+  }
+
+  .controller-shell {
+    padding-top: 16px;
+    padding-bottom: 16px;
+    border-radius: 32px 32px 44px 44px;
+  }
+
+  .controller-body {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "dpad action"
+      "center center";
+    gap: 18px 14px;
+  }
+
+  .dpad-cluster {
+    grid-area: dpad;
+    justify-self: center;
+    width: min(100%, 190px);
+  }
+
+  .system-button-group {
+    grid-area: center;
+  }
+
+  .action-cluster {
+    grid-area: action;
+    justify-self: center;
+    gap: 12px;
+  }
+
+  .action-button {
+    width: 76px;
+    height: 76px;
+  }
+
+  .action-button-label {
+    font-size: 24px;
   }
 }
 
@@ -778,7 +1090,7 @@ canvas {
   }
 
   .hero-banner {
-    padding: 14px 420px 14px 16px;
+    padding: 14px 72px 14px 16px;
   }
 
   .hero-grid {
@@ -798,23 +1110,20 @@ canvas {
     font-size: 14px;
   }
 
-  .input-badge-key {
-    min-height: 28px;
-  }
-
   .content-grid {
     grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
     gap: 10px;
   }
 
   .stage-shell,
+  .controller-shell,
   .launcher-shell {
     padding: 10px;
   }
 
   .stage {
-    width: min(100%, calc((100dvh - 225px) * 256 / 240));
-    max-height: calc(100dvh - 225px);
+    width: min(100%, calc((100dvh - 365px) * 256 / 240));
+    max-height: calc(100dvh - 365px);
   }
 
   .overlay {
@@ -829,6 +1138,33 @@ canvas {
   .overlay p {
     font-size: clamp(16px, 1.6vw, 19px);
   }
+
+  .controller-shell {
+    padding: 14px 18px 16px;
+    border-radius: 32px 32px 48px 48px;
+  }
+
+  .controller-header {
+    margin-bottom: 12px;
+  }
+
+  .controller-body {
+    gap: 16px;
+  }
+
+  .dpad-cluster {
+    width: min(100%, 180px);
+    gap: 8px;
+  }
+
+  .action-button {
+    width: 74px;
+    height: 74px;
+  }
+
+  .action-button-label {
+    font-size: 24px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -838,10 +1174,6 @@ canvas {
 
   .hero-lede {
     font-size: 20px;
-  }
-
-  .hero-stats {
-    grid-template-columns: 1fr;
   }
 
   .launcher-grid {
@@ -862,6 +1194,32 @@ canvas {
   .side-card li,
   .cartridge span {
     font-size: 18px;
+  }
+
+  .controller-header {
+    margin-bottom: 12px;
+  }
+
+  .controller-copy {
+    font-size: 10px;
+  }
+
+  .controller-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "action"
+      "center"
+      "dpad";
+  }
+
+  .action-cluster,
+  .system-button-group,
+  .dpad-cluster {
+    justify-self: center;
+  }
+
+  .system-button {
+    min-width: 96px;
   }
 }
     
