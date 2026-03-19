@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const EMULATOR_FILE_PATH = resolve(process.cwd(), "src/lib/emu/nes-emulator.js");
+const EMULATOR_SOURCE_URL =
+  "https://github.com/tsilva/nesvibes/blob/main/src/lib/emu/nes-emulator.js";
 
 function countLines(source) {
   if (source.length === 0) {
@@ -32,6 +34,7 @@ export async function load() {
   )})`;
 
   return {
-    emulatorLocLabel
+    emulatorLocLabel,
+    emulatorSourceUrl: EMULATOR_SOURCE_URL
   };
 }

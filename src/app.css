@@ -190,6 +190,10 @@ strong,
 }
 
 .hero-meta-link {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  pointer-events: auto;
   color: inherit;
   text-decoration: underline;
   text-decoration-thickness: 2px;

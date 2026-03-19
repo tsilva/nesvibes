@@ -360,8 +360,7 @@
           <a
             class="hero-meta-link"
             href={data.emulatorSourceUrl}
-            target="_blank"
-            rel="noreferrer"
+            rel="external"
           >
             {data.emulatorLocLabel}
           </a>
