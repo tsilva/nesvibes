@@ -356,7 +356,16 @@
         <p class="eyebrow">8-bit ROM lab</p>
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
-        <p class="hero-meta">{data.emulatorLocLabel}</p>
+        <p class="hero-meta">
+          <a
+            class="hero-meta-link"
+            href={data.emulatorSourceUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {data.emulatorLocLabel}
+          </a>
+        </p>
       </div>
     </div>
   </header>
@@ -386,13 +395,6 @@
 
       <section class="controller-dock" aria-label="Live NES controller">
         <div class="controller-shell">
-          <div class="controller-header">
-            <div>
-              <p class="controller-kicker">Player One Controller</p>
-              <p class="controller-copy">Keyboard and taps light up the same inputs live.</p>
-            </div>
-          </div>
-
           <div class="controller-body">
             <div class="dpad-cluster" role="group" aria-label="Directional pad">
               <button
@@ -454,22 +456,29 @@
               </button>
             </div>
 
-            <div class="system-button-group" role="group" aria-label="System buttons">
-              {#each SYSTEM_BUTTONS as control (control.button)}
-                <button
-                  type="button"
-                  class={`pad-button system-button ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                  aria-label={control.label}
-                  aria-pressed={pressedButtons[control.button]}
-                  on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                  on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                  on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                  on:lostpointercapture={() => setPressedButton(control.button, false)}
-                >
-                  <span class="pad-button-face">{control.label}</span>
-                  <span class="pad-button-key">{control.key}</span>
-                </button>
-              {/each}
+            <div class="controller-center-panel">
+              <div class="controller-badge" aria-hidden="true">
+                <span class="controller-brand">Nintendo Entertainment System</span>
+                <span class="controller-player">Player One</span>
+              </div>
+
+              <div class="system-button-group" role="group" aria-label="System buttons">
+                {#each SYSTEM_BUTTONS as control (control.button)}
+                  <button
+                    type="button"
+                    class={`pad-button system-button ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                    aria-label={control.label}
+                    aria-pressed={pressedButtons[control.button]}
+                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+                  >
+                    <span class="pad-button-face">{control.label}</span>
+                    <span class="pad-button-key">{control.key}</span>
+                  </button>
+                {/each}
+              </div>
             </div>
 
             <div class="action-cluster" role="group" aria-label="Action buttons">
