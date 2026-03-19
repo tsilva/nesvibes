@@ -22,3 +22,11 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - RAM monitor layout: converted the debugger panel to a fixed header plus flexible body, made the RAM section consume remaining vertical space, moved memory overflow to the table viewport itself, and widened the memory fetch window from 0x80 to 0x100 so the panel can show up to 16 rows.
 
 - Verification: `npm run check` passed after the RAM monitor sizing update. Browser-tool verification is still blocked by the existing Chrome session launch issue, so this pass was validated statically.
+
+- Touch overlay update: added a new `gamepad` controls mode in the stage toolbar. On coarse-pointer/touch devices it swaps the left-side D-pad for a draggable analog joystick while preserving the existing discrete D-pad in `controls` mode.
+
+- Input handling: the joystick clamps thumb travel, maps its vector into the NES directional buttons with a dead zone, and releases cleanly on pointer-up, blur, and visibility/fullscreen loss so it does not leave directions stuck.
+
+- Verification: `npm run check` passed. The required `develop-web-game` client was retried; the helper script resolved with an absolute path but `page.goto` still aborted against the local Vite server, so verification used a one-off Playwright phone-viewport run instead. That run passed, confirming the toolbar can switch into the new mode and the joystick thumb moves and recenters correctly.
+
+- Mobile follow-up: the mobile viewport now forces the touch overlay into analog joystick mode and hides the controls-mode toggle button. Desktop keeps the existing overlay cycling behavior.

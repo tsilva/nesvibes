@@ -7,6 +7,7 @@
     ArrowUp,
     EyeOff,
     Gamepad2,
+    Joystick,
     Keyboard,
     Maximize2,
     Minimize2,
@@ -17,8 +18,9 @@
   export let data;
 
   const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
-  const CANVAS_CONTROL_MODES = ["controls", "keys", "hidden"];
+  const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
+  const DIRECTIONAL_BUTTONS = ["up", "down", "left", "right"];
   const KEYBOARD_BUTTON_MAP = new Map([
     ["KeyZ", "b"],
     ["KeyX", "a"],
@@ -51,6 +53,7 @@
     { button: "a", label: "A", tone: "primary" },
   ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
+  const COARSE_POINTER_QUERY = "(pointer: coarse)";
   const EMPTY_OVERLAY_TITLE = "Drop a `.nes` ROM";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
@@ -64,6 +67,8 @@
     ["next-most-valuable-rom", 1],
     ["next-most-valuable-rom-mode", 1],
   ]);
+  const JOYSTICK_MAX_DISTANCE = 34;
+  const JOYSTICK_DEAD_ZONE = 0.38;
 
   let canvas;
   let stageElement;
@@ -86,12 +91,16 @@
   let overlayTitle = EMPTY_OVERLAY_TITLE;
   let overlayCopy = DESKTOP_EMPTY_OVERLAY_COPY;
   let pressedButtons = createPressedButtons();
+  let joystickState = createJoystickState();
   let canToggleFullscreen = false;
+  let hasTouchInput = false;
   let requestedRomMode = null;
   let canvasControlsMode = "controls";
 
+  $: effectiveCanvasControlsMode = isMobileMode ? "gamepad" : canvasControlsMode;
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
-  $: showCanvasControls = stageMode === "loaded" && canvasControlsMode !== "hidden";
+  $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
+  $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad" && (hasTouchInput || isMobileMode);
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -131,13 +140,38 @@
     }, {});
   }
 
+  function createJoystickState() {
+    return {
+      active: false,
+      pointerId: null,
+      x: 0,
+      y: 0,
+    };
+  }
+
+  function setCanvasControlsMode(mode) {
+    if (isMobileMode) {
+      return;
+    }
+
+    if (canvasControlsMode === "gamepad" && mode !== "gamepad") {
+      releaseJoystick();
+    }
+
+    canvasControlsMode = mode;
+  }
+
   function cycleCanvasControlsMode() {
     const currentIndex = CANVAS_CONTROL_MODES.indexOf(canvasControlsMode);
     const nextIndex = (currentIndex + 1) % CANVAS_CONTROL_MODES.length;
-    canvasControlsMode = CANVAS_CONTROL_MODES[nextIndex];
+    setCanvasControlsMode(CANVAS_CONTROL_MODES[nextIndex]);
   }
 
   function getCanvasControlsModeLabel(mode) {
+    if (mode === "gamepad") {
+      return "Touch gamepad overlay";
+    }
+
     if (mode === "keys") {
       return "Keyboard overlay";
     }
@@ -150,6 +184,10 @@
   }
 
   function getCanvasControlsModeIcon(mode) {
+    if (mode === "gamepad") {
+      return Joystick;
+    }
+
     if (mode === "keys") {
       return Keyboard;
     }
@@ -381,11 +419,11 @@
 
       romCatalog = await response.json();
       catalogMessage = romCatalog.length === 0 ? "No bundled ROMs available." : "";
-
       const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
       if (modeEntry) {
         await loadBundledRom(modeEntry);
       }
+
     } catch (error) {
       console.error(error);
       catalogMessage = "Bundled ROM catalog failed to load. Drag-and-drop remains available.";
@@ -419,8 +457,69 @@
   }
 
   function releaseAllInputs() {
+    joystickState = createJoystickState();
     pressedButtons = createPressedButtons();
     emulator?.releaseAllButtons();
+  }
+
+  function syncDirectionalButtons(nextButtons) {
+    for (const button of DIRECTIONAL_BUTTONS) {
+      setPressedButton(button, nextButtons.has(button));
+    }
+  }
+
+  function clampJoystickOffset(rawX, rawY) {
+    const distance = Math.hypot(rawX, rawY);
+    if (distance <= JOYSTICK_MAX_DISTANCE || distance === 0) {
+      return { x: rawX, y: rawY };
+    }
+
+    const scale = JOYSTICK_MAX_DISTANCE / distance;
+    return {
+      x: rawX * scale,
+      y: rawY * scale,
+    };
+  }
+
+  function updateJoystickFromEvent(event) {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + (rect.width / 2);
+    const centerY = rect.top + (rect.height / 2);
+    const { x, y } = clampJoystickOffset(event.clientX - centerX, event.clientY - centerY);
+    const nextButtons = new Set();
+
+    if ((y / JOYSTICK_MAX_DISTANCE) <= -JOYSTICK_DEAD_ZONE) {
+      nextButtons.add("up");
+    }
+
+    if ((y / JOYSTICK_MAX_DISTANCE) >= JOYSTICK_DEAD_ZONE) {
+      nextButtons.add("down");
+    }
+
+    if ((x / JOYSTICK_MAX_DISTANCE) <= -JOYSTICK_DEAD_ZONE) {
+      nextButtons.add("left");
+    }
+
+    if ((x / JOYSTICK_MAX_DISTANCE) >= JOYSTICK_DEAD_ZONE) {
+      nextButtons.add("right");
+    }
+
+    joystickState = {
+      ...joystickState,
+      x,
+      y,
+    };
+    syncDirectionalButtons(nextButtons);
+  }
+
+  function releaseJoystick() {
+    joystickState = createJoystickState();
+    syncDirectionalButtons(new Set());
   }
 
   function syncFullscreenState() {
@@ -470,6 +569,44 @@
     setPressedButton(button, false);
   }
 
+  function handleJoystickPointerDown(event) {
+    event.preventDefault();
+    event.currentTarget?.setPointerCapture?.(event.pointerId);
+    void enableAudio().catch(() => {});
+    joystickState = {
+      ...joystickState,
+      active: true,
+      pointerId: event.pointerId,
+    };
+    updateJoystickFromEvent(event);
+  }
+
+  function handleJoystickPointerMove(event) {
+    if (!joystickState.active || joystickState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    updateJoystickFromEvent(event);
+  }
+
+  function handleJoystickPointerUp(event) {
+    if (joystickState.pointerId !== null && joystickState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    releaseJoystick();
+  }
+
+  function handleJoystickLostCapture() {
+    if (!joystickState.active) {
+      return;
+    }
+
+    releaseJoystick();
+  }
+
   async function handleFilePickerChange(event) {
     const [file] = event.currentTarget.files ?? [];
     await loadRomFile(file);
@@ -478,11 +615,16 @@
 
   onMount(() => {
     const debuggerQuery = window.matchMedia(DESKTOP_DEBUGGER_QUERY);
+    const coarsePointerQuery = window.matchMedia(COARSE_POINTER_QUERY);
     requestedRomMode = getRequestedRomMode(window.location.search);
 
     fullscreenSupported = typeof document.fullscreenEnabled === "boolean"
       ? document.fullscreenEnabled
       : typeof stageElement?.requestFullscreen === "function";
+
+    const syncTouchInput = () => {
+      hasTouchInput = navigator.maxTouchPoints > 0 || coarsePointerQuery.matches;
+    };
 
     const syncDebuggerMode = () => {
       const nextIsMobileMode = !debuggerQuery.matches;
@@ -599,7 +741,9 @@
 
     void loadBundledCatalog();
     syncFullscreenState();
+    syncTouchInput();
     syncDebuggerMode();
+    coarsePointerQuery.addEventListener("change", syncTouchInput);
     debuggerQuery.addEventListener("change", syncDebuggerMode);
 
     return () => {
@@ -612,6 +756,7 @@
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      coarsePointerQuery.removeEventListener("change", syncTouchInput);
       debuggerQuery.removeEventListener("change", syncDebuggerMode);
       releaseAllInputs();
       disableDesktopDebugger();
@@ -677,15 +822,17 @@
         >
           {#if stageMode === "loaded"}
             <div class="stage-toolbar">
-              <button
-                type="button"
-                class="stage-toolbar-button controls-toggle"
-                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(canvasControlsMode).toLowerCase()}.`}
-                title={`Controls overlay: ${getCanvasControlsModeLabel(canvasControlsMode)}`}
-                on:click={() => cycleCanvasControlsMode()}
-              >
-                <svelte:component this={getCanvasControlsModeIcon(canvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
-              </button>
+              {#if !isMobileMode}
+                <button
+                  type="button"
+                  class="stage-toolbar-button controls-toggle"
+                  aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(effectiveCanvasControlsMode).toLowerCase()}.`}
+                  title={`Controls overlay: ${getCanvasControlsModeLabel(effectiveCanvasControlsMode)}`}
+                  on:click={() => cycleCanvasControlsMode()}
+                >
+                  <svelte:component this={getCanvasControlsModeIcon(effectiveCanvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
+                </button>
+              {/if}
               {#if canToggleFullscreen}
                 <button
                   type="button"
@@ -707,14 +854,16 @@
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
           <button class="overlay" type="button" on:click={openRomPicker}>
             <p class="loader-kicker">PLAYER ONE READY</p>
-            <strong>{overlayTitle}</strong>
+            {#if !(isMobileMode && overlayVariant === "empty")}
+              <strong>{overlayTitle}</strong>
+            {/if}
             <p id="loader-copy">{overlayCopy}</p>
             {#if overlayVariant === "empty"}
               <p class="overlay-note">Try the Super Mario Bros ROM if you have it :)</p>
             {/if}
           </button>
           {#if showCanvasControls}
-            <div class={`touch-controls active ${canvasControlsMode === "keys" ? "keys-mode" : ""}`.trim()}>
+            <div class={`touch-controls active ${effectiveCanvasControlsMode === "keys" ? "keys-mode" : ""} ${showJoystickOverlay ? "gamepad-mode" : ""}`.trim()}>
               <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
                   <button
@@ -727,29 +876,53 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{getCanvasControlText(control, canvasControlsMode)}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
                   </button>
                 {/each}
               </div>
 
-              <div class="touch-cluster touch-dpad" role="group" aria-label="Directional pad">
-                {#each TOUCH_DIRECTION_BUTTONS as control (control.button)}
-                  <button
-                    type="button"
-                    class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                    aria-label={control.label}
-                    aria-pressed={pressedButtons[control.button]}
-                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+              {#if showJoystickOverlay}
+                <div class="touch-cluster touch-joystick-shell" role="group" aria-label="Analog directional pad">
+                  <div
+                    class={`touch-joystick ${joystickState.active ? "active" : ""}`.trim()}
+                    aria-hidden="true"
+                    on:pointerdown={handleJoystickPointerDown}
+                    on:pointermove={handleJoystickPointerMove}
+                    on:pointerup={handleJoystickPointerUp}
+                    on:pointercancel={handleJoystickPointerUp}
+                    on:lostpointercapture={handleJoystickLostCapture}
                   >
-                    <span class="touch-button-label touch-button-icon" aria-hidden="true">
-                      <svelte:component this={control.icon} size={18} strokeWidth={2.75} />
+                    <span class="touch-joystick-base"></span>
+                    <span class="touch-joystick-guide horizontal"></span>
+                    <span class="touch-joystick-guide vertical"></span>
+                    <span
+                      class="touch-joystick-thumb"
+                      style={`transform: translate(${joystickState.x}px, ${joystickState.y}px);`}
+                    >
+                      <Joystick size={24} strokeWidth={2.1} aria-hidden="true" />
                     </span>
-                  </button>
-                {/each}
-              </div>
+                  </div>
+                </div>
+              {:else}
+                <div class="touch-cluster touch-dpad" role="group" aria-label="Directional pad">
+                  {#each TOUCH_DIRECTION_BUTTONS as control (control.button)}
+                    <button
+                      type="button"
+                      class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                      aria-label={control.label}
+                      aria-pressed={pressedButtons[control.button]}
+                      on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                      on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                      on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                      on:lostpointercapture={() => setPressedButton(control.button, false)}
+                    >
+                      <span class="touch-button-label touch-button-icon" aria-hidden="true">
+                        <svelte:component this={control.icon} size={18} strokeWidth={2.75} />
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
 
               <div class="touch-cluster touch-actions" role="group" aria-label="Action buttons">
                 {#each ACTION_BUTTONS as control (control.button)}
@@ -763,7 +936,7 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{getCanvasControlText(control, canvasControlsMode)}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
                   </button>
                 {/each}
               </div>
