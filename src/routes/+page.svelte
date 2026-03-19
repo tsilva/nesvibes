@@ -496,10 +496,6 @@
       <div>
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
-        <p class="hero-summary">
-          Browser-based NES emulator for public-domain and homebrew ROMs with quicklaunch,
-          drag-and-drop uploads, mobile touch controls, fullscreen play, and a desktop debugger.
-        </p>
         <p class="hero-meta">
           <a
             class="hero-meta-link"

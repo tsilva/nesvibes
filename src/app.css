@@ -182,14 +182,6 @@ strong,
   color: var(--muted);
 }
 
-.hero-summary {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 14px;
-  line-height: 1.55;
-  color: rgba(243, 243, 243, 0.84);
-}
-
 .hero-meta {
   margin: 0;
   font-size: 16px;
