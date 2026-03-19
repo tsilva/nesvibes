@@ -12,8 +12,10 @@ function createInitialMemorySearchState() {
     candidateCount: 0,
     captureCount: 0,
     comparisonCount: 0,
-    lastDiffCount: 0,
+    lastMatchCount: 0,
+    mode: "changed",
     results: [],
+    targetValue: null,
     viewBytes: null,
   };
 }
@@ -27,6 +29,22 @@ function createInitialState() {
     paused: false,
     snapshot: null,
   };
+}
+
+function matchesMemorySearch(mode, previousValue, currentValue, targetValue) {
+  switch (mode) {
+    case "unchanged":
+      return previousValue === currentValue;
+    case "increased":
+      return currentValue > previousValue;
+    case "decreased":
+      return currentValue < previousValue;
+    case "exact":
+      return targetValue !== null && currentValue === targetValue;
+    case "changed":
+    default:
+      return previousValue !== currentValue;
+  }
 }
 
 export function createEmulatorDebugger() {
@@ -163,7 +181,7 @@ export function createEmulatorDebugger() {
       syncSnapshot();
       startPolling();
     },
-    captureMemorySearch() {
+    captureMemorySearch({ mode = "changed", value = null } = {}) {
       if (!emulator?.getDebugSnapshot) {
         return null;
       }
@@ -181,6 +199,8 @@ export function createEmulatorDebugger() {
             ...createInitialMemorySearchState(),
             baselineCaptured: true,
             captureCount: 1,
+            mode,
+            targetValue: value,
             viewBytes: nextSnapshot,
           },
         }));
@@ -188,39 +208,26 @@ export function createEmulatorDebugger() {
         return [];
       }
 
-      const latestDiffs = [];
-      for (let address = 0; address < MEMORY_SEARCH_LENGTH; address += 1) {
+      const candidateAddresses = memorySearchCandidates
+        ? [...memorySearchCandidates.keys()]
+        : Array.from({ length: MEMORY_SEARCH_LENGTH }, (_, address) => address);
+
+      const nextCandidates = new Map();
+      for (const address of candidateAddresses) {
         const previousValue = memorySearchSnapshot[address];
         const currentValue = nextSnapshot[address];
 
-        if (previousValue === currentValue) {
+        if (!matchesMemorySearch(mode, previousValue, currentValue, value)) {
           continue;
         }
 
-        latestDiffs.push({
+        nextCandidates.set(address, {
           address,
           currentValue,
           previousValue,
+          changeCount: (memorySearchCandidates?.get(address)?.changeCount ?? 0) + (previousValue !== currentValue ? 1 : 0),
         });
       }
-
-      const latestDiffMap = new Map(
-        latestDiffs.map((entry) => [
-          entry.address,
-          {
-            ...entry,
-            changeCount: (memorySearchCandidates?.get(entry.address)?.changeCount ?? 0) + 1,
-          },
-        ]),
-      );
-
-      const nextCandidates = memorySearchCandidates
-        ? new Map(
-            [...memorySearchCandidates.keys()]
-              .filter((address) => latestDiffMap.has(address))
-              .map((address) => [address, latestDiffMap.get(address)]),
-          )
-        : latestDiffMap;
 
       memorySearchSnapshot = nextSnapshot;
       memorySearchCandidates = nextCandidates;
@@ -232,8 +239,10 @@ export function createEmulatorDebugger() {
           candidateCount: nextCandidates.size,
           captureCount: state.memorySearch.captureCount + 1,
           comparisonCount: state.memorySearch.comparisonCount + 1,
-          lastDiffCount: latestDiffs.length,
+          lastMatchCount: nextCandidates.size,
+          mode,
           results: [...nextCandidates.values()],
+          targetValue: value,
           viewBytes: nextSnapshot,
         },
       }));

@@ -22,7 +22,16 @@
     Z: "Zero",
     C: "Carry",
   };
+  const MEMORY_SEARCH_MODE_OPTIONS = [
+    { value: "changed", label: "Changed" },
+    { value: "unchanged", label: "Unchanged" },
+    { value: "increased", label: "Increased" },
+    { value: "decreased", label: "Decreased" },
+    { value: "exact", label: "Exact" },
+  ];
   let memoryByteDrafts = {};
+  let memorySearchMode = "changed";
+  let memorySearchExactValue = "";
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
@@ -69,8 +78,19 @@
     return value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 2);
   }
 
+  function sanitizeSearchExactValue(value) {
+    return value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 2);
+  }
+
   function captureMemorySearch() {
-    debuggerController.captureMemorySearch();
+    const targetValue = memorySearchMode === "exact"
+      ? Number.parseInt(sanitizeSearchExactValue(memorySearchExactValue), 16)
+      : null;
+
+    debuggerController.captureMemorySearch({
+      mode: memorySearchMode,
+      value: Number.isNaN(targetValue) ? null : targetValue,
+    });
   }
 
   function resetMemorySearch() {
@@ -159,6 +179,12 @@
   $: memorySearchResults = memorySearch?.results ?? [];
   $: changedAddresses = new Set(memorySearchResults.map((result) => result.address));
   $: memorySearchActive = (memorySearch?.comparisonCount ?? 0) > 0;
+  $: memorySearchNeedsValue = memorySearchMode === "exact";
+  $: memorySearchHasValue = sanitizeSearchExactValue(memorySearchExactValue).length > 0;
+  $: memorySearchCanCapture = !memorySearch?.baselineCaptured || !memorySearchNeedsValue || memorySearchHasValue;
+  $: memorySearchAppliedMode = memorySearchActive ? (memorySearch?.mode ?? "changed") : memorySearchMode;
+  $: memorySearchAppliedModeLabel = MEMORY_SEARCH_MODE_OPTIONS.find((option) => option.value === memorySearchAppliedMode)?.label ?? "Changed";
+  $: memorySearchAppliedTargetValue = memorySearchActive ? memorySearch?.targetValue ?? null : null;
   $: memoryRows = memorySearchActive && memorySearch?.viewBytes
     ? buildMemoryRows(memorySearch.viewBytes, 0, changedAddresses, true)
     : snapshot
@@ -168,12 +194,12 @@
     memoryByteDrafts = {};
   }
   $: memorySearchSummary = !memorySearch?.baselineCaptured
-    ? "Capture a baseline, reproduce the event, then capture again. Only addresses that changed every time remain."
+    ? "Capture a baseline, choose a compare rule, reproduce the event, then capture again to filter candidates."
     : memorySearch.comparisonCount === 0
-      ? "Baseline saved. Reproduce the state change and capture again to keep only the bytes that moved."
+      ? "Baseline saved. Reproduce the target event, then capture again with the compare rule you want to apply."
       : memorySearch.candidateCount === 0
-        ? `No shared changes remain after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`
-        : `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} changed across all ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`;
+        ? `No addresses matched ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`
+        : `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} still match ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`;
 </script>
 
 <div class="debugger-dock">
@@ -295,7 +321,36 @@
               </div>
 
               <div class="memory-search-actions">
-                <button type="button" class="debugger-action" on:click={captureMemorySearch}>
+                <label class="memory-search-filter">
+                  <span>Compare</span>
+                  <select bind:value={memorySearchMode} aria-label="RAM search comparison mode">
+                    {#each MEMORY_SEARCH_MODE_OPTIONS as option (option.value)}
+                      <option value={option.value}>{option.label}</option>
+                    {/each}
+                  </select>
+                </label>
+                {#if memorySearchNeedsValue}
+                  <label class="memory-search-filter">
+                    <span>Hex</span>
+                    <input
+                      type="text"
+                      inputmode="text"
+                      maxlength="2"
+                      spellcheck="false"
+                      aria-label="Exact RAM search value in hex"
+                      bind:value={memorySearchExactValue}
+                      on:input={(event) => {
+                        memorySearchExactValue = sanitizeSearchExactValue(event.currentTarget.value);
+                      }}
+                    />
+                  </label>
+                {/if}
+                <button
+                  type="button"
+                  class="debugger-action"
+                  disabled={!memorySearchCanCapture}
+                  on:click={captureMemorySearch}
+                >
                   Capture
                 </button>
                 <button
@@ -311,7 +366,7 @@
 
             <div class="memory-search-stats">
               <span>{memorySearch?.captureCount ?? 0} snapshots</span>
-              <span>{memorySearch?.lastDiffCount ?? 0} changed last capture</span>
+              <span>{memorySearch?.lastMatchCount ?? 0} matched last capture</span>
               {#if memorySearchActive}
                 <span>{memorySearchResults.length} highlighted</span>
               {/if}
@@ -709,7 +764,40 @@
   }
 
   .memory-search-actions {
+    flex-wrap: wrap;
     flex-shrink: 0;
+  }
+
+  .memory-search-filter {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    color: rgba(235, 243, 196, 0.72);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .memory-search-filter select,
+  .memory-search-filter input {
+    min-height: 41px;
+    padding: 8px 10px;
+    color: #fffce8;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(212, 255, 118, 0.18);
+    font: inherit;
+    text-transform: uppercase;
+  }
+
+  .memory-search-filter input {
+    width: 64px;
+    text-align: center;
+  }
+
+  .memory-search-filter select:focus-visible,
+  .memory-search-filter input:focus-visible {
+    outline: 1px solid rgba(248, 184, 0, 0.85);
+    outline-offset: 1px;
   }
 
   .memory-search-actions .debugger-action {
@@ -858,6 +946,15 @@
     }
 
     .memory-search-actions {
+      width: 100%;
+    }
+
+    .memory-search-filter {
+      flex: 1 1 140px;
+    }
+
+    .memory-search-filter input,
+    .memory-search-filter select {
       width: 100%;
     }
 
