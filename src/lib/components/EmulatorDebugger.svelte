@@ -161,13 +161,15 @@
 
 <style>
   .debugger-dock {
-    position: absolute;
-    top: 24px;
-    left: 24px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
     z-index: 3;
     display: grid;
-    gap: 10px;
+    gap: 0;
     align-items: start;
+    justify-items: end;
     pointer-events: none;
   }
 
@@ -184,6 +186,7 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    margin: 24px 24px 0 0;
     padding: 10px 14px;
     color: #f4f0d8;
     background:
@@ -239,18 +242,22 @@
 
   .debugger-panel {
     pointer-events: auto;
-    width: min(420px, calc(100vw - 88px));
-    max-height: min(640px, calc(100dvh - 210px));
+    width: min(440px, calc(100vw - 24px));
+    height: 100dvh;
+    max-height: 100dvh;
     overflow: auto;
-    padding: 16px;
+    padding: 20px 20px 28px;
     color: #eef0cf;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 14%),
       rgba(16, 24, 16, 0.95);
-    border: 3px solid rgba(184, 232, 93, 0.52);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 3px solid rgba(184, 232, 93, 0.52);
     box-shadow:
       inset 0 0 0 2px rgba(232, 255, 184, 0.05),
-      0 22px 44px rgba(0, 0, 0, 0.45);
+      -18px 0 36px rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(10px);
   }
 
@@ -459,13 +466,15 @@
 
   @media (max-width: 720px) {
     .debugger-dock {
-      top: 18px;
-      left: 18px;
+      top: 0;
+      right: 0;
+      bottom: 0;
     }
 
     .debugger-panel {
-      width: min(100vw - 56px, 420px);
-      max-height: min(60dvh, 520px);
+      width: min(100vw - 12px, 420px);
+      height: 100dvh;
+      max-height: 100dvh;
       padding: 14px;
     }
 
