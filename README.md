@@ -116,7 +116,7 @@ Toggle it with the debug icon in the bottom corner.
 src/
 ├── lib/
 │   ├── emu/
-│   │   ├── nes-emulator.js          # Core emulator (~3.1k LOC)
+│   │   ├── nes-emulator.js          # Core emulator (~2.5k LOC)
 │   │   └── audio-output-worklet.js  # AudioWorklet processor
 │   ├── components/
 │   │   └── EmulatorDebugger.svelte   # Debugger panel UI

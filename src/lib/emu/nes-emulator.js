@@ -51,13 +51,53 @@ const NOISE_PERIOD_TABLE = [
 ];
 const AUDIO_WORKLET_PROCESSOR_NAME = "nes-audio-output";
 const AUDIO_WORKLET_CHUNK_SIZE = 512;
+const CONTROLLER_BUTTON_BITS = { a: 0, b: 1, select: 2, start: 3, up: 4, down: 5, left: 6, right: 7 };
+const CONTROLLER_BUTTON_ORDER = Object.keys(CONTROLLER_BUTTON_BITS);
+const DEBUG_CPU_FLAGS = [["N", CPU_FLAG_NEGATIVE], ["V", CPU_FLAG_OVERFLOW], ["U", CPU_FLAG_UNUSED], ["B", CPU_FLAG_BREAK], ["D", CPU_FLAG_DECIMAL], ["I", CPU_FLAG_INTERRUPT], ["Z", CPU_FLAG_ZERO], ["C", CPU_FLAG_CARRY]];
+const MMC1_MIRRORING_MODES = ["single-screen-lower", "single-screen-upper", "vertical", "horizontal"];
+const MMC3_CHR_BANK_SELECTORS = [
+  [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [3, 0], [4, 0], [5, 0]], [[2, 0], [3, 0], [4, 0], [5, 0], [0, 0], [0, 1], [1, 0], [1, 1]],
+];
+const PPU_DEFAULTS = {
+  ctrl: 0,
+  mask: 0,
+  status: 0,
+  oamAddr: 0,
+  readBuffer: 0,
+  openBus: 0,
+  v: 0,
+  t: 0,
+  x: 0,
+  w: 0,
+  scanline: 261,
+  cycle: 0,
+  frameReady: false,
+  nmiPending: false,
+  lineBaseV: 0,
+};
+const CPU_DEFAULTS = { a: 0, x: 0, y: 0, s: 0xfd, p: CPU_FLAG_INTERRUPT | CPU_FLAG_UNUSED, pc: 0, stallCycles: 0 };
+const APU_DEFAULTS = {
+  frameMode: 0,
+  frameInterruptInhibit: false,
+  frameInterruptFlag: false,
+  pendingFrameCounterWrite: null,
+  cpuCycles: 0,
+  sampleClock: 0,
+  sampleRate: 0,
+  dmcOutput: 0,
+  dmcEnabled: false,
+  highPass90: null,
+  highPass440: null,
+  lowPass14k: null,
+};
+const CARTRIDGE_TYPES = {};
 
-function wrapIndex(index, size) {
-  if (size <= 0) {
-    return 0;
-  }
-  return index % size;
-}
+function wrapIndex(index, size) { return size <= 0 ? 0 : index % size; }
+function resetFields(target, defaults) { Object.assign(target, defaults); }
+function setLengthEnabled(channel, enabled) { channel.enabled = enabled; if (!enabled) channel.lengthCounter = 0; }
+function writeTimerLow(channel, value) { channel.timerPeriod = (channel.timerPeriod & 0x0700) | value; }
+function loadLengthCounter(channel, value) { if (channel.enabled) channel.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f]; }
+function clockLengthCounter(channel, halted) { if (channel.lengthCounter > 0 && !halted) channel.lengthCounter -= 1; }
 
 class Cartridge {
   static fromINES(bytes) {
@@ -99,24 +139,9 @@ class Cartridge {
       prgRamSize: (bytes[8] || 1) * 0x2000,
     };
 
-    if (mapper === 0) {
-      return new NROMCartridge(common);
-    }
-
-    if (mapper === 1) {
-      return new MMC1Cartridge(common);
-    }
-
-    if (mapper === 2) {
-      return new UxROMCartridge(common);
-    }
-
-    if (mapper === 3) {
-      return new CNROMCartridge(common);
-    }
-
-    if (mapper === 4) {
-      return new MMC3Cartridge(common);
+    const CartridgeType = CARTRIDGE_TYPES[mapper];
+    if (CartridgeType) {
+      return new CartridgeType(common);
     }
 
     throw new Error(
@@ -142,6 +167,14 @@ class Cartridge {
 
   getNametableRamSize() {
     return this.fourScreen ? 0x1000 : 0x0800;
+  }
+
+  normalizePrgBank(bank, shift) {
+    return wrapIndex(bank, Math.max(1, this.prgRom.length >> shift));
+  }
+
+  normalizeChrBank(bank, shift) {
+    return wrapIndex(bank, Math.max(1, this.chrRom.length >> shift));
   }
 
   readPrg() {
@@ -229,16 +262,11 @@ class UxROMCartridge extends Cartridge {
     this.prgBank = 0;
   }
 
-  getPrgBankCount() {
-    return Math.max(1, this.prgRom.length >> 14);
-  }
-
   readPrg(addr) {
     const slot = (addr - 0x8000) >> 14;
-    const lastBank = this.getPrgBankCount() - 1;
-    const bank = slot === 0 ? wrapIndex(this.prgBank, this.getPrgBankCount()) : lastBank;
+    const bank = slot === 0 ? this.prgBank : (this.prgRom.length >> 14) - 1;
     const index = bank * 0x4000 + (addr & 0x3fff);
-    return this.prgRom[index];
+    return this.prgRom[this.normalizePrgBank(bank, 14) * 0x4000 + (addr & 0x3fff)];
   }
 
   writePrg(addr, value) {
@@ -258,14 +286,8 @@ class CNROMCartridge extends NROMCartridge {
     this.chrBank = 0;
   }
 
-  getChrBankCount() {
-    return Math.max(1, this.chrRom.length >> 13);
-  }
-
   readChr(addr) {
-    const bank = wrapIndex(this.chrBank, this.getChrBankCount());
-    const index = bank * 0x2000 + (addr & 0x1fff);
-    return this.chrRom[index];
+    return this.chrRom[this.normalizeChrBank(this.chrBank, 13) * 0x2000 + (addr & 0x1fff)];
   }
 
   writeChr(addr, value) {
@@ -273,9 +295,7 @@ class CNROMCartridge extends NROMCartridge {
       return;
     }
 
-    const bank = wrapIndex(this.chrBank, this.getChrBankCount());
-    const index = bank * 0x2000 + (addr & 0x1fff);
-    this.chrRom[index] = value & 0xff;
+    this.chrRom[this.normalizeChrBank(this.chrBank, 13) * 0x2000 + (addr & 0x1fff)] = value & 0xff;
   }
 
   writePrg(addr, value) {
@@ -286,50 +306,33 @@ class CNROMCartridge extends NROMCartridge {
 class MMC1Cartridge extends Cartridge {
   constructor(options) {
     super(options);
-    this.shiftRegister = 0x10;
-    this.control = 0x0c;
-    this.chrBank0 = 0;
-    this.chrBank1 = 0;
-    this.prgBank = 0;
     this.reset();
   }
 
   reset() {
     super.reset();
-    this.shiftRegister = 0x10;
-    this.control = 0x0c;
-    this.chrBank0 = 0;
-    this.chrBank1 = 0;
-    this.prgBank = 0;
+    resetFields(this, {
+      shiftRegister: 0x10,
+      control: 0x0c,
+      chrBank0: 0,
+      chrBank1: 0,
+      prgBank: 0,
+    });
     if (!this.fourScreen) {
       this.mirroring = "horizontal";
     }
   }
 
-  getPrgBankCount() {
-    return Math.max(1, this.prgRom.length >> 14);
-  }
-
-  getChrBankCount() {
-    return Math.max(1, this.chrRom.length >> 12);
-  }
-
   readPrg(addr) {
     const mode = (this.control >> 2) & 0x03;
     const slot = (addr - 0x8000) >> 14;
-    const lastBank = this.getPrgBankCount() - 1;
-    let bank;
-
-    if (mode <= 1) {
-      bank = (this.prgBank & 0x0e) + slot;
-    } else if (mode === 2) {
-      bank = slot === 0 ? 0 : this.prgBank;
-    } else {
-      bank = slot === 0 ? this.prgBank : lastBank;
-    }
-
-    const index = wrapIndex(bank, this.getPrgBankCount()) * 0x4000 + (addr & 0x3fff);
-    return this.prgRom[index];
+    const lastBank = (this.prgRom.length >> 14) - 1;
+    const bank = mode <= 1
+      ? (this.prgBank & 0x0e) + slot
+      : mode === 2
+        ? (slot === 0 ? 0 : this.prgBank)
+        : (slot === 0 ? this.prgBank : lastBank);
+    return this.prgRom[this.normalizePrgBank(bank, 14) * 0x4000 + (addr & 0x3fff)];
   }
 
   writePrg(addr, value) {
@@ -381,31 +384,16 @@ class MMC1Cartridge extends Cartridge {
 
   resolveChrBank(addr) {
     if (((this.control >> 4) & 0x01) === 0) {
-      return wrapIndex((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), this.getChrBankCount());
+      return this.normalizeChrBank((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), 12);
     }
 
     const bank = (addr & 0x1000) === 0 ? this.chrBank0 : this.chrBank1;
-    return wrapIndex(bank, this.getChrBankCount());
+    return this.normalizeChrBank(bank, 12);
   }
 
   updateMirroring() {
-    if (this.fourScreen) {
-      return;
-    }
-
-    switch (this.control & 0x03) {
-      case 0:
-        this.mirroring = "single-screen-lower";
-        break;
-      case 1:
-        this.mirroring = "single-screen-upper";
-        break;
-      case 2:
-        this.mirroring = "vertical";
-        break;
-      default:
-        this.mirroring = "horizontal";
-        break;
+    if (!this.fourScreen) {
+      this.mirroring = MMC1_MIRRORING_MODES[this.control & 0x03];
     }
   }
 }
@@ -413,72 +401,38 @@ class MMC1Cartridge extends Cartridge {
 class MMC3Cartridge extends Cartridge {
   constructor(options) {
     super(options);
-    this.bankSelect = 0;
-    this.prgMode = 0;
-    this.chrMode = 0;
     this.bankRegisters = new Uint8Array(8);
-    this.irqLatch = 0;
-    this.irqCounter = 0;
-    this.irqReload = false;
-    this.irqEnabled = false;
-    this.irqPending = false;
     this.reset();
   }
 
   reset() {
     super.reset();
-    this.bankSelect = 0;
-    this.prgMode = 0;
-    this.chrMode = 0;
+    resetFields(this, {
+      bankSelect: 0,
+      prgMode: 0,
+      chrMode: 0,
+      irqLatch: 0,
+      irqCounter: 0,
+      irqReload: false,
+      irqEnabled: false,
+      irqPending: false,
+    });
     this.bankRegisters.fill(0);
     this.bankRegisters[6] = 0;
     this.bankRegisters[7] = 1;
-    this.irqLatch = 0;
-    this.irqCounter = 0;
-    this.irqReload = false;
-    this.irqEnabled = false;
-    this.irqPending = false;
-  }
-
-  getPrgBankCount() {
-    return Math.max(1, this.prgRom.length >> 13);
-  }
-
-  getChrBankCount() {
-    return Math.max(1, this.chrRom.length >> 10);
-  }
-
-  resolvePrgBank(bank) {
-    return wrapIndex(bank, this.getPrgBankCount());
-  }
-
-  resolveChrBank(bank) {
-    return wrapIndex(bank, this.getChrBankCount());
   }
 
   readPrg(addr) {
     const slot = (addr - 0x8000) >> 13;
-    const lastBank = this.getPrgBankCount() - 1;
+    const lastBank = (this.prgRom.length >> 13) - 1;
     const secondLastBank = Math.max(0, lastBank - 1);
-
-    let bank = lastBank;
-    switch (slot) {
-      case 0:
-        bank = this.prgMode ? secondLastBank : this.bankRegisters[6];
-        break;
-      case 1:
-        bank = this.bankRegisters[7];
-        break;
-      case 2:
-        bank = this.prgMode ? this.bankRegisters[6] : secondLastBank;
-        break;
-      default:
-        bank = lastBank;
-        break;
-    }
-
-    const index = this.resolvePrgBank(bank) * 0x2000 + (addr & 0x1fff);
-    return this.prgRom[index];
+    const bank = [
+      this.prgMode ? secondLastBank : this.bankRegisters[6],
+      this.bankRegisters[7],
+      this.prgMode ? this.bankRegisters[6] : secondLastBank,
+      lastBank,
+    ][slot];
+    return this.prgRom[this.normalizePrgBank(bank, 13) * 0x2000 + (addr & 0x1fff)];
   }
 
   writePrg(addr, value) {
@@ -525,149 +479,23 @@ class MMC3Cartridge extends Cartridge {
   }
 
   writeBankData(value) {
-    switch (this.bankSelect) {
-      case 0:
-      case 1:
-        this.bankRegisters[this.bankSelect] = value & 0xfe;
-        break;
-      default:
-        this.bankRegisters[this.bankSelect] = value & 0xff;
-        break;
-    }
+    this.bankRegisters[this.bankSelect] = value & (this.bankSelect <= 1 ? 0xfe : 0xff);
+  }
+
+  getChrAddress(addr) {
+    const slot = (addr & 0x1fff) >> 10;
+    const [registerIndex, offset] = MMC3_CHR_BANK_SELECTORS[this.chrMode][slot];
+    return this.normalizeChrBank(this.bankRegisters[registerIndex] + offset, 10) * 0x0400 + (addr & 0x03ff);
   }
 
   readChr(addr) {
-    const slot = (addr & 0x1fff) >> 10;
-    const offset = addr & 0x03ff;
-    let bank;
-
-    if (this.chrMode === 0) {
-      switch (slot) {
-        case 0:
-          bank = this.bankRegisters[0];
-          break;
-        case 1:
-          bank = this.bankRegisters[0] + 1;
-          break;
-        case 2:
-          bank = this.bankRegisters[1];
-          break;
-        case 3:
-          bank = this.bankRegisters[1] + 1;
-          break;
-        case 4:
-          bank = this.bankRegisters[2];
-          break;
-        case 5:
-          bank = this.bankRegisters[3];
-          break;
-        case 6:
-          bank = this.bankRegisters[4];
-          break;
-        default:
-          bank = this.bankRegisters[5];
-          break;
-      }
-    } else {
-      switch (slot) {
-        case 0:
-          bank = this.bankRegisters[2];
-          break;
-        case 1:
-          bank = this.bankRegisters[3];
-          break;
-        case 2:
-          bank = this.bankRegisters[4];
-          break;
-        case 3:
-          bank = this.bankRegisters[5];
-          break;
-        case 4:
-          bank = this.bankRegisters[0];
-          break;
-        case 5:
-          bank = this.bankRegisters[0] + 1;
-          break;
-        case 6:
-          bank = this.bankRegisters[1];
-          break;
-        default:
-          bank = this.bankRegisters[1] + 1;
-          break;
-      }
-    }
-
-    const index = this.resolveChrBank(bank) * 0x0400 + offset;
-    return this.chrRom[index];
+    return this.chrRom[this.getChrAddress(addr)];
   }
 
   writeChr(addr, value) {
-    if (!this.hasChrRam) {
-      return;
+    if (this.hasChrRam) {
+      this.chrRom[this.getChrAddress(addr)] = value & 0xff;
     }
-
-    const slot = (addr & 0x1fff) >> 10;
-    const offset = addr & 0x03ff;
-    let bank;
-
-    if (this.chrMode === 0) {
-      switch (slot) {
-        case 0:
-          bank = this.bankRegisters[0];
-          break;
-        case 1:
-          bank = this.bankRegisters[0] + 1;
-          break;
-        case 2:
-          bank = this.bankRegisters[1];
-          break;
-        case 3:
-          bank = this.bankRegisters[1] + 1;
-          break;
-        case 4:
-          bank = this.bankRegisters[2];
-          break;
-        case 5:
-          bank = this.bankRegisters[3];
-          break;
-        case 6:
-          bank = this.bankRegisters[4];
-          break;
-        default:
-          bank = this.bankRegisters[5];
-          break;
-      }
-    } else {
-      switch (slot) {
-        case 0:
-          bank = this.bankRegisters[2];
-          break;
-        case 1:
-          bank = this.bankRegisters[3];
-          break;
-        case 2:
-          bank = this.bankRegisters[4];
-          break;
-        case 3:
-          bank = this.bankRegisters[5];
-          break;
-        case 4:
-          bank = this.bankRegisters[0];
-          break;
-        case 5:
-          bank = this.bankRegisters[0] + 1;
-          break;
-        case 6:
-          bank = this.bankRegisters[1];
-          break;
-        default:
-          bank = this.bankRegisters[1] + 1;
-          break;
-      }
-    }
-
-    const index = this.resolveChrBank(bank) * 0x0400 + offset;
-    this.chrRom[index] = value & 0xff;
   }
 
   clockScanline() {
@@ -688,25 +516,25 @@ class MMC3Cartridge extends Cartridge {
   }
 }
 
+Object.assign(CARTRIDGE_TYPES, {
+  0: NROMCartridge,
+  1: MMC1Cartridge,
+  2: UxROMCartridge,
+  3: CNROMCartridge,
+  4: MMC3Cartridge,
+});
+
 class Controller {
   constructor() {
-    this.state = 0;
-    this.shift = 0;
-    this.strobe = 0;
+    resetFields(this, {
+      state: 0,
+      shift: 0,
+      strobe: 0,
+    });
   }
 
   setButton(button, pressed) {
-    const bit = {
-      a: 0,
-      b: 1,
-      select: 2,
-      start: 3,
-      up: 4,
-      down: 5,
-      left: 6,
-      right: 7,
-    }[button];
-
+    const bit = CONTROLLER_BUTTON_BITS[button];
     if (bit === undefined) {
       return;
     }
@@ -751,43 +579,11 @@ class PPU {
     this.paletteRam = new Uint8Array(0x20);
     this.oam = new Uint8Array(0x100);
     this.framebuffer = new Uint8ClampedArray(256 * 240 * 4);
-
-    this.ctrl = 0;
-    this.mask = 0;
-    this.status = 0;
-    this.oamAddr = 0;
-    this.readBuffer = 0;
-    this.openBus = 0;
-
-    this.v = 0;
-    this.t = 0;
-    this.x = 0;
-    this.w = 0;
-
-    this.scanline = 261;
-    this.cycle = 0;
-    this.frameReady = false;
-    this.nmiPending = false;
-    this.lineBaseV = 0;
-    this.lineSprites = [];
+    this.reset();
   }
 
   reset() {
-    this.ctrl = 0;
-    this.mask = 0;
-    this.status = 0;
-    this.oamAddr = 0;
-    this.readBuffer = 0;
-    this.openBus = 0;
-    this.v = 0;
-    this.t = 0;
-    this.x = 0;
-    this.w = 0;
-    this.scanline = 261;
-    this.cycle = 0;
-    this.frameReady = false;
-    this.nmiPending = false;
-    this.lineBaseV = 0;
+    resetFields(this, PPU_DEFAULTS);
     this.lineSprites = [];
   }
 
@@ -1230,21 +1026,11 @@ class PPU {
 class CPU6502 {
   constructor(bus) {
     this.bus = bus;
-    this.a = 0;
-    this.x = 0;
-    this.y = 0;
-    this.s = 0xfd;
-    this.p = CPU_FLAG_INTERRUPT | CPU_FLAG_UNUSED;
-    this.pc = 0;
-    this.stallCycles = 0;
+    resetFields(this, CPU_DEFAULTS);
   }
 
   reset() {
-    this.a = 0;
-    this.x = 0;
-    this.y = 0;
-    this.s = 0xfd;
-    this.p = CPU_FLAG_INTERRUPT | CPU_FLAG_UNUSED;
+    resetFields(this, CPU_DEFAULTS);
     this.stallCycles = 7;
     this.pc = this.read16(0xfffc);
   }
@@ -1266,9 +1052,7 @@ class CPU6502 {
     this.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
   }
 
-  read(addr) {
-    return this.bus.read(addr);
-  }
+  read(addr) { return this.bus.read(addr); }
 
   write(addr, value) {
     const stall = this.bus.write(addr, value & 0xff);
@@ -1277,38 +1061,12 @@ class CPU6502 {
     }
   }
 
-  read16(addr) {
-    const lo = this.read(addr);
-    const hi = this.read((addr + 1) & 0xffff);
-    return lo | (hi << 8);
-  }
-
-  read16Bug(addr) {
-    const lo = this.read(addr);
-    const hi = this.read((addr & 0xff00) | ((addr + 1) & 0x00ff));
-    return lo | (hi << 8);
-  }
-
-  push(value) {
-    this.write(0x0100 | this.s, value);
-    this.s = (this.s - 1) & 0xff;
-  }
-
-  pull() {
-    this.s = (this.s + 1) & 0xff;
-    return this.read(0x0100 | this.s);
-  }
-
-  push16(value) {
-    this.push((value >> 8) & 0xff);
-    this.push(value & 0xff);
-  }
-
-  pull16() {
-    const lo = this.pull();
-    const hi = this.pull();
-    return lo | (hi << 8);
-  }
+  read16(addr) { return this.read(addr) | (this.read((addr + 1) & 0xffff) << 8); }
+  read16Bug(addr) { return this.read(addr) | (this.read((addr & 0xff00) | ((addr + 1) & 0x00ff)) << 8); }
+  push(value) { this.write(0x0100 | this.s, value); this.s = (this.s - 1) & 0xff; }
+  pull() { this.s = (this.s + 1) & 0xff; return this.read(0x0100 | this.s); }
+  push16(value) { this.push((value >> 8) & 0xff); this.push(value & 0xff); }
+  pull16() { return this.pull() | (this.pull() << 8); }
 
   serviceInterrupt(vector, breakFlag) {
     this.push16(this.pc);
@@ -1317,67 +1075,20 @@ class CPU6502 {
     this.pc = this.read16(vector);
   }
 
-  pageCrossed(a, b) {
-    return (a & 0xff00) !== (b & 0xff00);
-  }
-
-  immediate() {
-    const addr = this.pc;
-    this.pc = (this.pc + 1) & 0xffff;
-    return { addr, pageCrossed: false };
-  }
-
-  zeroPage() {
-    const addr = this.read(this.pc);
-    this.pc = (this.pc + 1) & 0xffff;
-    return { addr, pageCrossed: false };
-  }
-
-  zeroPageX() {
-    const addr = (this.read(this.pc) + this.x) & 0xff;
-    this.pc = (this.pc + 1) & 0xffff;
-    return { addr, pageCrossed: false };
-  }
-
-  zeroPageY() {
-    const addr = (this.read(this.pc) + this.y) & 0xff;
-    this.pc = (this.pc + 1) & 0xffff;
-    return { addr, pageCrossed: false };
-  }
-
-  absolute() {
-    const addr = this.read16(this.pc);
-    this.pc = (this.pc + 2) & 0xffff;
-    return { addr, pageCrossed: false };
-  }
-
-  absoluteX() {
-    const base = this.read16(this.pc);
-    const addr = (base + this.x) & 0xffff;
-    this.pc = (this.pc + 2) & 0xffff;
-    return { addr, pageCrossed: this.pageCrossed(base, addr) };
-  }
-
-  absoluteY() {
-    const base = this.read16(this.pc);
-    const addr = (base + this.y) & 0xffff;
-    this.pc = (this.pc + 2) & 0xffff;
-    return { addr, pageCrossed: this.pageCrossed(base, addr) };
-  }
-
-  indirect() {
-    const pointer = this.read16(this.pc);
-    this.pc = (this.pc + 2) & 0xffff;
-    return { addr: this.read16Bug(pointer), pageCrossed: false };
-  }
-
+  pageCrossed(a, b) { return (a & 0xff00) !== (b & 0xff00); }
+  immediate() { const addr = this.pc; this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
+  zeroPage() { const addr = this.read(this.pc); this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
+  zeroPageX() { const addr = (this.read(this.pc) + this.x) & 0xff; this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
+  zeroPageY() { const addr = (this.read(this.pc) + this.y) & 0xff; this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
+  absolute() { const addr = this.read16(this.pc); this.pc = (this.pc + 2) & 0xffff; return { addr, pageCrossed: false }; }
+  absoluteX() { const base = this.read16(this.pc); const addr = (base + this.x) & 0xffff; this.pc = (this.pc + 2) & 0xffff; return { addr, pageCrossed: this.pageCrossed(base, addr) }; }
+  absoluteY() { const base = this.read16(this.pc); const addr = (base + this.y) & 0xffff; this.pc = (this.pc + 2) & 0xffff; return { addr, pageCrossed: this.pageCrossed(base, addr) }; }
+  indirect() { const pointer = this.read16(this.pc); this.pc = (this.pc + 2) & 0xffff; return { addr: this.read16Bug(pointer), pageCrossed: false }; }
   indexedIndirect() {
     const pointer = (this.read(this.pc) + this.x) & 0xff;
     this.pc = (this.pc + 1) & 0xffff;
-    const addr = this.read(pointer) | (this.read((pointer + 1) & 0xff) << 8);
-    return { addr, pageCrossed: false };
+    return { addr: this.read(pointer) | (this.read((pointer + 1) & 0xff) << 8), pageCrossed: false };
   }
-
   indirectIndexed() {
     const pointer = this.read(this.pc);
     this.pc = (this.pc + 1) & 0xffff;
@@ -1385,21 +1096,9 @@ class CPU6502 {
     const addr = (base + this.y) & 0xffff;
     return { addr, pageCrossed: this.pageCrossed(base, addr) };
   }
-
-  relative() {
-    const offsetByte = this.read(this.pc);
-    this.pc = (this.pc + 1) & 0xffff;
-    const offset = offsetByte < 0x80 ? offsetByte : offsetByte - 0x100;
-    return { offset };
-  }
-
-  accumulator() {
-    return { addr: null, pageCrossed: false };
-  }
-
-  implied() {
-    return { addr: null, pageCrossed: false };
-  }
+  relative() { const offset = this.read(this.pc); this.pc = (this.pc + 1) & 0xffff; return { offset: offset < 0x80 ? offset : offset - 0x100 }; }
+  accumulator() { return { addr: null, pageCrossed: false }; }
+  implied() { return { addr: null, pageCrossed: false }; }
 
   branchIf(condition, offset) {
     if (!condition) {
@@ -1421,11 +1120,7 @@ class CPU6502 {
     this.setZN(this.a);
   }
 
-  compare(register, value) {
-    const result = (register - value) & 0xff;
-    this.setFlag(CPU_FLAG_CARRY, register >= value);
-    this.setZN(result);
-  }
+  compare(register, value) { const result = (register - value) & 0xff; this.setFlag(CPU_FLAG_CARRY, register >= value); this.setZN(result); }
 
   step() {
     if (this.stallCycles > 0) {
@@ -1454,490 +1149,260 @@ class CPU6502 {
     }
 
     const operand = this[meta.mode]();
-    let extraCycles = 0;
-    const address = operand.addr;
-    const readValue = () => this.read(address);
-    const writeValue = (value) => this.write(address, value);
-
-    switch (meta.name) {
-      case "ADC":
-        this.adc(readValue());
-        break;
-      case "AND":
-        this.a &= readValue();
-        this.setZN(this.a);
-        break;
-      case "ASL":
-        if (meta.mode === "accumulator") {
-          this.setFlag(CPU_FLAG_CARRY, (this.a & 0x80) !== 0);
-          this.a = (this.a << 1) & 0xff;
-          this.setZN(this.a);
-        } else {
-          const value = readValue();
-          this.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
-          const result = (value << 1) & 0xff;
-          writeValue(result);
-          this.setZN(result);
-        }
-        break;
-      case "BCC":
-        extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_CARRY), operand.offset);
-        break;
-      case "BCS":
-        extraCycles = this.branchIf(this.getFlag(CPU_FLAG_CARRY), operand.offset);
-        break;
-      case "BEQ":
-        extraCycles = this.branchIf(this.getFlag(CPU_FLAG_ZERO), operand.offset);
-        break;
-      case "BIT": {
-        const value = readValue();
-        this.setFlag(CPU_FLAG_ZERO, (this.a & value) === 0);
-        this.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
-        this.setFlag(CPU_FLAG_OVERFLOW, (value & 0x40) !== 0);
-        break;
-      }
-      case "BMI":
-        extraCycles = this.branchIf(this.getFlag(CPU_FLAG_NEGATIVE), operand.offset);
-        break;
-      case "BNE":
-        extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_ZERO), operand.offset);
-        break;
-      case "BPL":
-        extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_NEGATIVE), operand.offset);
-        break;
-      case "BRK":
-        this.pc = (this.pc + 1) & 0xffff;
-        this.serviceInterrupt(0xfffe, true);
-        break;
-      case "BVC":
-        extraCycles = this.branchIf(!this.getFlag(CPU_FLAG_OVERFLOW), operand.offset);
-        break;
-      case "BVS":
-        extraCycles = this.branchIf(this.getFlag(CPU_FLAG_OVERFLOW), operand.offset);
-        break;
-      case "CLC":
-        this.setFlag(CPU_FLAG_CARRY, false);
-        break;
-      case "CLD":
-        this.setFlag(CPU_FLAG_DECIMAL, false);
-        break;
-      case "CLI":
-        this.setFlag(CPU_FLAG_INTERRUPT, false);
-        break;
-      case "CLV":
-        this.setFlag(CPU_FLAG_OVERFLOW, false);
-        break;
-      case "CMP":
-        this.compare(this.a, readValue());
-        break;
-      case "CPX":
-        this.compare(this.x, readValue());
-        break;
-      case "CPY":
-        this.compare(this.y, readValue());
-        break;
-      case "DEC": {
-        const result = (readValue() - 1) & 0xff;
-        writeValue(result);
-        this.setZN(result);
-        break;
-      }
-      case "DEX":
-        this.x = (this.x - 1) & 0xff;
-        this.setZN(this.x);
-        break;
-      case "DEY":
-        this.y = (this.y - 1) & 0xff;
-        this.setZN(this.y);
-        break;
-      case "EOR":
-        this.a ^= readValue();
-        this.setZN(this.a);
-        break;
-      case "INC": {
-        const result = (readValue() + 1) & 0xff;
-        writeValue(result);
-        this.setZN(result);
-        break;
-      }
-      case "INX":
-        this.x = (this.x + 1) & 0xff;
-        this.setZN(this.x);
-        break;
-      case "INY":
-        this.y = (this.y + 1) & 0xff;
-        this.setZN(this.y);
-        break;
-      case "JMP":
-        this.pc = address;
-        break;
-      case "JSR":
-        this.push16((this.pc - 1) & 0xffff);
-        this.pc = address;
-        break;
-      case "LDA":
-        this.a = readValue();
-        this.setZN(this.a);
-        break;
-      case "LDX":
-        this.x = readValue();
-        this.setZN(this.x);
-        break;
-      case "LDY":
-        this.y = readValue();
-        this.setZN(this.y);
-        break;
-      case "LSR":
-        if (meta.mode === "accumulator") {
-          this.setFlag(CPU_FLAG_CARRY, (this.a & 0x01) !== 0);
-          this.a = (this.a >> 1) & 0xff;
-          this.setZN(this.a);
-        } else {
-          const value = readValue();
-          this.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
-          const result = (value >> 1) & 0xff;
-          writeValue(result);
-          this.setZN(result);
-        }
-        break;
-      case "NOP":
-        break;
-      case "ORA":
-        this.a |= readValue();
-        this.setZN(this.a);
-        break;
-      case "PHA":
-        this.push(this.a);
-        break;
-      case "PHP":
-        this.push(this.p | CPU_FLAG_BREAK | CPU_FLAG_UNUSED);
-        break;
-      case "PLA":
-        this.a = this.pull();
-        this.setZN(this.a);
-        break;
-      case "PLP":
-        this.p = (this.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
-        break;
-      case "ROL":
-        if (meta.mode === "accumulator") {
-          const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
-          this.setFlag(CPU_FLAG_CARRY, (this.a & 0x80) !== 0);
-          this.a = ((this.a << 1) | carryIn) & 0xff;
-          this.setZN(this.a);
-        } else {
-          const value = readValue();
-          const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
-          this.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
-          const result = ((value << 1) | carryIn) & 0xff;
-          writeValue(result);
-          this.setZN(result);
-        }
-        break;
-      case "ROR":
-        if (meta.mode === "accumulator") {
-          const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 0x80 : 0;
-          this.setFlag(CPU_FLAG_CARRY, (this.a & 0x01) !== 0);
-          this.a = ((this.a >> 1) | carryIn) & 0xff;
-          this.setZN(this.a);
-        } else {
-          const value = readValue();
-          const carryIn = this.getFlag(CPU_FLAG_CARRY) ? 0x80 : 0;
-          this.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
-          const result = ((value >> 1) | carryIn) & 0xff;
-          writeValue(result);
-          this.setZN(result);
-        }
-        break;
-      case "RTI":
-        this.p = (this.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
-        this.pc = this.pull16();
-        break;
-      case "RTS":
-        this.pc = (this.pull16() + 1) & 0xffff;
-        break;
-      case "SBC":
-        this.adc(readValue() ^ 0xff);
-        break;
-      case "SEC":
-        this.setFlag(CPU_FLAG_CARRY, true);
-        break;
-      case "SED":
-        this.setFlag(CPU_FLAG_DECIMAL, true);
-        break;
-      case "SEI":
-        this.setFlag(CPU_FLAG_INTERRUPT, true);
-        break;
-      case "STA":
-        writeValue(this.a);
-        break;
-      case "STX":
-        writeValue(this.x);
-        break;
-      case "STY":
-        writeValue(this.y);
-        break;
-      case "TAX":
-        this.x = this.a;
-        this.setZN(this.x);
-        break;
-      case "TAY":
-        this.y = this.a;
-        this.setZN(this.y);
-        break;
-      case "TSX":
-        this.x = this.s;
-        this.setZN(this.x);
-        break;
-      case "TXA":
-        this.a = this.x;
-        this.setZN(this.a);
-        break;
-      case "TXS":
-        this.s = this.x;
-        break;
-      case "TYA":
-        this.a = this.y;
-        this.setZN(this.a);
-        break;
-      default:
-        throw new Error(`Opcode handler missing for ${meta.name}`);
+    const handler = CPU_INSTRUCTION_HANDLERS[meta.name];
+    if (!handler) {
+      throw new Error(`Opcode handler missing for ${meta.name}`);
     }
 
-    return meta.cycles + extraCycles + (meta.pageCycle && operand.pageCrossed ? 1 : 0);
+    return meta.cycles + handler(this, operand, meta) + (meta.pageCycle && operand.pageCrossed ? 1 : 0);
   }
 }
 
-function defineOpcode(table, opcode, name, mode, cycles, pageCycle = false) {
-  table[opcode] = { name, mode, cycles, pageCycle };
+function readOperand(cpu, operand) { return cpu.read(operand.addr); }
+function writeOperand(cpu, operand, value) { cpu.write(operand.addr, value); }
+function mutateAccumulator(cpu, operand, operation) {
+  cpu.a = operation(cpu.a, readOperand(cpu, operand)) & 0xff;
+  cpu.setZN(cpu.a);
+  return 0;
 }
+function readModifyWrite(cpu, operand, meta, operation) {
+  const value = meta.mode === "accumulator" ? cpu.a : readOperand(cpu, operand);
+  const result = operation(cpu, value) & 0xff;
+  if (meta.mode === "accumulator") cpu.a = result;
+  else writeOperand(cpu, operand, result);
+  cpu.setZN(result);
+  return 0;
+}
+function branchOnFlag(flag, enabled) { return (cpu, operand) => cpu.branchIf(cpu.getFlag(flag) === enabled, operand.offset); }
+function compareRegister(register) { return (cpu, operand) => (cpu.compare(cpu[register], readOperand(cpu, operand)), 0); }
+function loadRegister(register) { return (cpu, operand) => ((cpu[register] = readOperand(cpu, operand)), cpu.setZN(cpu[register]), 0); }
+function storeRegister(register) { return (cpu, operand) => (writeOperand(cpu, operand, cpu[register]), 0); }
+function transferRegister(target, source, setZN = true) {
+  return (cpu) => ((cpu[target] = cpu[source]), setZN && cpu.setZN(cpu[target]), 0);
+}
+function setFlagHandler(flag, enabled) { return (cpu) => (cpu.setFlag(flag, enabled), 0); }
 
-const OPCODES = new Array(256);
-const OPCODE_GROUPS = {
-  ADC: [
-    [0x69, "immediate", 2],
-    [0x65, "zeroPage", 3],
-    [0x75, "zeroPageX", 4],
-    [0x6d, "absolute", 4],
-    [0x7d, "absoluteX", 4, true],
-    [0x79, "absoluteY", 4, true],
-    [0x61, "indexedIndirect", 6],
-    [0x71, "indirectIndexed", 5, true],
-  ],
-  AND: [
-    [0x29, "immediate", 2],
-    [0x25, "zeroPage", 3],
-    [0x35, "zeroPageX", 4],
-    [0x2d, "absolute", 4],
-    [0x3d, "absoluteX", 4, true],
-    [0x39, "absoluteY", 4, true],
-    [0x21, "indexedIndirect", 6],
-    [0x31, "indirectIndexed", 5, true],
-  ],
-  ASL: [
-    [0x0a, "accumulator", 2],
-    [0x06, "zeroPage", 5],
-    [0x16, "zeroPageX", 6],
-    [0x0e, "absolute", 6],
-    [0x1e, "absoluteX", 7],
-  ],
-  BCC: [[0x90, "relative", 2]],
-  BCS: [[0xb0, "relative", 2]],
-  BEQ: [[0xf0, "relative", 2]],
-  BIT: [
-    [0x24, "zeroPage", 3],
-    [0x2c, "absolute", 4],
-  ],
-  BMI: [[0x30, "relative", 2]],
-  BNE: [[0xd0, "relative", 2]],
-  BPL: [[0x10, "relative", 2]],
-  BRK: [[0x00, "implied", 7]],
-  BVC: [[0x50, "relative", 2]],
-  BVS: [[0x70, "relative", 2]],
-  CLC: [[0x18, "implied", 2]],
-  CLD: [[0xd8, "implied", 2]],
-  CLI: [[0x58, "implied", 2]],
-  CLV: [[0xb8, "implied", 2]],
-  CMP: [
-    [0xc9, "immediate", 2],
-    [0xc5, "zeroPage", 3],
-    [0xd5, "zeroPageX", 4],
-    [0xcd, "absolute", 4],
-    [0xdd, "absoluteX", 4, true],
-    [0xd9, "absoluteY", 4, true],
-    [0xc1, "indexedIndirect", 6],
-    [0xd1, "indirectIndexed", 5, true],
-  ],
-  CPX: [
-    [0xe0, "immediate", 2],
-    [0xe4, "zeroPage", 3],
-    [0xec, "absolute", 4],
-  ],
-  CPY: [
-    [0xc0, "immediate", 2],
-    [0xc4, "zeroPage", 3],
-    [0xcc, "absolute", 4],
-  ],
-  DEC: [
-    [0xc6, "zeroPage", 5],
-    [0xd6, "zeroPageX", 6],
-    [0xce, "absolute", 6],
-    [0xde, "absoluteX", 7],
-  ],
-  DEX: [[0xca, "implied", 2]],
-  DEY: [[0x88, "implied", 2]],
-  EOR: [
-    [0x49, "immediate", 2],
-    [0x45, "zeroPage", 3],
-    [0x55, "zeroPageX", 4],
-    [0x4d, "absolute", 4],
-    [0x5d, "absoluteX", 4, true],
-    [0x59, "absoluteY", 4, true],
-    [0x41, "indexedIndirect", 6],
-    [0x51, "indirectIndexed", 5, true],
-  ],
-  INC: [
-    [0xe6, "zeroPage", 5],
-    [0xf6, "zeroPageX", 6],
-    [0xee, "absolute", 6],
-    [0xfe, "absoluteX", 7],
-  ],
-  INX: [[0xe8, "implied", 2]],
-  INY: [[0xc8, "implied", 2]],
-  JMP: [
-    [0x4c, "absolute", 3],
-    [0x6c, "indirect", 5],
-  ],
-  JSR: [[0x20, "absolute", 6]],
-  LDA: [
-    [0xa9, "immediate", 2],
-    [0xa5, "zeroPage", 3],
-    [0xb5, "zeroPageX", 4],
-    [0xad, "absolute", 4],
-    [0xbd, "absoluteX", 4, true],
-    [0xb9, "absoluteY", 4, true],
-    [0xa1, "indexedIndirect", 6],
-    [0xb1, "indirectIndexed", 5, true],
-  ],
-  LDX: [
-    [0xa2, "immediate", 2],
-    [0xa6, "zeroPage", 3],
-    [0xb6, "zeroPageY", 4],
-    [0xae, "absolute", 4],
-    [0xbe, "absoluteY", 4, true],
-  ],
-  LDY: [
-    [0xa0, "immediate", 2],
-    [0xa4, "zeroPage", 3],
-    [0xb4, "zeroPageX", 4],
-    [0xac, "absolute", 4],
-    [0xbc, "absoluteX", 4, true],
-  ],
-  LSR: [
-    [0x4a, "accumulator", 2],
-    [0x46, "zeroPage", 5],
-    [0x56, "zeroPageX", 6],
-    [0x4e, "absolute", 6],
-    [0x5e, "absoluteX", 7],
-  ],
-  NOP: [
-    [0xea, "implied", 2],
-    [0x1a, "implied", 2],
-    [0x3a, "implied", 2],
-    [0x5a, "implied", 2],
-    [0x7a, "implied", 2],
-    [0xda, "implied", 2],
-    [0xfa, "implied", 2],
-    [0x04, "zeroPage", 3],
-    [0x44, "zeroPage", 3],
-    [0x64, "zeroPage", 3],
-    [0x14, "zeroPageX", 4],
-    [0x34, "zeroPageX", 4],
-    [0x54, "zeroPageX", 4],
-    [0x74, "zeroPageX", 4],
-    [0xd4, "zeroPageX", 4],
-    [0xf4, "zeroPageX", 4],
-    [0x0c, "absolute", 4],
-    [0x1c, "absoluteX", 4, true],
-    [0x3c, "absoluteX", 4, true],
-    [0x5c, "absoluteX", 4, true],
-    [0x7c, "absoluteX", 4, true],
-    [0xdc, "absoluteX", 4, true],
-    [0xfc, "absoluteX", 4, true],
-  ],
-  ORA: [
-    [0x09, "immediate", 2],
-    [0x05, "zeroPage", 3],
-    [0x15, "zeroPageX", 4],
-    [0x0d, "absolute", 4],
-    [0x1d, "absoluteX", 4, true],
-    [0x19, "absoluteY", 4, true],
-    [0x01, "indexedIndirect", 6],
-    [0x11, "indirectIndexed", 5, true],
-  ],
-  PHA: [[0x48, "implied", 3]],
-  PHP: [[0x08, "implied", 3]],
-  PLA: [[0x68, "implied", 4]],
-  PLP: [[0x28, "implied", 4]],
-  ROL: [
-    [0x2a, "accumulator", 2],
-    [0x26, "zeroPage", 5],
-    [0x36, "zeroPageX", 6],
-    [0x2e, "absolute", 6],
-    [0x3e, "absoluteX", 7],
-  ],
-  ROR: [
-    [0x6a, "accumulator", 2],
-    [0x66, "zeroPage", 5],
-    [0x76, "zeroPageX", 6],
-    [0x6e, "absolute", 6],
-    [0x7e, "absoluteX", 7],
-  ],
-  RTI: [[0x40, "implied", 6]],
-  RTS: [[0x60, "implied", 6]],
-  SBC: [
-    [0xe9, "immediate", 2],
-    [0xe5, "zeroPage", 3],
-    [0xf5, "zeroPageX", 4],
-    [0xed, "absolute", 4],
-    [0xfd, "absoluteX", 4, true],
-    [0xf9, "absoluteY", 4, true],
-    [0xe1, "indexedIndirect", 6],
-    [0xf1, "indirectIndexed", 5, true],
-  ],
-  SEC: [[0x38, "implied", 2]],
-  SED: [[0xf8, "implied", 2]],
-  SEI: [[0x78, "implied", 2]],
-  STA: [
-    [0x85, "zeroPage", 3],
-    [0x95, "zeroPageX", 4],
-    [0x8d, "absolute", 4],
-    [0x9d, "absoluteX", 5],
-    [0x99, "absoluteY", 5],
-    [0x81, "indexedIndirect", 6],
-    [0x91, "indirectIndexed", 6],
-  ],
-  STX: [
-    [0x86, "zeroPage", 3],
-    [0x96, "zeroPageY", 4],
-    [0x8e, "absolute", 4],
-  ],
-  STY: [
-    [0x84, "zeroPage", 3],
-    [0x94, "zeroPageX", 4],
-    [0x8c, "absolute", 4],
-  ],
-  TAX: [[0xaa, "implied", 2]],
-  TAY: [[0xa8, "implied", 2]],
-  TSX: [[0xba, "implied", 2]],
-  TXA: [[0x8a, "implied", 2]],
-  TXS: [[0x9a, "implied", 2]],
-  TYA: [[0x98, "implied", 2]],
+const CPU_INSTRUCTION_HANDLERS = {
+  ADC(cpu, operand) {
+    cpu.adc(readOperand(cpu, operand));
+    return 0;
+  },
+  AND(cpu, operand) {
+    return mutateAccumulator(cpu, operand, (a, b) => a & b);
+  },
+  ASL(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (instance, value) => {
+      instance.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
+      return value << 1;
+    });
+  },
+  BCC: branchOnFlag(CPU_FLAG_CARRY, false),
+  BCS: branchOnFlag(CPU_FLAG_CARRY, true),
+  BEQ: branchOnFlag(CPU_FLAG_ZERO, true),
+  BIT(cpu, operand) {
+    const value = readOperand(cpu, operand);
+    cpu.setFlag(CPU_FLAG_ZERO, (cpu.a & value) === 0);
+    cpu.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
+    cpu.setFlag(CPU_FLAG_OVERFLOW, (value & 0x40) !== 0);
+    return 0;
+  },
+  BMI: branchOnFlag(CPU_FLAG_NEGATIVE, true),
+  BNE: branchOnFlag(CPU_FLAG_ZERO, false),
+  BPL: branchOnFlag(CPU_FLAG_NEGATIVE, false),
+  BRK(cpu) {
+    cpu.pc = (cpu.pc + 1) & 0xffff;
+    cpu.serviceInterrupt(0xfffe, true);
+    return 0;
+  },
+  BVC: branchOnFlag(CPU_FLAG_OVERFLOW, false),
+  BVS: branchOnFlag(CPU_FLAG_OVERFLOW, true),
+  CLC: setFlagHandler(CPU_FLAG_CARRY, false),
+  CLD: setFlagHandler(CPU_FLAG_DECIMAL, false),
+  CLI: setFlagHandler(CPU_FLAG_INTERRUPT, false),
+  CLV: setFlagHandler(CPU_FLAG_OVERFLOW, false),
+  CMP: compareRegister("a"),
+  CPX: compareRegister("x"),
+  CPY: compareRegister("y"),
+  DEC(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (_, value) => value - 1);
+  },
+  DEX(cpu) {
+    cpu.x = (cpu.x - 1) & 0xff;
+    cpu.setZN(cpu.x);
+    return 0;
+  },
+  DEY(cpu) {
+    cpu.y = (cpu.y - 1) & 0xff;
+    cpu.setZN(cpu.y);
+    return 0;
+  },
+  EOR(cpu, operand) {
+    return mutateAccumulator(cpu, operand, (a, b) => a ^ b);
+  },
+  INC(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (_, value) => value + 1);
+  },
+  INX(cpu) {
+    cpu.x = (cpu.x + 1) & 0xff;
+    cpu.setZN(cpu.x);
+    return 0;
+  },
+  INY(cpu) {
+    cpu.y = (cpu.y + 1) & 0xff;
+    cpu.setZN(cpu.y);
+    return 0;
+  },
+  JMP(cpu, operand) {
+    cpu.pc = operand.addr;
+    return 0;
+  },
+  JSR(cpu, operand) {
+    cpu.push16((cpu.pc - 1) & 0xffff);
+    cpu.pc = operand.addr;
+    return 0;
+  },
+  LDA: loadRegister("a"),
+  LDX: loadRegister("x"),
+  LDY: loadRegister("y"),
+  LSR(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (instance, value) => {
+      instance.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
+      return value >> 1;
+    });
+  },
+  NOP() {
+    return 0;
+  },
+  ORA(cpu, operand) {
+    return mutateAccumulator(cpu, operand, (a, b) => a | b);
+  },
+  PHA(cpu) {
+    cpu.push(cpu.a);
+    return 0;
+  },
+  PHP(cpu) {
+    cpu.push(cpu.p | CPU_FLAG_BREAK | CPU_FLAG_UNUSED);
+    return 0;
+  },
+  PLA(cpu) {
+    cpu.a = cpu.pull();
+    cpu.setZN(cpu.a);
+    return 0;
+  },
+  PLP(cpu) {
+    cpu.p = (cpu.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
+    return 0;
+  },
+  ROL(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (instance, value) => {
+      const carryIn = instance.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
+      instance.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
+      return (value << 1) | carryIn;
+    });
+  },
+  ROR(cpu, operand, meta) {
+    return readModifyWrite(cpu, operand, meta, (instance, value) => {
+      const carryIn = instance.getFlag(CPU_FLAG_CARRY) ? 0x80 : 0;
+      instance.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
+      return (value >> 1) | carryIn;
+    });
+  },
+  RTI(cpu) {
+    cpu.p = (cpu.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
+    cpu.pc = cpu.pull16();
+    return 0;
+  },
+  RTS(cpu) {
+    cpu.pc = (cpu.pull16() + 1) & 0xffff;
+    return 0;
+  },
+  SBC(cpu, operand) {
+    cpu.adc(readOperand(cpu, operand) ^ 0xff);
+    return 0;
+  },
+  SEC: setFlagHandler(CPU_FLAG_CARRY, true),
+  SED: setFlagHandler(CPU_FLAG_DECIMAL, true),
+  SEI: setFlagHandler(CPU_FLAG_INTERRUPT, true),
+  STA: storeRegister("a"),
+  STX: storeRegister("x"),
+  STY: storeRegister("y"),
+  TAX: transferRegister("x", "a"),
+  TAY: transferRegister("y", "a"),
+  TSX: transferRegister("x", "s"),
+  TXA: transferRegister("a", "x"),
+  TXS: transferRegister("s", "x", false),
+  TYA: transferRegister("a", "y"),
 };
 
-for (const [name, entries] of Object.entries(OPCODE_GROUPS)) {
-  for (const [opcode, mode, cycles, pageCycle = false] of entries) {
-    defineOpcode(OPCODES, opcode, name, mode, cycles, pageCycle);
+const OPCODES = new Array(256);
+const OPCODE_SPECS = {
+  ADC: "69 immediate 2|65 zeroPage 3|75 zeroPageX 4|6d absolute 4|7d absoluteX 4 p|79 absoluteY 4 p|61 indexedIndirect 6|71 indirectIndexed 5 p",
+  AND: "29 immediate 2|25 zeroPage 3|35 zeroPageX 4|2d absolute 4|3d absoluteX 4 p|39 absoluteY 4 p|21 indexedIndirect 6|31 indirectIndexed 5 p",
+  ASL: "0a accumulator 2|06 zeroPage 5|16 zeroPageX 6|0e absolute 6|1e absoluteX 7",
+  BCC: "90 relative 2",
+  BCS: "b0 relative 2",
+  BEQ: "f0 relative 2",
+  BIT: "24 zeroPage 3|2c absolute 4",
+  BMI: "30 relative 2",
+  BNE: "d0 relative 2",
+  BPL: "10 relative 2",
+  BRK: "00 implied 7",
+  BVC: "50 relative 2",
+  BVS: "70 relative 2",
+  CLC: "18 implied 2",
+  CLD: "d8 implied 2",
+  CLI: "58 implied 2",
+  CLV: "b8 implied 2",
+  CMP: "c9 immediate 2|c5 zeroPage 3|d5 zeroPageX 4|cd absolute 4|dd absoluteX 4 p|d9 absoluteY 4 p|c1 indexedIndirect 6|d1 indirectIndexed 5 p",
+  CPX: "e0 immediate 2|e4 zeroPage 3|ec absolute 4",
+  CPY: "c0 immediate 2|c4 zeroPage 3|cc absolute 4",
+  DEC: "c6 zeroPage 5|d6 zeroPageX 6|ce absolute 6|de absoluteX 7",
+  DEX: "ca implied 2",
+  DEY: "88 implied 2",
+  EOR: "49 immediate 2|45 zeroPage 3|55 zeroPageX 4|4d absolute 4|5d absoluteX 4 p|59 absoluteY 4 p|41 indexedIndirect 6|51 indirectIndexed 5 p",
+  INC: "e6 zeroPage 5|f6 zeroPageX 6|ee absolute 6|fe absoluteX 7",
+  INX: "e8 implied 2",
+  INY: "c8 implied 2",
+  JMP: "4c absolute 3|6c indirect 5",
+  JSR: "20 absolute 6",
+  LDA: "a9 immediate 2|a5 zeroPage 3|b5 zeroPageX 4|ad absolute 4|bd absoluteX 4 p|b9 absoluteY 4 p|a1 indexedIndirect 6|b1 indirectIndexed 5 p",
+  LDX: "a2 immediate 2|a6 zeroPage 3|b6 zeroPageY 4|ae absolute 4|be absoluteY 4 p",
+  LDY: "a0 immediate 2|a4 zeroPage 3|b4 zeroPageX 4|ac absolute 4|bc absoluteX 4 p",
+  LSR: "4a accumulator 2|46 zeroPage 5|56 zeroPageX 6|4e absolute 6|5e absoluteX 7",
+  NOP: "ea implied 2|1a implied 2|3a implied 2|5a implied 2|7a implied 2|da implied 2|fa implied 2|04 zeroPage 3|44 zeroPage 3|64 zeroPage 3|14 zeroPageX 4|34 zeroPageX 4|54 zeroPageX 4|74 zeroPageX 4|d4 zeroPageX 4|f4 zeroPageX 4|0c absolute 4|1c absoluteX 4 p|3c absoluteX 4 p|5c absoluteX 4 p|7c absoluteX 4 p|dc absoluteX 4 p|fc absoluteX 4 p",
+  ORA: "09 immediate 2|05 zeroPage 3|15 zeroPageX 4|0d absolute 4|1d absoluteX 4 p|19 absoluteY 4 p|01 indexedIndirect 6|11 indirectIndexed 5 p",
+  PHA: "48 implied 3",
+  PHP: "08 implied 3",
+  PLA: "68 implied 4",
+  PLP: "28 implied 4",
+  ROL: "2a accumulator 2|26 zeroPage 5|36 zeroPageX 6|2e absolute 6|3e absoluteX 7",
+  ROR: "6a accumulator 2|66 zeroPage 5|76 zeroPageX 6|6e absolute 6|7e absoluteX 7",
+  RTI: "40 implied 6",
+  RTS: "60 implied 6",
+  SBC: "e9 immediate 2|e5 zeroPage 3|f5 zeroPageX 4|ed absolute 4|fd absoluteX 4 p|f9 absoluteY 4 p|e1 indexedIndirect 6|f1 indirectIndexed 5 p",
+  SEC: "38 implied 2",
+  SED: "f8 implied 2",
+  SEI: "78 implied 2",
+  STA: "85 zeroPage 3|95 zeroPageX 4|8d absolute 4|9d absoluteX 5|99 absoluteY 5|81 indexedIndirect 6|91 indirectIndexed 6",
+  STX: "86 zeroPage 3|96 zeroPageY 4|8e absolute 4",
+  STY: "84 zeroPage 3|94 zeroPageX 4|8c absolute 4",
+  TAX: "aa implied 2",
+  TAY: "a8 implied 2",
+  TSX: "ba implied 2",
+  TXA: "8a implied 2",
+  TXS: "9a implied 2",
+  TYA: "98 implied 2",
+};
+
+for (const [name, spec] of Object.entries(OPCODE_SPECS)) {
+  for (const entry of spec.split("|")) {
+    const [opcode, mode, cycles, pageCycle] = entry.split(" ");
+    OPCODES[Number.parseInt(opcode, 16)] = {
+      name,
+      mode,
+      cycles: Number(cycles),
+      pageCycle: pageCycle === "p",
+    };
   }
 }
 
@@ -2146,6 +1611,58 @@ class AudioDriver {
   }
 }
 
+const PULSE_CHANNEL_DEFAULTS = {
+  enabled: false,
+  duty: 0,
+  sequenceIndex: 0,
+  lengthCounter: 0,
+  lengthHalt: false,
+  timerPeriod: 0,
+  timerValue: 0,
+  sweepEnabled: false,
+  sweepPeriod: 0,
+  sweepNegate: false,
+  sweepShift: 0,
+  sweepDivider: 0,
+  sweepReload: false,
+};
+const TRIANGLE_CHANNEL_DEFAULTS = {
+  enabled: false,
+  controlFlag: false,
+  linearReloadValue: 0,
+  linearCounter: 0,
+  linearReloadFlag: false,
+  lengthCounter: 0,
+  timerPeriod: 0,
+  timerValue: 0,
+  sequenceIndex: 0,
+};
+const NOISE_CHANNEL_DEFAULTS = {
+  enabled: false,
+  lengthCounter: 0,
+  lengthHalt: false,
+  mode: false,
+  timerPeriod: NOISE_PERIOD_TABLE[0],
+  timerValue: 0,
+  shiftRegister: 1,
+};
+const APU_REGISTER_WRITES = {
+  0x4000: ["pulse1", "writeControl"],
+  0x4001: ["pulse1", "writeSweep"],
+  0x4002: ["pulse1", "writeTimerLow"],
+  0x4003: ["pulse1", "writeTimerHigh"],
+  0x4004: ["pulse2", "writeControl"],
+  0x4005: ["pulse2", "writeSweep"],
+  0x4006: ["pulse2", "writeTimerLow"],
+  0x4007: ["pulse2", "writeTimerHigh"],
+  0x4008: ["triangle", "writeControl"],
+  0x400a: ["triangle", "writeTimerLow"],
+  0x400b: ["triangle", "writeTimerHigh"],
+  0x400c: ["noise", "writeControl"],
+  0x400e: ["noise", "writePeriod"],
+  0x400f: ["noise", "writeLength"],
+};
+
 class EnvelopeGenerator {
   constructor() {
     this.reset();
@@ -2204,27 +1721,12 @@ class PulseChannel {
   }
 
   reset() {
-    this.enabled = false;
-    this.duty = 0;
-    this.sequenceIndex = 0;
-    this.lengthCounter = 0;
-    this.lengthHalt = false;
-    this.timerPeriod = 0;
-    this.timerValue = 0;
-    this.sweepEnabled = false;
-    this.sweepPeriod = 0;
-    this.sweepNegate = false;
-    this.sweepShift = 0;
-    this.sweepDivider = 0;
-    this.sweepReload = false;
+    resetFields(this, PULSE_CHANNEL_DEFAULTS);
     this.envelope.reset();
   }
 
   setEnabled(enabled) {
-    this.enabled = enabled;
-    if (!enabled) {
-      this.lengthCounter = 0;
-    }
+    setLengthEnabled(this, enabled);
   }
 
   writeControl(value) {
@@ -2242,14 +1744,12 @@ class PulseChannel {
   }
 
   writeTimerLow(value) {
-    this.timerPeriod = (this.timerPeriod & 0x0700) | value;
+    writeTimerLow(this, value);
   }
 
   writeTimerHigh(value) {
     this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
-    if (this.enabled) {
-      this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
-    }
+    loadLengthCounter(this, value);
     this.sequenceIndex = 0;
     this.envelope.restart();
   }
@@ -2276,9 +1776,7 @@ class PulseChannel {
   }
 
   clockHalfFrame() {
-    if (this.lengthCounter > 0 && !this.lengthHalt) {
-      this.lengthCounter -= 1;
-    }
+    clockLengthCounter(this, this.lengthHalt);
 
     const dividerZero = this.sweepDivider === 0;
     if (dividerZero && this.sweepEnabled && this.sweepShift > 0 && this.timerPeriod >= 8) {
@@ -2319,22 +1817,11 @@ class TriangleChannel {
   }
 
   reset() {
-    this.enabled = false;
-    this.controlFlag = false;
-    this.linearReloadValue = 0;
-    this.linearCounter = 0;
-    this.linearReloadFlag = false;
-    this.lengthCounter = 0;
-    this.timerPeriod = 0;
-    this.timerValue = 0;
-    this.sequenceIndex = 0;
+    resetFields(this, TRIANGLE_CHANNEL_DEFAULTS);
   }
 
   setEnabled(enabled) {
-    this.enabled = enabled;
-    if (!enabled) {
-      this.lengthCounter = 0;
-    }
+    setLengthEnabled(this, enabled);
   }
 
   writeControl(value) {
@@ -2343,14 +1830,12 @@ class TriangleChannel {
   }
 
   writeTimerLow(value) {
-    this.timerPeriod = (this.timerPeriod & 0x0700) | value;
+    writeTimerLow(this, value);
   }
 
   writeTimerHigh(value) {
     this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
-    if (this.enabled) {
-      this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
-    }
+    loadLengthCounter(this, value);
     this.linearReloadFlag = true;
   }
 
@@ -2378,9 +1863,7 @@ class TriangleChannel {
   }
 
   clockHalfFrame() {
-    if (this.lengthCounter > 0 && !this.controlFlag) {
-      this.lengthCounter -= 1;
-    }
+    clockLengthCounter(this, this.controlFlag);
   }
 
   output() {
@@ -2403,21 +1886,12 @@ class NoiseChannel {
   }
 
   reset() {
-    this.enabled = false;
-    this.lengthCounter = 0;
-    this.lengthHalt = false;
-    this.mode = false;
-    this.timerPeriod = NOISE_PERIOD_TABLE[0];
-    this.timerValue = 0;
-    this.shiftRegister = 1;
+    resetFields(this, NOISE_CHANNEL_DEFAULTS);
     this.envelope.reset();
   }
 
   setEnabled(enabled) {
-    this.enabled = enabled;
-    if (!enabled) {
-      this.lengthCounter = 0;
-    }
+    setLengthEnabled(this, enabled);
   }
 
   writeControl(value) {
@@ -2431,9 +1905,7 @@ class NoiseChannel {
   }
 
   writeLength(value) {
-    if (this.enabled) {
-      this.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f];
-    }
+    loadLengthCounter(this, value);
     this.envelope.restart();
   }
 
@@ -2453,9 +1925,7 @@ class NoiseChannel {
   }
 
   clockHalfFrame() {
-    if (this.lengthCounter > 0 && !this.lengthHalt) {
-      this.lengthCounter -= 1;
-    }
+    clockLengthCounter(this, this.lengthHalt);
   }
 
   output() {
@@ -2474,26 +1944,15 @@ class APU {
     this.pulse2 = new PulseChannel(false);
     this.triangle = new TriangleChannel();
     this.noise = new NoiseChannel();
+    this.frameChannels = [this.pulse1, this.pulse2, this.triangle, this.noise];
     this.reset();
   }
 
   reset() {
-    this.pulse1.reset();
-    this.pulse2.reset();
-    this.triangle.reset();
-    this.noise.reset();
-    this.frameMode = 0;
-    this.frameInterruptInhibit = false;
-    this.frameInterruptFlag = false;
-    this.pendingFrameCounterWrite = null;
-    this.cpuCycles = 0;
-    this.sampleClock = 0;
-    this.sampleRate = 0;
-    this.dmcOutput = 0;
-    this.dmcEnabled = false;
-    this.highPass90 = null;
-    this.highPass440 = null;
-    this.lowPass14k = null;
+    for (const channel of this.frameChannels) {
+      channel.reset();
+    }
+    resetFields(this, APU_DEFAULTS);
   }
 
   hasIRQ() {
@@ -2524,10 +1983,9 @@ class APU {
   }
 
   writeStatus(value) {
-    this.pulse1.setEnabled((value & 0x01) !== 0);
-    this.pulse2.setEnabled((value & 0x02) !== 0);
-    this.triangle.setEnabled((value & 0x04) !== 0);
-    this.noise.setEnabled((value & 0x08) !== 0);
+    for (const [index, channel] of this.frameChannels.entries()) {
+      channel.setEnabled((value & (1 << index)) !== 0);
+    }
     this.dmcEnabled = (value & 0x10) !== 0;
   }
 
@@ -2556,79 +2014,32 @@ class APU {
   }
 
   writeRegister(address, value) {
-    switch (address) {
-      case 0x4000:
-        this.pulse1.writeControl(value);
-        break;
-      case 0x4001:
-        this.pulse1.writeSweep(value);
-        break;
-      case 0x4002:
-        this.pulse1.writeTimerLow(value);
-        break;
-      case 0x4003:
-        this.pulse1.writeTimerHigh(value);
-        break;
-      case 0x4004:
-        this.pulse2.writeControl(value);
-        break;
-      case 0x4005:
-        this.pulse2.writeSweep(value);
-        break;
-      case 0x4006:
-        this.pulse2.writeTimerLow(value);
-        break;
-      case 0x4007:
-        this.pulse2.writeTimerHigh(value);
-        break;
-      case 0x4008:
-        this.triangle.writeControl(value);
-        break;
-      case 0x400a:
-        this.triangle.writeTimerLow(value);
-        break;
-      case 0x400b:
-        this.triangle.writeTimerHigh(value);
-        break;
-      case 0x400c:
-        this.noise.writeControl(value);
-        break;
-      case 0x400e:
-        this.noise.writePeriod(value);
-        break;
-      case 0x400f:
-        this.noise.writeLength(value);
-        break;
-      case 0x4010:
-      case 0x4012:
-      case 0x4013:
-        break;
-      case 0x4011:
-        this.dmcOutput = value & 0x7f;
-        break;
-      case 0x4015:
-        this.writeStatus(value);
-        break;
-      case 0x4017:
-        this.writeFrameCounter(value);
-        break;
-      default:
-        break;
+    const registerWrite = APU_REGISTER_WRITES[address];
+    if (registerWrite) {
+      const [channel, method] = registerWrite;
+      this[channel][method](value);
+      return;
+    }
+
+    if (address === 0x4011) {
+      this.dmcOutput = value & 0x7f;
+    } else if (address === 0x4015) {
+      this.writeStatus(value);
+    } else if (address === 0x4017) {
+      this.writeFrameCounter(value);
     }
   }
 
   clockQuarterFrame() {
-    this.pulse1.clockQuarterFrame();
-    this.pulse2.clockQuarterFrame();
-    this.triangle.clockQuarterFrame();
-    this.noise.clockQuarterFrame();
+    for (const channel of this.frameChannels) {
+      channel.clockQuarterFrame();
+    }
   }
 
   clockHalfFrame() {
-    this.pulse1.clockHalfFrame();
-    this.pulse2.clockHalfFrame();
-    this.triangle.clockHalfFrame();
-    this.noise.clockHalfFrame();
+    for (const channel of this.frameChannels) {
+      channel.clockHalfFrame();
+    }
   }
 
   clockFrameCounter() {
@@ -2822,6 +2233,12 @@ class Bus {
   }
 }
 
+function advanceNesCycles(nes, cpuCycles) {
+  for (let i = 0; i < cpuCycles; i += 1) nes.bus.apu.stepCpuCycle();
+  for (let i = 0; i < cpuCycles * 3; i += 1) nes.bus.ppu.step();
+}
+function stepNesInstruction(nes) { advanceNesCycles(nes, nes.cpu.step()); }
+
 class NES {
   constructor(cartridge, canvas, audioDriver) {
     this.bus = new Bus(cartridge, audioDriver);
@@ -2840,7 +2257,7 @@ class NES {
   }
 
   releaseAllButtons() {
-    for (const button of ["a", "b", "select", "start", "up", "down", "left", "right"]) {
+    for (const button of CONTROLLER_BUTTON_ORDER) {
       this.bus.controller1.setButton(button, false);
     }
   }
@@ -2849,15 +2266,7 @@ class NES {
     this.bus.ppu.frameReady = false;
 
     while (!this.bus.ppu.frameReady) {
-      const cpuCycles = this.cpu.step();
-
-      for (let i = 0; i < cpuCycles; i += 1) {
-        this.bus.apu.stepCpuCycle();
-      }
-
-      for (let i = 0; i < cpuCycles * 3; i += 1) {
-        this.bus.ppu.step();
-      }
+      stepNesInstruction(this);
     }
   }
 
@@ -2867,21 +2276,8 @@ class NES {
   }
 }
 
-const BUTTON_MAP = new Map([
-  ["KeyZ", "b"],
-  ["KeyX", "a"],
-  ["ShiftLeft", "select"],
-  ["ShiftRight", "select"],
-  ["Enter", "start"],
-  ["ArrowUp", "up"],
-  ["ArrowDown", "down"],
-  ["ArrowLeft", "left"],
-  ["ArrowRight", "right"],
-]);
-
-export function getButtonForKeyboardCode(code) {
-  return BUTTON_MAP.get(code) ?? null;
-}
+const BUTTON_MAP = new Map([["KeyZ", "b"], ["KeyX", "a"], ["ShiftLeft", "select"], ["ShiftRight", "select"], ["Enter", "start"], ["ArrowUp", "up"], ["ArrowDown", "down"], ["ArrowLeft", "left"], ["ArrowRight", "right"]]);
+export function getButtonForKeyboardCode(code) { return BUTTON_MAP.get(code) ?? null; }
 
 export function createNesEmulator({
   canvas,
@@ -2898,18 +2294,6 @@ export function createNesEmulator({
   let frameHandle = 0;
   let isPaused = false;
   let loopGeneration = 0;
-
-  function stepCpuInstruction(nes) {
-    const cpuCycles = nes.cpu.step();
-
-    for (let i = 0; i < cpuCycles; i += 1) {
-      nes.bus.apu.stepCpuCycle();
-    }
-
-    for (let i = 0; i < cpuCycles * 3; i += 1) {
-      nes.bus.ppu.step();
-    }
-  }
 
   function getDebugByte(nes, address) {
     const normalizedAddress = address & 0xffff;
@@ -2976,16 +2360,10 @@ export function createNesEmulator({
       paused: isPaused,
       cpu: {
         a: activeNES.cpu.a,
-        flags: [
-          { label: "N", enabled: activeNES.cpu.getFlag(CPU_FLAG_NEGATIVE) },
-          { label: "V", enabled: activeNES.cpu.getFlag(CPU_FLAG_OVERFLOW) },
-          { label: "U", enabled: activeNES.cpu.getFlag(CPU_FLAG_UNUSED) },
-          { label: "B", enabled: activeNES.cpu.getFlag(CPU_FLAG_BREAK) },
-          { label: "D", enabled: activeNES.cpu.getFlag(CPU_FLAG_DECIMAL) },
-          { label: "I", enabled: activeNES.cpu.getFlag(CPU_FLAG_INTERRUPT) },
-          { label: "Z", enabled: activeNES.cpu.getFlag(CPU_FLAG_ZERO) },
-          { label: "C", enabled: activeNES.cpu.getFlag(CPU_FLAG_CARRY) },
-        ],
+        flags: DEBUG_CPU_FLAGS.map(([label, flag]) => ({
+          label,
+          enabled: activeNES.cpu.getFlag(flag),
+        })),
         p: activeNES.cpu.p,
         pc: activeNES.cpu.pc,
         s: activeNES.cpu.s,
@@ -3002,9 +2380,17 @@ export function createNesEmulator({
     };
   }
 
-  function drawPlaceholder() {
-    context.fillStyle = "#000";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+  function drawPlaceholder() { context.fillStyle = "#000"; context.fillRect(0, 0, canvas.width, canvas.height); }
+
+  function handleRuntimeFailure(error, notify = true) {
+    const runtimeError = error instanceof Error ? error : new Error(String(error));
+    console.error(runtimeError);
+    stopActiveLoop();
+    drawPlaceholder();
+    if (notify) {
+      onRuntimeError(runtimeError);
+    }
+    return runtimeError;
   }
 
   function stopActiveLoop() {
@@ -3057,19 +2443,14 @@ export function createNesEmulator({
         nes.present();
         frameHandle = requestAnimationFrame(frame);
       } catch (error) {
-        console.error(error);
-        stopActiveLoop();
-        drawPlaceholder();
-        onRuntimeError(error instanceof Error ? error : new Error(String(error)));
+        handleRuntimeFailure(error);
       }
     };
 
     frameHandle = requestAnimationFrame(frame);
   }
 
-  async function enableAudio() {
-    return audioDriver.enable();
-  }
+  async function enableAudio() { return audioDriver.enable(); }
 
   function loadRomBytes(bytes) {
     try {
@@ -3078,10 +2459,7 @@ export function createNesEmulator({
       bootNES(nes);
       canvas.focus({ preventScroll: true });
     } catch (error) {
-      console.error(error);
-      stopActiveLoop();
-      drawPlaceholder();
-      throw error;
+      throw handleRuntimeFailure(error, false);
     }
   }
 
@@ -3097,35 +2475,11 @@ export function createNesEmulator({
 
   function setButtonByCode(code, pressed) {
     const button = getButtonForKeyboardCode(code);
-    if (!button) {
-      return false;
-    }
-
-    return setButton(button, pressed);
+    return button ? setButton(button, pressed) : false;
   }
-
-  function releaseAllButtons() {
-    activeNES?.releaseAllButtons();
-  }
-
-  function pause() {
-    if (!activeNES) {
-      return false;
-    }
-
-    isPaused = true;
-    activeNES.releaseAllButtons();
-    return true;
-  }
-
-  function resume() {
-    if (!activeNES) {
-      return false;
-    }
-
-    isPaused = false;
-    return true;
-  }
+  function releaseAllButtons() { activeNES?.releaseAllButtons(); }
+  function pause() { if (!activeNES) return false; isPaused = true; activeNES.releaseAllButtons(); return true; }
+  function resume() { if (!activeNES) return false; isPaused = false; return true; }
 
   function stepInstruction() {
     if (!activeNES) {
@@ -3135,22 +2489,16 @@ export function createNesEmulator({
     isPaused = true;
 
     try {
-      stepCpuInstruction(activeNES);
+      stepNesInstruction(activeNES);
       activeNES.present();
       return getDebugSnapshot();
     } catch (error) {
-      console.error(error);
-      stopActiveLoop();
-      drawPlaceholder();
-      onRuntimeError(error instanceof Error ? error : new Error(String(error)));
+      handleRuntimeFailure(error);
       return null;
     }
   }
 
-  function destroy() {
-    stopActiveLoop();
-    audioDriver.destroy();
-  }
+  function destroy() { stopActiveLoop(); audioDriver.destroy(); }
 
   drawPlaceholder();
 
