@@ -329,12 +329,18 @@ strong,
     0 24px 44px var(--shadow);
 }
 
-.fullscreen-toggle {
-  appearance: none;
+.stage-toolbar {
   position: absolute;
   top: 24px;
   right: 24px;
   z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+
+.stage-toolbar-button {
+  appearance: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -354,18 +360,18 @@ strong,
   transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.fullscreen-toggle svg {
+.stage-toolbar-button svg {
   display: block;
 }
 
-.fullscreen-toggle:hover,
-.fullscreen-toggle:focus-visible {
+.stage-toolbar-button:hover,
+.stage-toolbar-button:focus-visible {
   color: #f8b800;
   border-color: rgba(248, 184, 0, 0.72);
   transform: translateY(-1px);
 }
 
-.fullscreen-toggle:focus-visible {
+.stage-toolbar-button:focus-visible {
   outline: 2px solid rgba(248, 184, 0, 0.65);
   outline-offset: 3px;
 }
@@ -562,17 +568,6 @@ canvas:focus-visible {
   place-items: center;
 }
 
-.touch-dpad::before {
-  content: "";
-  position: absolute;
-  inset: 16px;
-  border-radius: 28px;
-  background:
-    linear-gradient(90deg, transparent 0 33%, rgba(255, 255, 255, 0.08) 33% 67%, transparent 67%),
-    linear-gradient(transparent 0 33%, rgba(255, 255, 255, 0.08) 33% 67%, transparent 67%),
-    rgba(14, 14, 14, 0.1);
-}
-
 .touch-system {
   bottom: 18px;
   left: 50%;
@@ -687,6 +682,10 @@ canvas:focus-visible {
   font-size: 8px;
 }
 
+.touch-controls.keys-mode .touch-button.system .touch-button-label {
+  letter-spacing: 0.08em;
+}
+
 .touch-button.action {
   width: 58px;
   height: 58px;
@@ -706,6 +705,11 @@ canvas:focus-visible {
 .touch-button.action .touch-button-label {
   font-size: 19px;
   letter-spacing: 0.08em;
+}
+
+.touch-controls.keys-mode .touch-button.action .touch-button-label {
+  font-size: 17px;
+  letter-spacing: 0.1em;
 }
 
 .launcher-shell {
@@ -990,7 +994,7 @@ canvas:focus-visible {
     max-height: none;
   }
 
-  .fullscreen-toggle {
+  .stage-toolbar {
     top: 20px;
     right: 20px;
   }
@@ -1045,11 +1049,6 @@ canvas:focus-visible {
     height: 112px;
   }
 
-  .touch-dpad::before {
-    inset: 14px;
-    border-radius: 24px;
-  }
-
   .touch-actions {
     right: 14px;
     bottom: 14px;
@@ -1078,9 +1077,13 @@ canvas:focus-visible {
     font-size: 17px;
   }
 
-  .fullscreen-toggle {
+  .stage-toolbar {
     top: 18px;
     right: 18px;
+    gap: 6px;
+  }
+
+  .stage-toolbar-button {
     width: 40px;
     height: 40px;
   }
@@ -1183,7 +1186,7 @@ canvas:focus-visible {
     font-size: 18px;
   }
 
-  .fullscreen-toggle {
+  .stage-toolbar {
     top: 16px;
     right: 16px;
   }
@@ -1198,11 +1201,6 @@ canvas:focus-visible {
     bottom: 10px;
     width: 96px;
     height: 96px;
-  }
-
-  .touch-dpad::before {
-    inset: 12px;
-    border-radius: 22px;
   }
 
   .touch-actions {

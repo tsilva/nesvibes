@@ -22,27 +22,11 @@ function createInitialState() {
   return {
     attached: false,
     hasRom: false,
-    memoryError: "",
     memorySearch: createInitialMemorySearchState(),
-    memoryJumpAddress: DEFAULT_MEMORY_ADDRESS,
-    memoryInput: formatAddress(DEFAULT_MEMORY_ADDRESS),
     open: false,
     paused: false,
     snapshot: null,
   };
-}
-
-function formatAddress(value) {
-  return value.toString(16).toUpperCase().padStart(4, "0");
-}
-
-function parseAddress(value) {
-  const normalized = value.trim().replace(/^0x/i, "");
-  if (!/^[0-9a-fA-F]{1,4}$/.test(normalized)) {
-    return null;
-  }
-
-  return Number.parseInt(normalized, 16) & 0xffff;
 }
 
 export function createEmulatorDebugger() {
@@ -173,26 +157,6 @@ export function createEmulatorDebugger() {
 
   return {
     subscribe: store.subscribe,
-    applyMemoryInput() {
-      const state = get(store);
-      const nextAddress = parseAddress(state.memoryInput);
-      if (nextAddress === null || nextAddress >= MEMORY_VIEW_LENGTH) {
-        store.update((current) => ({
-          ...current,
-          memoryError: `Use a RAM address from 0000 to ${formatAddress(MEMORY_VIEW_LENGTH - 1)}.`,
-        }));
-        return null;
-      }
-
-      store.update((current) => ({
-        ...current,
-        memoryError: "",
-        memoryJumpAddress: nextAddress,
-        memoryInput: formatAddress(nextAddress),
-      }));
-      syncSnapshot();
-      return nextAddress;
-    },
     attachEmulator(nextEmulator) {
       emulator = nextEmulator;
       resetMemorySearchState();
@@ -306,13 +270,6 @@ export function createEmulatorDebugger() {
 
       syncSnapshot();
       return true;
-    },
-    setMemoryInput(value) {
-      store.update((state) => ({
-        ...state,
-        memoryError: "",
-        memoryInput: value,
-      }));
     },
     stepInstruction() {
       return withSnapshotRefresh(() => emulator?.stepInstruction?.());

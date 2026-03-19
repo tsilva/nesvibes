@@ -1,5 +1,4 @@
 <script>
-  import { tick } from "svelte";
   import { Bug, Pause, Play, RefreshCw, StepForward, X } from "lucide-svelte";
 
   export let debuggerController;
@@ -25,7 +24,6 @@
   };
   const MEMORY_SEARCH_RANGE = "0000-07FF";
   let memoryByteDrafts = {};
-  let memoryGridElement;
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
@@ -70,16 +68,6 @@
 
   function sanitizeHexByte(value) {
     return value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 2);
-  }
-
-  async function submitMemoryAddress() {
-    const targetAddress = debuggerController.applyMemoryInput();
-    if (targetAddress === null) {
-      return;
-    }
-
-    await tick();
-    scrollMemoryAddressIntoView(targetAddress);
   }
 
   function captureMemorySearch() {
@@ -164,19 +152,6 @@
   function flagTooltip(flag) {
     const description = FLAG_LABELS[flag.label] ?? flag.label;
     return `${description} flag (${flag.label}): ${flag.enabled ? "set" : "clear"}`;
-  }
-
-  function scrollMemoryAddressIntoView(address) {
-    if (!memoryGridElement) {
-      return;
-    }
-
-    const rowAddress = address & 0xfff0;
-    const rowElement = memoryGridElement.querySelector(`[data-memory-row="${formatHex(rowAddress, 4)}"]`);
-    rowElement?.scrollIntoView({
-      block: "center",
-      inline: "nearest",
-    });
   }
 
   $: state = $debuggerController;
@@ -319,25 +294,6 @@
               <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
             </div>
 
-            <form class="memory-form" on:submit|preventDefault={submitMemoryAddress}>
-              <label>
-                <span>Address</span>
-                <input
-                  type="text"
-                  inputmode="text"
-                  maxlength="6"
-                  spellcheck="false"
-                  value={state.memoryInput}
-                  on:input={(event) => debuggerController.setMemoryInput(event.currentTarget.value)}
-                />
-              </label>
-              <button type="submit" class="debugger-action">Go</button>
-            </form>
-
-            {#if state.memoryError}
-              <p class="memory-error">{state.memoryError}</p>
-            {/if}
-
             <div class="memory-search-toolbar" aria-label="RAM search controls">
               <div class="memory-search-copy">
                 <strong>RAM Search</strong>
@@ -369,18 +325,13 @@
             </div>
 
             <div
-              bind:this={memoryGridElement}
               class={`memory-grid ${memorySearchActive ? "filtered" : ""}`.trim()}
               role="table"
               aria-label="Live memory bytes"
             >
               {#if memoryRows.length > 0}
                 {#each memoryRows as row (`row-${row.address}`)}
-                <div
-                  class="memory-row"
-                  role="row"
-                  data-memory-row={formatHex(row.address, 4)}
-                >
+                <div class="memory-row" role="row">
                   <span class="memory-address" role="cell">
                     {formatHex(row.address, 4)}
                   </span>
@@ -574,9 +525,7 @@
   }
 
   .debugger-empty p,
-  .memory-error,
   .debugger-meta,
-  .memory-form span,
   .memory-search-copy p,
   .memory-search-stats,
   .register-label,
@@ -731,52 +680,8 @@
     border-color: rgba(16, 27, 9, 0.75);
   }
 
-  .memory-form {
-    --memory-control-height: 41px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
-    align-items: end;
-  }
-
-  .memory-form label {
-    display: grid;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .memory-form input {
-    width: 100%;
-    min-height: var(--memory-control-height);
-    padding: 0 10px;
-    color: #fffce8;
-    background: rgba(0, 0, 0, 0.32);
-    border: 2px solid rgba(213, 255, 118, 0.2);
-    font: inherit;
-    text-transform: uppercase;
-  }
-
-  .memory-form input:focus-visible {
-    outline: none;
-    border-color: rgba(248, 184, 0, 0.72);
-    box-shadow:
-      inset 0 0 0 1px rgba(248, 184, 0, 0.3),
-      0 0 0 2px rgba(248, 184, 0, 0.85);
-  }
-
-  .memory-form .debugger-action {
-    align-self: end;
-    height: var(--memory-control-height);
-    padding: 0 16px;
-  }
-
-  .memory-error {
-    margin: 0;
-    color: #ff8b75;
-  }
-
   .debugger-memory-section {
-    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
   }
 
   .memory-search-toolbar,
@@ -914,7 +819,7 @@
   .memory-bytes span.changed,
   .memory-ascii span.changed,
   .memory-byte-input.changed {
-    color: #243600;
+    color: #0b1100;
     background: #d5ff76;
     box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
   }

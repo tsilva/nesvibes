@@ -35,6 +35,7 @@
 ## ✨ Features
 
 - ⚡ **Instant play** — 35 bundled public-domain ROMs with quicklaunch sidebar
+- 🎯 **ROM launch modes** — use `?romMode=most-valuable` or `?romMode=next-most-valuable` to auto-launch the top ranked bundled ROMs
 - 📂 **Drag & drop** — load your own `.nes` files straight from disk
 - 🗺️ **5 mapper support** — NROM (0), MMC1 (1), UxROM (2), CNROM (3), MMC3 (4)
 - 🔊 **Authentic audio** — pulse, triangle, and noise channels via AudioWorklet

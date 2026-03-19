@@ -1,12 +1,23 @@
 <script>
   import { onMount } from "svelte";
-  import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize2, Minimize2 } from "lucide-svelte";
+  import {
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    EyeOff,
+    Gamepad2,
+    Keyboard,
+    Maximize2,
+    Minimize2,
+  } from "lucide-svelte";
   import "@fontsource/silkscreen/latin.css";
   import "../app.css";
 
   export let data;
 
   const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
+  const CANVAS_CONTROL_MODES = ["controls", "keys", "hidden"];
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
   const KEYBOARD_BUTTON_MAP = new Map([
     ["KeyZ", "b"],
@@ -38,6 +49,15 @@
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
   const MOBILE_EMPTY_OVERLAY_COPY = "Click this prompt to choose a ROM.";
+  const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];
+  const ROM_MODE_RANK_BY_ALIAS = new Map([
+    ["most-valuable", 0],
+    ["most-valuable-rom", 0],
+    ["most-valuable-rom-mode", 0],
+    ["next-most-valuable", 1],
+    ["next-most-valuable-rom", 1],
+    ["next-most-valuable-rom-mode", 1],
+  ]);
 
   let canvas;
   let stageElement;
@@ -61,9 +81,11 @@
   let overlayCopy = DESKTOP_EMPTY_OVERLAY_COPY;
   let pressedButtons = createPressedButtons();
   let canToggleFullscreen = false;
+  let requestedRomMode = null;
+  let canvasControlsMode = "controls";
 
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
-  $: showCanvasControls = stageMode === "loaded";
+  $: showCanvasControls = stageMode === "loaded" && canvasControlsMode !== "hidden";
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -101,6 +123,40 @@
       state[button] = false;
       return state;
     }, {});
+  }
+
+  function cycleCanvasControlsMode() {
+    const currentIndex = CANVAS_CONTROL_MODES.indexOf(canvasControlsMode);
+    const nextIndex = (currentIndex + 1) % CANVAS_CONTROL_MODES.length;
+    canvasControlsMode = CANVAS_CONTROL_MODES[nextIndex];
+  }
+
+  function getCanvasControlsModeLabel() {
+    if (canvasControlsMode === "keys") {
+      return "Keyboard overlay";
+    }
+
+    if (canvasControlsMode === "hidden") {
+      return "Overlay hidden";
+    }
+
+    return "Controls overlay";
+  }
+
+  function getCanvasControlsModeIcon() {
+    if (canvasControlsMode === "keys") {
+      return Keyboard;
+    }
+
+    if (canvasControlsMode === "hidden") {
+      return EyeOff;
+    }
+
+    return Gamepad2;
+  }
+
+  function getCanvasControlText(control) {
+    return canvasControlsMode === "keys" ? control.key : control.label;
   }
 
   function getEmptyOverlayCopy() {
@@ -155,6 +211,58 @@
 
   function assetPath(path) {
     return path.startsWith("/") ? path : `/${path}`;
+  }
+
+  function normalizeRomMode(value) {
+    return value
+      .trim()
+      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+      .toLowerCase()
+      .replace(/[\s_]+/g, "-")
+      .replace(/-+/g, "-");
+  }
+
+  function getRequestedRomMode(search) {
+    const params = new URLSearchParams(search);
+
+    for (const paramName of ROM_MODE_PARAM_NAMES) {
+      const value = params.get(paramName);
+      if (!value) {
+        continue;
+      }
+
+      const normalizedValue = normalizeRomMode(value);
+      if (ROM_MODE_RANK_BY_ALIAS.has(normalizedValue)) {
+        return normalizedValue;
+      }
+    }
+
+    return null;
+  }
+
+  // Larger supported ROMs tend to exercise more of the emulator and expose more content,
+  // so size is the primary ranking signal for the auto-launch "value" modes.
+  function compareRomValue(a, b) {
+    return (
+      b.sizeBytes - a.sizeBytes ||
+      b.prgBanks - a.prgBanks ||
+      b.chrBanks - a.chrBanks ||
+      a.title.localeCompare(b.title)
+    );
+  }
+
+  function getRomEntryForMode(catalog, mode) {
+    if (!mode) {
+      return null;
+    }
+
+    const requestedRank = ROM_MODE_RANK_BY_ALIAS.get(mode);
+    if (requestedRank === undefined) {
+      return null;
+    }
+
+    const supportedEntries = catalog.filter((entry) => entry.supported).sort(compareRomValue);
+    return supportedEntries[requestedRank] ?? null;
   }
 
   async function ensureEmulator() {
@@ -265,6 +373,11 @@
 
       romCatalog = await response.json();
       catalogMessage = romCatalog.length === 0 ? "No bundled ROMs available." : "";
+
+      const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
+      if (modeEntry) {
+        await loadBundledRom(modeEntry);
+      }
     } catch (error) {
       console.error(error);
       catalogMessage = "Bundled ROM catalog failed to load. Drag-and-drop remains available.";
@@ -306,6 +419,20 @@
     isFullscreen = document.fullscreenElement === stageElement;
   }
 
+  function isEditableTarget(target) {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    const tagName = target.tagName;
+    return (
+      target.isContentEditable ||
+      tagName === "INPUT" ||
+      tagName === "TEXTAREA" ||
+      tagName === "SELECT"
+    );
+  }
+
   async function toggleFullscreenMode() {
     if (!canToggleFullscreen || !stageElement) {
       return;
@@ -343,6 +470,7 @@
 
   onMount(() => {
     const debuggerQuery = window.matchMedia(DESKTOP_DEBUGGER_QUERY);
+    requestedRomMode = getRequestedRomMode(window.location.search);
 
     fullscreenSupported = typeof document.fullscreenEnabled === "boolean"
       ? document.fullscreenEnabled
@@ -364,6 +492,10 @@
     };
 
     const handleKeydown = (event) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
       if (event.code === "KeyF" && !event.repeat && canToggleFullscreen) {
         void toggleFullscreenMode();
         event.preventDefault();
@@ -380,6 +512,10 @@
     };
 
     const handleKeyup = (event) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
       const button = KEYBOARD_BUTTON_MAP.get(event.code);
       if (!button) {
         return;
@@ -526,21 +662,34 @@
         {#if debuggerComponent && debuggerController && stageMode === "loaded"}
           <svelte:component this={debuggerComponent} debuggerController={debuggerController} />
         {/if}
-        {#if canToggleFullscreen}
-          <button
-            type="button"
-            class="fullscreen-toggle"
-            aria-pressed={isFullscreen}
-            aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            on:click={() => void toggleFullscreenMode()}
-          >
-            {#if isFullscreen}
-              <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
-            {:else}
-              <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+        {#if stageMode === "loaded"}
+          <div class="stage-toolbar">
+            <button
+              type="button"
+              class="stage-toolbar-button controls-toggle"
+              aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel().toLowerCase()}.`}
+              title={`Controls overlay: ${getCanvasControlsModeLabel()}`}
+              on:click={cycleCanvasControlsMode}
+            >
+              <svelte:component this={getCanvasControlsModeIcon()} size={18} strokeWidth={2.25} aria-hidden="true" />
+            </button>
+            {#if canToggleFullscreen}
+              <button
+                type="button"
+                class="stage-toolbar-button fullscreen-toggle"
+                aria-pressed={isFullscreen}
+                aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                on:click={() => void toggleFullscreenMode()}
+              >
+                {#if isFullscreen}
+                  <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+                {:else}
+                  <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+                {/if}
+              </button>
             {/if}
-          </button>
+          </div>
         {/if}
         <section
           bind:this={stageElement}
@@ -554,7 +703,7 @@
             <p id="loader-copy">{overlayCopy}</p>
           </button>
           {#if showCanvasControls}
-            <div class="touch-controls active">
+            <div class={`touch-controls active ${canvasControlsMode === "keys" ? "keys-mode" : ""}`.trim()}>
               <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
                   <button
@@ -567,7 +716,7 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{control.label}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control)}</span>
                   </button>
                 {/each}
               </div>
@@ -603,7 +752,7 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{control.label}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control)}</span>
                   </button>
                 {/each}
               </div>
