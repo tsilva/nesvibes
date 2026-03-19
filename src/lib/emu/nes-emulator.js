@@ -49,6 +49,8 @@ const NOISE_PERIOD_TABLE = [
   4, 8, 16, 32, 64, 96, 128, 160,
   202, 254, 380, 508, 762, 1016, 2034, 4068,
 ];
+const AUDIO_WORKLET_PROCESSOR_NAME = "nes-audio-output";
+const AUDIO_WORKLET_CHUNK_SIZE = 512;
 
 function wrapIndex(index, size) {
   if (size <= 0) {
@@ -1974,7 +1976,9 @@ class AudioDriver {
   constructor(onStatusChange = () => {}) {
     this.onStatusChange = onStatusChange;
     this.context = null;
+    this.initializing = null;
     this.processor = null;
+    this.workletNode = null;
     this.gain = null;
     this.buffer = new Float32Array(16384);
     this.readIndex = 0;
@@ -1990,6 +1994,7 @@ class AudioDriver {
     this.readIndex = 0;
     this.writeIndex = 0;
     this.availableSamples = 0;
+    this.workletNode?.port.postMessage({ type: "reset" });
   }
 
   pushSample(sample) {
@@ -2005,6 +2010,10 @@ class AudioDriver {
     this.buffer[this.writeIndex] = Math.max(-1, Math.min(1, sample));
     this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
     this.availableSamples += 1;
+
+    if (this.workletNode && this.availableSamples >= AUDIO_WORKLET_CHUNK_SIZE) {
+      this.flushPendingSamples();
+    }
   }
 
   consume(buffer) {
@@ -2019,7 +2028,43 @@ class AudioDriver {
     }
   }
 
-  createContext() {
+  drainSamples(target) {
+    for (let i = 0; i < target.length; i += 1) {
+      target[i] = this.buffer[this.readIndex];
+      this.readIndex = (this.readIndex + 1) % this.buffer.length;
+    }
+
+    this.availableSamples -= target.length;
+  }
+
+  flushPendingSamples(force = false) {
+    if (!this.workletNode) {
+      return;
+    }
+
+    const minimumSamples = force ? 1 : AUDIO_WORKLET_CHUNK_SIZE;
+    while (this.availableSamples >= minimumSamples) {
+      const length = force
+        ? Math.min(this.availableSamples, AUDIO_WORKLET_CHUNK_SIZE)
+        : AUDIO_WORKLET_CHUNK_SIZE;
+      const samples = new Float32Array(length);
+      this.drainSamples(samples);
+      this.workletNode.port.postMessage(
+        { type: "samples", samples },
+        [samples.buffer]
+      );
+    }
+  }
+
+  createLegacyProcessor() {
+    this.processor = this.context.createScriptProcessor(2048, 0, 1);
+    this.processor.onaudioprocess = (event) => {
+      this.consume(event.outputBuffer.getChannelData(0));
+    };
+    this.processor.connect(this.gain);
+  }
+
+  async createContext() {
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) {
       this.onStatusChange("Web Audio is unavailable in this browser.", "error", "Audio Unsupported");
@@ -2027,24 +2072,49 @@ class AudioDriver {
     }
 
     this.context = new AudioContextCtor();
-    this.processor = this.context.createScriptProcessor(2048, 0, 1);
     this.gain = this.context.createGain();
     this.gain.gain.value = 0.18;
-    this.processor.onaudioprocess = (event) => {
-      this.consume(event.outputBuffer.getChannelData(0));
-    };
-    this.processor.connect(this.gain);
     this.gain.connect(this.context.destination);
+
+    if (
+      typeof AudioWorkletNode === "function" &&
+      this.context.audioWorklet &&
+      typeof this.context.audioWorklet.addModule === "function"
+    ) {
+      try {
+        await this.context.audioWorklet.addModule(
+          new URL("./audio-output-worklet.js", import.meta.url)
+        );
+        this.workletNode = new AudioWorkletNode(
+          this.context,
+          AUDIO_WORKLET_PROCESSOR_NAME,
+          { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] }
+        );
+        this.workletNode.connect(this.gain);
+        return true;
+      } catch (error) {
+        console.warn("AudioWorklet initialization failed, falling back to ScriptProcessorNode.", error);
+      }
+    }
+
+    this.createLegacyProcessor();
     return true;
   }
 
   async enable() {
     try {
-      if (!this.context && !this.createContext()) {
+      if (!this.context) {
+        this.initializing ??= this.createContext().finally(() => {
+          this.initializing = null;
+        });
+      }
+
+      if (this.initializing && !(await this.initializing)) {
         return false;
       }
 
       await this.context.resume();
+      this.flushPendingSamples(true);
       this.onStatusChange("Audio live. Boot a ROM or keep playing to hear it.", "ready", "Audio On");
       return true;
     } catch (error) {
@@ -2054,6 +2124,24 @@ class AudioDriver {
         "Retry Audio"
       );
       return false;
+    }
+  }
+
+  destroy() {
+    this.clear();
+    this.workletNode?.port.postMessage({ type: "reset" });
+    this.workletNode?.disconnect();
+    this.workletNode = null;
+    this.processor?.disconnect();
+    this.processor = null;
+    this.gain?.disconnect();
+    this.gain = null;
+
+    const context = this.context;
+    this.context = null;
+    this.initializing = null;
+    if (context && context.state !== "closed") {
+      void context.close().catch(() => {});
     }
   }
 }
@@ -3039,6 +3127,7 @@ export function createNesEmulator({
 
   function destroy() {
     stopActiveLoop();
+    audioDriver.destroy();
   }
 
   drawPlaceholder();
