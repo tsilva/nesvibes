@@ -507,7 +507,7 @@
       </a>
     </div>
     <div class="hero-grid">
-      <div>
+      <div class="hero-copy">
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
         <p class="hero-meta">

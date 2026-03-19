@@ -160,6 +160,12 @@ strong,
   z-index: 1;
 }
 
+.hero-copy {
+  display: grid;
+  justify-items: start;
+  text-align: left;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--accent-2);
@@ -169,6 +175,7 @@ strong,
 
 .hero-title {
   margin: 0;
+  margin-left: -0.12em;
   font-size: clamp(28px, 5vw, 52px);
   line-height: 1.05;
   text-shadow: 4px 4px 0 #111111;
