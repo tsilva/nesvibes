@@ -28,6 +28,7 @@
   ];
 
   let canvas;
+  let stageElement;
   let emulator;
   let emulatorPromise;
   let filePicker;
@@ -36,6 +37,8 @@
   let catalogMessage = "Loading bundled ROMs...";
   let stageMode = "empty";
   let isDragging = false;
+  let isFullscreen = false;
+  let fullscreenSupported = false;
   let overlayTitle = "Drop a `.nes` ROM";
   let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
   let pressedButtons = createPressedButtons();
@@ -208,6 +211,27 @@
     emulator?.releaseAllButtons();
   }
 
+  function syncFullscreenState() {
+    isFullscreen = document.fullscreenElement === stageElement;
+  }
+
+  async function toggleFullscreenMode() {
+    if (!fullscreenSupported || !stageElement) {
+      return;
+    }
+
+    try {
+      if (document.fullscreenElement === stageElement) {
+        await document.exitFullscreen();
+      } else {
+        await stageElement.requestFullscreen();
+        canvas?.focus();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   function handleControllerPress(button, event) {
     event.preventDefault();
     event.currentTarget?.setPointerCapture?.(event.pointerId);
@@ -227,7 +251,17 @@
   }
 
   onMount(() => {
+    fullscreenSupported = typeof document.fullscreenEnabled === "boolean"
+      ? document.fullscreenEnabled
+      : typeof stageElement?.requestFullscreen === "function";
+
     const handleKeydown = (event) => {
+      if (event.code === "KeyF" && !event.repeat) {
+        void toggleFullscreenMode();
+        event.preventDefault();
+        return;
+      }
+
       const button = KEYBOARD_BUTTON_MAP.get(event.code);
       if (!button) {
         return;
@@ -253,6 +287,15 @@
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        releaseAllInputs();
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      syncFullscreenState();
+      if (document.fullscreenElement === stageElement) {
+        canvas?.focus();
+      } else {
         releaseAllInputs();
       }
     };
@@ -300,8 +343,10 @@
     window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     void loadBundledCatalog();
+    syncFullscreenState();
 
     return () => {
       window.removeEventListener("keydown", handleKeydown);
@@ -312,6 +357,7 @@
       window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       releaseAllInputs();
       emulator?.destroy();
       emulator = undefined;
@@ -378,7 +424,19 @@
         on:change={handleFilePickerChange}
       />
       <div class="stage-shell">
+        {#if fullscreenSupported}
+          <button
+            type="button"
+            class="fullscreen-toggle"
+            aria-pressed={isFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+            on:click={() => void toggleFullscreenMode()}
+          >
+            {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          </button>
+        {/if}
         <section
+          bind:this={stageElement}
           class={`stage ${stageMode}${isDragging ? " dragging" : ""}`}
           aria-label="ROM drop zone"
         >
