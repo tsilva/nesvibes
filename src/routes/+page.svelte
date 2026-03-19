@@ -19,6 +19,12 @@
     ["ArrowLeft", "left"],
     ["ArrowRight", "right"],
   ]);
+  const TOUCH_DIRECTION_BUTTONS = [
+    { button: "up", label: "Up", position: "up" },
+    { button: "left", label: "Left", position: "left" },
+    { button: "right", label: "Right", position: "right" },
+    { button: "down", label: "Down", position: "down" },
+  ];
   const SYSTEM_BUTTONS = [
     { button: "select", label: "Select", key: "SHIFT" },
     { button: "start", label: "Start", key: "ENTER" },
@@ -28,6 +34,10 @@
     { button: "a", label: "A", key: "X", tone: "primary" },
   ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
+  const EMPTY_OVERLAY_TITLE = "Drop a `.nes` ROM";
+  const RELOAD_OVERLAY_TITLE = "Drop another ROM";
+  const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
+  const MOBILE_EMPTY_OVERLAY_COPY = "Click this prompt to choose a ROM.";
 
   let canvas;
   let stageElement;
@@ -41,11 +51,14 @@
   let activeCatalogId = "";
   let catalogMessage = "Loading bundled ROMs...";
   let stageMode = "empty";
+  let isMobileMode = false;
   let isDragging = false;
   let isFullscreen = false;
   let fullscreenSupported = false;
-  let overlayTitle = "Drop a `.nes` ROM";
-  let overlayCopy = "Drop a ROM here, or click this prompt to choose one.";
+  let overlayVariant = "empty";
+  let overlayLoadedPrefix = "";
+  let overlayTitle = EMPTY_OVERLAY_TITLE;
+  let overlayCopy = DESKTOP_EMPTY_OVERLAY_COPY;
   let pressedButtons = createPressedButtons();
   let canToggleFullscreen = false;
 
@@ -89,9 +102,46 @@
     }, {});
   }
 
+  function getEmptyOverlayCopy() {
+    return isMobileMode ? MOBILE_EMPTY_OVERLAY_COPY : DESKTOP_EMPTY_OVERLAY_COPY;
+  }
+
+  function getLoadedOverlayCopy(prefix) {
+    return isMobileMode
+      ? `${prefix}. Click this prompt anytime to replace it.`
+      : `${prefix}. Drop another ROM anytime to replace it.`;
+  }
+
+  function syncOverlayForViewport() {
+    if (overlayVariant === "empty") {
+      overlayTitle = EMPTY_OVERLAY_TITLE;
+      overlayCopy = getEmptyOverlayCopy();
+      return;
+    }
+
+    if (overlayVariant === "loaded") {
+      overlayTitle = RELOAD_OVERLAY_TITLE;
+      overlayCopy = getLoadedOverlayCopy(overlayLoadedPrefix);
+    }
+  }
+
   function setOverlay(title, message) {
+    overlayVariant = "custom";
+    overlayLoadedPrefix = "";
     overlayTitle = title;
     overlayCopy = message;
+  }
+
+  function setEmptyOverlay() {
+    overlayVariant = "empty";
+    overlayLoadedPrefix = "";
+    syncOverlayForViewport();
+  }
+
+  function setLoadedOverlay(prefix) {
+    overlayVariant = "loaded";
+    overlayLoadedPrefix = prefix;
+    syncOverlayForViewport();
   }
 
   function setStageMode(mode) {
@@ -156,7 +206,7 @@
       emulator.loadRomBytes(bytes);
       refreshDebugger();
       setStageMode("loaded");
-      setOverlay("Drop another ROM", successMessage);
+      setLoadedOverlay(successMessage);
     } catch (error) {
       refreshDebugger();
       setStageMode("error");
@@ -177,10 +227,7 @@
 
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      loadRomBytes(
-        bytes,
-        `${file.name} loaded. Drop another ROM anytime to replace it.`
-      );
+      loadRomBytes(bytes, `${file.name} loaded`);
     } catch (error) {
       console.error(error);
     }
@@ -195,10 +242,7 @@
       }
 
       const bytes = new Uint8Array(await response.arrayBuffer());
-      loadRomBytes(
-        bytes,
-        `${entry.title} launched from Quicklaunch. Drop another ROM anytime to replace it.`
-      );
+      loadRomBytes(bytes, `${entry.title} launched from Quicklaunch`);
       activeCatalogId = entry.id;
     } catch (error) {
       console.error(error);
@@ -303,6 +347,9 @@
       : typeof stageElement?.requestFullscreen === "function";
 
     const syncDebuggerMode = () => {
+      isMobileMode = !debuggerQuery.matches;
+      syncOverlayForViewport();
+
       if (debuggerQuery.matches) {
         void enableDesktopDebugger().catch((error) => {
           console.error(error);
@@ -515,88 +562,13 @@
             <strong>{overlayTitle}</strong>
             <p id="loader-copy">{overlayCopy}</p>
           </button>
-        </section>
-      </div>
-
-      <section class="controller-dock" aria-label="Live NES controller">
-        <div class="controller-shell">
-          <div class="controller-body">
-            <div class="dpad-cluster" role="group" aria-label="Directional pad">
-              <button
-                type="button"
-                class={`pad-button dpad-button up ${pressedButtons.up ? "pressed" : ""}`.trim()}
-                aria-label="Up"
-                aria-pressed={pressedButtons.up}
-                on:pointerdown={(event) => handleControllerPress("up", event)}
-                on:pointerup={(event) => handleControllerRelease("up", event)}
-                on:pointercancel={(event) => handleControllerRelease("up", event)}
-                on:lostpointercapture={() => setPressedButton("up", false)}
-              >
-                <span class="pad-button-face">Up</span>
-                <span class="pad-button-key">Up</span>
-              </button>
-
-              <button
-                type="button"
-                class={`pad-button dpad-button left ${pressedButtons.left ? "pressed" : ""}`.trim()}
-                aria-label="Left"
-                aria-pressed={pressedButtons.left}
-                on:pointerdown={(event) => handleControllerPress("left", event)}
-                on:pointerup={(event) => handleControllerRelease("left", event)}
-                on:pointercancel={(event) => handleControllerRelease("left", event)}
-                on:lostpointercapture={() => setPressedButton("left", false)}
-              >
-                <span class="pad-button-face">Left</span>
-                <span class="pad-button-key">Left</span>
-              </button>
-
-              <div class="dpad-core" aria-hidden="true"></div>
-
-              <button
-                type="button"
-                class={`pad-button dpad-button right ${pressedButtons.right ? "pressed" : ""}`.trim()}
-                aria-label="Right"
-                aria-pressed={pressedButtons.right}
-                on:pointerdown={(event) => handleControllerPress("right", event)}
-                on:pointerup={(event) => handleControllerRelease("right", event)}
-                on:pointercancel={(event) => handleControllerRelease("right", event)}
-                on:lostpointercapture={() => setPressedButton("right", false)}
-              >
-                <span class="pad-button-face">Right</span>
-                <span class="pad-button-key">Right</span>
-              </button>
-
-              <button
-                type="button"
-                class={`pad-button dpad-button down ${pressedButtons.down ? "pressed" : ""}`.trim()}
-                aria-label="Down"
-                aria-pressed={pressedButtons.down}
-                on:pointerdown={(event) => handleControllerPress("down", event)}
-                on:pointerup={(event) => handleControllerRelease("down", event)}
-                on:pointercancel={(event) => handleControllerRelease("down", event)}
-                on:lostpointercapture={() => setPressedButton("down", false)}
-              >
-                <span class="pad-button-face">Down</span>
-                <span class="pad-button-key">Down</span>
-              </button>
-            </div>
-
-            <div class="controller-center-panel">
-              <div class="controller-badge" aria-hidden="true">
-                <span class="controller-stripe top"></span>
-                <span class="controller-badge-text">
-                  <span class="controller-brand">Select</span>
-                  <span class="controller-player">Start</span>
-                </span>
-                <span class="controller-stripe bottom"></span>
-                <span class="controller-logo">Nintendo</span>
-              </div>
-
-              <div class="system-button-group" role="group" aria-label="System buttons">
+          {#if isMobileMode && stageMode === "loaded"}
+            <div class="touch-controls active">
+              <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
                   <button
                     type="button"
-                    class={`pad-button system-button ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                    class={`touch-button system ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
@@ -604,33 +576,48 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="pad-button-face">{control.label}</span>
-                    <span class="pad-button-key">{control.key}</span>
+                    <span class="touch-button-label">{control.label}</span>
+                  </button>
+                {/each}
+              </div>
+
+              <div class="touch-cluster touch-dpad" role="group" aria-label="Directional pad">
+                {#each TOUCH_DIRECTION_BUTTONS as control (control.button)}
+                  <button
+                    type="button"
+                    class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                    aria-label={control.label}
+                    aria-pressed={pressedButtons[control.button]}
+                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+                  >
+                    <span class="touch-button-label">{control.label}</span>
+                  </button>
+                {/each}
+              </div>
+
+              <div class="touch-cluster touch-actions" role="group" aria-label="Action buttons">
+                {#each ACTION_BUTTONS as control (control.button)}
+                  <button
+                    type="button"
+                    class={`touch-button action ${control.button} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
+                    aria-label={control.label}
+                    aria-pressed={pressedButtons[control.button]}
+                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
+                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
+                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
+                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+                  >
+                    <span class="touch-button-label">{control.label}</span>
                   </button>
                 {/each}
               </div>
             </div>
-
-            <div class="action-cluster" role="group" aria-label="Action buttons">
-              {#each ACTION_BUTTONS as control (control.button)}
-                <button
-                  type="button"
-                  class={`pad-button action-button ${control.tone} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                  aria-label={control.label}
-                  aria-pressed={pressedButtons[control.button]}
-                  on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                  on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                  on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                  on:lostpointercapture={() => setPressedButton(control.button, false)}
-                >
-                  <span class="action-button-label">{control.label}</span>
-                  <span class="pad-button-key">{control.key}</span>
-                </button>
-              {/each}
-            </div>
-          </div>
-        </div>
-      </section>
+          {/if}
+        </section>
+      </div>
     </section>
 
     <aside class="side-rail" aria-label="Setup notes">
