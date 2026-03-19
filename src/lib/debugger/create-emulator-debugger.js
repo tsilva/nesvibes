@@ -13,6 +13,7 @@ function createInitialMemorySearchState() {
     comparisonCount: 0,
     lastDiffCount: 0,
     results: [],
+    viewBytes: null,
   };
 }
 
@@ -84,11 +85,18 @@ export function createEmulatorDebugger() {
       length: DEFAULT_MEMORY_LENGTH,
       startAddress: memoryAddress,
     });
+    const searchViewBytes = memorySearchCandidates ? readMemorySearchSnapshot() : null;
 
     store.update((state) => ({
       ...state,
       attached: true,
       hasRom: Boolean(snapshot),
+      memorySearch: searchViewBytes
+        ? {
+            ...state.memorySearch,
+            viewBytes: searchViewBytes,
+          }
+        : state.memorySearch,
       paused: snapshot?.paused ?? false,
       snapshot,
     }));
@@ -191,6 +199,7 @@ export function createEmulatorDebugger() {
             ...createInitialMemorySearchState(),
             baselineCaptured: true,
             captureCount: 1,
+            viewBytes: nextSnapshot,
           },
         }));
         syncSnapshot();
@@ -243,6 +252,7 @@ export function createEmulatorDebugger() {
           comparisonCount: state.memorySearch.comparisonCount + 1,
           lastDiffCount: latestDiffs.length,
           results: [...nextCandidates.values()],
+          viewBytes: nextSnapshot,
         },
       }));
 

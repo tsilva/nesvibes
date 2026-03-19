@@ -24,10 +24,27 @@
   };
   const MEMORY_SEARCH_RANGE = "0000-07FF";
 
-  function chunk(bytes, size) {
+  function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
-    for (let index = 0; index < bytes.length; index += size) {
-      rows.push(bytes.slice(index, index + size));
+    for (let index = 0; index < bytes.length; index += 16) {
+      const rowAddress = startAddress + index;
+      const rowBytes = bytes.slice(index, index + 16).map((value, byteIndex) => {
+        const address = rowAddress + byteIndex;
+        return {
+          address,
+          changed: changedAddresses?.has(address) ?? false,
+          value,
+        };
+      });
+
+      if (filterChangedRows && !rowBytes.some((byte) => byte.changed)) {
+        continue;
+      }
+
+      rows.push({
+        address: rowAddress,
+        bytes: rowBytes,
+      });
     }
     return rows;
   }
@@ -72,8 +89,14 @@
   $: state = $debuggerController;
   $: memorySearch = state.memorySearch;
   $: snapshot = state.snapshot;
-  $: memoryRows = snapshot ? chunk(snapshot.memory.bytes, 16) : [];
   $: memorySearchResults = memorySearch?.results ?? [];
+  $: changedAddresses = new Set(memorySearchResults.map((result) => result.address));
+  $: memorySearchActive = (memorySearch?.comparisonCount ?? 0) > 0;
+  $: memoryRows = memorySearchActive && memorySearch?.viewBytes
+    ? buildMemoryRows(memorySearch.viewBytes, 0, changedAddresses, true)
+    : snapshot
+      ? buildMemoryRows(snapshot.memory.bytes, snapshot.memory.startAddress, changedAddresses)
+      : [];
   $: memorySearchSummary = !memorySearch?.baselineCaptured
     ? "Capture a baseline, reproduce the event, then capture again. Only addresses that changed every time remain."
     : memorySearch.comparisonCount === 0
@@ -219,77 +242,64 @@
               <p class="memory-error">{state.memoryError}</p>
             {/if}
 
-            <div class="memory-search-panel" aria-label="RAM search snapshots">
-              <div class="memory-search-header">
-                <div class="memory-search-copy">
-                  <strong>RAM Search</strong>
-                  <p>{memorySearchSummary}</p>
-                </div>
-
-                <div class="memory-search-actions">
-                  <button type="button" class="debugger-action" on:click={captureMemorySearch}>
-                    Capture
-                  </button>
-                  <button
-                    type="button"
-                    class="debugger-action ghost"
-                    disabled={!memorySearch?.baselineCaptured}
-                    on:click={resetMemorySearch}
-                  >
-                    Reset
-                  </button>
-                </div>
+            <div class="memory-search-toolbar" aria-label="RAM search controls">
+              <div class="memory-search-copy">
+                <strong>RAM Search</strong>
+                <p>{memorySearchSummary}</p>
               </div>
 
-              <div class="memory-search-stats">
-                <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
-                <span>{memorySearch?.captureCount ?? 0} snapshots</span>
-                <span>{memorySearch?.lastDiffCount ?? 0} changed last capture</span>
+              <div class="memory-search-actions">
+                <button type="button" class="debugger-action" on:click={captureMemorySearch}>
+                  Capture
+                </button>
+                <button
+                  type="button"
+                  class="debugger-action ghost"
+                  disabled={!memorySearch?.baselineCaptured}
+                  on:click={resetMemorySearch}
+                >
+                  Reset
+                </button>
               </div>
+            </div>
 
-              {#if memorySearch?.comparisonCount > 0}
-                {#if memorySearchResults.length > 0}
-                  <div class="memory-search-grid" role="table" aria-label="Changed RAM addresses">
-                    <div class="memory-search-row memory-search-heading" role="row">
-                      <span role="columnheader">Addr</span>
-                      <span role="columnheader">Was</span>
-                      <span role="columnheader">Now</span>
-                      <span role="columnheader">Hits</span>
-                    </div>
-
-                    {#each memorySearchResults as result (`search-${result.address}`)}
-                      <div class="memory-search-row" role="row">
-                        <span role="cell">{formatHex(result.address, 4)}</span>
-                        <span role="cell">{formatHex(result.previousValue, 2)}</span>
-                        <span role="cell">{formatHex(result.currentValue, 2)}</span>
-                        <span role="cell">{result.changeCount}</span>
-                      </div>
-                    {/each}
-                  </div>
-                {:else}
-                  <p class="memory-search-empty">
-                    No addresses survived the latest filter. Reset to start a new search.
-                  </p>
-                {/if}
+            <div class="memory-search-stats">
+              <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
+              <span>{memorySearch?.captureCount ?? 0} snapshots</span>
+              <span>{memorySearch?.lastDiffCount ?? 0} changed last capture</span>
+              {#if memorySearchActive}
+                <span>{memorySearchResults.length} highlighted</span>
               {/if}
             </div>
 
-            <div class="memory-grid" role="table" aria-label="Live memory bytes">
-              {#each memoryRows as row, rowIndex (`row-${rowIndex}`)}
+            <div
+              class={`memory-grid ${memorySearchActive ? "filtered" : ""}`.trim()}
+              role="table"
+              aria-label="Live memory bytes"
+            >
+              {#if memoryRows.length > 0}
+                {#each memoryRows as row (`row-${row.address}`)}
                 <div class="memory-row" role="row">
                   <span class="memory-address" role="cell">
-                    {formatHex(snapshot.memory.startAddress + rowIndex * 16, 4)}
+                    {formatHex(row.address, 4)}
                   </span>
                   <div class="memory-bytes" role="cell">
-                    {#each row as value, byteIndex (`byte-${rowIndex}-${byteIndex}`)}
-                      <span>{formatHex(value, 2)}</span>
+                    {#each row.bytes as byte (`byte-${byte.address}`)}
+                      <span class:changed={byte.changed}>{formatHex(byte.value, 2)}</span>
                     {/each}
                   </div>
-                  <span class="memory-ascii" role="cell">
-                    {row.map(formatAscii).join("")}
-                  </span>
+                  <div class="memory-ascii" role="cell" aria-hidden="true">
+                    {#each row.bytes as byte (`ascii-${byte.address}`)}
+                      <span class:changed={byte.changed}>{formatAscii(byte.value)}</span>
+                    {/each}
+                  </div>
                 </div>
-              {/each}
+                {/each}
+              {:else if memorySearchActive}
+                <p class="memory-search-empty">
+                  No addresses survived the latest filter. Reset to start a new search.
+                </p>
+              {/if}
             </div>
           </section>
         </div>
@@ -451,7 +461,6 @@
   .debugger-meta,
   .memory-form span,
   .memory-search-copy p,
-  .memory-search-row,
   .memory-search-stats,
   .register-label,
   .memory-address,
@@ -653,16 +662,7 @@
     grid-template-rows: auto auto auto auto minmax(0, 1fr);
   }
 
-  .memory-search-panel {
-    display: grid;
-    gap: 10px;
-    min-height: 0;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(213, 255, 118, 0.14);
-  }
-
-  .memory-search-header,
+  .memory-search-toolbar,
   .memory-search-stats,
   .memory-search-actions {
     display: flex;
@@ -670,7 +670,7 @@
     gap: 10px;
   }
 
-  .memory-search-header {
+  .memory-search-toolbar {
     justify-content: space-between;
   }
 
@@ -706,32 +706,9 @@
     color: rgba(235, 243, 196, 0.72);
   }
 
-  .memory-search-grid {
-    display: grid;
-    gap: 6px;
-    max-height: min(28dvh, 240px);
-    min-height: 0;
-    padding-right: 6px;
-    overflow: auto;
-  }
-
-  .memory-search-row {
-    display: grid;
-    grid-template-columns: 5ch 4ch 4ch 4ch;
-    gap: 12px;
-    align-items: center;
-    font-family: var(--font-body);
-    font-variant-numeric: tabular-nums;
-    white-space: pre;
-  }
-
-  .memory-search-heading {
-    color: #b9cf81;
-    text-transform: uppercase;
-  }
-
   .memory-search-empty {
-    padding: 2px 0;
+    margin: 0;
+    color: rgba(235, 243, 196, 0.78);
   }
 
   .memory-grid {
@@ -773,14 +750,31 @@
   }
 
   .memory-bytes span,
-  .memory-ascii {
+  .memory-ascii span {
     display: block;
+    border-radius: 3px;
+    transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
   }
 
   .memory-ascii {
+    display: grid;
+    grid-template-columns: repeat(16, 1ch);
+    gap: 0.08em;
     min-width: 16ch;
     color: rgba(235, 243, 196, 0.68);
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
+  }
+
+  .memory-grid.filtered .memory-bytes span,
+  .memory-grid.filtered .memory-ascii span {
+    color: rgba(235, 243, 196, 0.38);
+  }
+
+  .memory-bytes span.changed,
+  .memory-ascii span.changed {
+    color: #132500;
+    background: #d5ff76;
+    box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
   }
 
   @media (max-width: 720px) {
@@ -816,7 +810,7 @@
       min-width: 0;
     }
 
-    .memory-search-header {
+    .memory-search-toolbar {
       align-items: stretch;
       flex-direction: column;
     }
@@ -830,13 +824,12 @@
       min-width: 0;
     }
 
-    .memory-search-row {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-    }
-
     .memory-bytes {
       grid-template-columns: repeat(8, 2ch);
+    }
+
+    .memory-ascii {
+      grid-template-columns: repeat(8, 1ch);
     }
   }
 </style>

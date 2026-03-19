@@ -509,7 +509,7 @@
     <div class="hero-grid">
       <div>
         <h1 class="hero-title">NESVibes</h1>
-        <p class="hero-lede">Vibecoded with GPT-5.4. Play NES directly in your browser.</p>
+        <p class="hero-lede">Play NES directly in your browser.</p>
         <p class="hero-meta">
           <a
             class="hero-meta-link"
