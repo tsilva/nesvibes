@@ -528,20 +528,20 @@ canvas:focus-visible {
 .controller-dock {
   display: grid;
   place-items: center;
-  padding: 0 12px 10px;
+  padding: 0 12px 14px;
 }
 
 .controller-shell {
   position: relative;
-  width: min(100%, 648px);
-  padding: 18px 24px 28px;
-  background: linear-gradient(180deg, #f7f4ee 0%, #eee9e0 68%, #ddd7cd 100%);
-  border: 2px solid #d4cec5;
-  border-radius: 6px;
+  width: min(100%, 720px);
+  padding: 20px 26px 24px;
+  background: linear-gradient(180deg, #faf7f0 0%, #ece6dc 72%, #d8d0c4 100%);
+  border: 3px solid #dad3c7;
+  border-radius: 10px;
   box-shadow:
-    inset 0 -6px 0 rgba(203, 196, 186, 0.72),
-    0 0 0 1px #faf8f4,
-    0 10px 20px rgba(0, 0, 0, 0.16);
+    inset 0 -7px 0 rgba(188, 180, 170, 0.78),
+    0 0 0 2px rgba(255, 255, 255, 0.52),
+    0 16px 28px rgba(0, 0, 0, 0.16);
   overflow: visible;
   animation: banner-rise 720ms steps(6, end) 120ms both;
 }
@@ -554,43 +554,53 @@ canvas:focus-visible {
 }
 
 .controller-shell::before {
-  inset: 16px 18px 14px;
+  inset: 15px 18px 18px;
   background:
-    linear-gradient(90deg, #2f3139 0 28%, #353841 28% 59%, #2c2e36 59% 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%);
-  border-radius: 4px;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 18%),
+    linear-gradient(90deg, #202126 0 34%, #2a2c32 34% 61%, #1c1d22 61% 100%);
+  border-radius: 8px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+    inset 0 -2px 0 rgba(0, 0, 0, 0.44);
   opacity: 1;
 }
 
 .controller-shell::after {
-  top: 26px;
-  bottom: 24px;
+  top: 30px;
+  bottom: 30px;
   left: 50%;
-  width: 182px;
+  width: 222px;
   transform: translateX(-50%);
   background:
-    linear-gradient(180deg, transparent 0 3%, rgba(128, 134, 145, 0.92) 3% 13%, transparent 13% 28%, rgba(128, 134, 145, 0.92) 28% 38%, transparent 38% 76%, rgba(128, 134, 145, 0.92) 76% 86%, transparent 86% 100%);
+    linear-gradient(
+      180deg,
+      transparent 0 7%,
+      rgba(145, 149, 158, 0.92) 7% 17%,
+      transparent 17% 38%,
+      rgba(145, 149, 158, 0.92) 38% 48%,
+      transparent 48% 78%,
+      rgba(145, 149, 158, 0.92) 78% 88%,
+      transparent 88% 100%
+    );
   border-radius: 4px;
-  opacity: 0.88;
+  opacity: 0.92;
 }
 
 .controller-body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 156px minmax(156px, 1fr) 156px;
-  align-items: center;
+  grid-template-columns: 154px minmax(210px, 1fr) 154px;
+  align-items: end;
   gap: 18px;
+  min-height: 132px;
 }
 
 .dpad-cluster {
   position: relative;
   justify-self: start;
-  width: 126px;
-  height: 126px;
+  width: 124px;
+  height: 124px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -602,12 +612,14 @@ canvas:focus-visible {
 .dpad-cluster::before {
   content: "";
   position: absolute;
-  inset: 6px;
+  inset: 4px;
   background:
-    linear-gradient(90deg, transparent 0 29%, rgba(244, 244, 247, 0.98) 29% 71%, transparent 71%),
-    linear-gradient(transparent 0 29%, rgba(244, 244, 247, 0.98) 29% 71%, transparent 71%);
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28));
-  opacity: 0.95;
+    linear-gradient(90deg, transparent 0 23%, #d7dbe2 23% 77%, transparent 77%),
+    linear-gradient(transparent 0 23%, #d7dbe2 23% 77%, transparent 77%),
+    linear-gradient(90deg, transparent 0 29%, #111319 29% 71%, transparent 71%),
+    linear-gradient(transparent 0 29%, #111319 29% 71%, transparent 71%);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.32));
+  opacity: 0.98;
 }
 
 .dpad-button.up {
@@ -634,55 +646,73 @@ canvas:focus-visible {
   position: relative;
   grid-column: 2;
   grid-row: 2;
-  width: 38px;
-  height: 38px;
-  border-radius: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%),
-    #20222a;
+    radial-gradient(circle at 35% 35%, #505560 0 22%, #23262d 24% 58%, #0e1015 100%);
   box-shadow:
-    inset 0 -3px 0 rgba(0, 0, 0, 0.42),
-    0 2px 6px rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.36);
 }
 
 .dpad-core::after {
   content: "";
   position: absolute;
-  inset: 13px;
-  background: radial-gradient(circle, #656872 0%, #2d3038 72%, transparent 74%);
+  inset: 7px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
 }
 
 .controller-center-panel {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 14px;
+  width: 100%;
+  align-self: center;
 }
 
 .controller-badge {
+  position: relative;
   display: grid;
-  gap: 6px;
-  justify-items: center;
-  width: 100%;
-  text-align: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-items: center;
+  column-gap: 22px;
+  row-gap: 8px;
+  width: min(100%, 320px);
 }
 
 .controller-stripe {
   display: block;
-  width: min(100%, 138px);
-  height: 10px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #808691 0%, #696e79 100%);
+  width: 100%;
+  height: 18px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #8e939d 0%, #7b8089 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.controller-stripe.top {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.controller-stripe.bottom {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .controller-badge-text {
   display: flex;
-  gap: 22px;
+  grid-column: 1;
+  grid-row: 2;
+  gap: 20px;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 .controller-brand,
@@ -690,18 +720,31 @@ canvas:focus-visible {
   font-family: var(--font-display);
   line-height: 1;
   text-transform: uppercase;
+  color: #d6523e;
 }
 
 .controller-brand {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #c8463c;
+  font-size: 13px;
+  letter-spacing: 0.16em;
 }
 
 .controller-player {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #c8463c;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+
+.controller-logo {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #d24a33;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
 .system-button-group {
@@ -709,14 +752,14 @@ canvas:focus-visible {
   justify-self: center;
   display: flex;
   justify-content: center;
-  gap: 18px;
-  padding: 11px 18px 10px;
-  background: linear-gradient(180deg, #f8f7f3 0%, #e7e3dc 100%);
-  border: 2px solid #cbc8c2;
-  border-radius: 3px;
+  gap: 24px;
+  padding: 13px 18px 14px;
+  background: linear-gradient(180deg, #f8f6f1 0%, #e6e0d5 100%);
+  border: 3px solid #cbc5bb;
+  border-radius: 6px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    0 2px 8px rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .action-cluster {
@@ -724,8 +767,9 @@ canvas:focus-visible {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 18px;
+  gap: 12px;
   padding-right: 8px;
+  padding-bottom: 2px;
 }
 
 .pad-button {
@@ -762,19 +806,19 @@ canvas:focus-visible {
   gap: 0;
   padding: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 24%),
-    #181a21;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 22%),
+    #14161b;
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
-    inset 0 -3px 0 rgba(0, 0, 0, 0.42),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
     0 4px 8px rgba(0, 0, 0, 0.18);
 }
 
 .dpad-button {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   margin: 0;
-  border-radius: 2px;
+  border-radius: 3px;
   z-index: 1;
 }
 
@@ -788,33 +832,35 @@ canvas:focus-visible {
   width: 0;
   height: 0;
   border-style: solid;
+  opacity: 0.72;
 }
 
 .dpad-button.up::before {
-  border-width: 0 7px 10px 7px;
-  border-color: transparent transparent #5e646f transparent;
+  border-width: 0 6px 10px 6px;
+  border-color: transparent transparent #606572 transparent;
 }
 
 .dpad-button.left::before {
-  border-width: 7px 10px 7px 0;
-  border-color: transparent #5e646f transparent transparent;
+  border-width: 6px 10px 6px 0;
+  border-color: transparent #606572 transparent transparent;
 }
 
 .dpad-button.right::before {
-  border-width: 7px 0 7px 10px;
-  border-color: transparent transparent transparent #5e646f;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent #606572;
 }
 
 .dpad-button.down::before {
-  border-width: 10px 7px 0 7px;
-  border-color: #5e646f transparent transparent transparent;
+  border-width: 10px 6px 0 6px;
+  border-color: #606572 transparent transparent transparent;
 }
 
 .system-button {
-  min-width: 40px;
-  min-height: 16px;
+  min-width: 46px;
+  min-height: 20px;
   border-radius: 999px;
   transform: none;
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .system-button.pressed {
@@ -829,8 +875,8 @@ canvas:focus-visible {
 .dpad-button.pressed,
 .system-button.pressed {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 24%),
-    #2a2a2a;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 24%),
+    #24262b;
   border-color: rgba(248, 184, 0, 0.78);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -864,75 +910,79 @@ canvas:focus-visible {
 
 .action-button {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   gap: 0;
-  border-radius: 999px;
-  border-width: 2px;
-  border-color: rgba(182, 68, 58, 0.55);
+  border-radius: 5px;
+  border-width: 3px;
+  border-color: #cec9c2;
+  background: linear-gradient(180deg, #faf8f4 0%, #e7e1d7 100%);
   box-shadow:
-    inset 0 -4px 0 rgba(122, 16, 14, 0.38),
-    0 5px 8px rgba(0, 0, 0, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 5px 10px rgba(0, 0, 0, 0.18);
 }
 
 .action-button::before {
   content: "";
   position: absolute;
-  inset: -10px;
-  z-index: -1;
-  background: linear-gradient(180deg, #faf9f4 0%, #d7d3cc 100%);
-  border: 2px solid #c4c0ba;
-  border-radius: 2px;
+  inset: 10px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 212, 194, 0.94) 0 14%, rgba(255, 118, 80, 0.78) 15% 32%, transparent 33%),
+    linear-gradient(180deg, #ff744a 0%, #e13a1c 62%, #b1160d 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    0 2px 6px rgba(0, 0, 0, 0.12);
+    inset 0 -4px 0 rgba(127, 11, 10, 0.34),
+    0 4px 7px rgba(0, 0, 0, 0.16);
 }
 
 .action-button.primary {
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.26), transparent 26%),
-    linear-gradient(180deg, #ff5561 0%, #d81420 68%, #980913 100%);
+  background: linear-gradient(180deg, #faf8f4 0%, #e7e1d7 100%);
 }
 
 .action-button.secondary {
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.18), transparent 26%),
-    linear-gradient(180deg, #f08086 0%, #b11a24 68%, #7b0911 100%);
+  background: linear-gradient(180deg, #faf8f4 0%, #e7e1d7 100%);
 }
 
 .action-button-label {
   font-family: var(--font-display);
   position: absolute;
-  bottom: -24px;
-  font-size: 10px;
+  bottom: -21px;
+  font-size: 11px;
   line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #d14a40;
+  color: #d24a33;
   text-shadow: none;
 }
 
+.action-button .pad-button-face,
 .action-button .pad-button-key {
   display: none;
 }
 
 .action-button.pressed {
-  border-color: rgba(255, 255, 255, 0.42);
+  border-color: rgba(248, 184, 0, 0.7);
   box-shadow:
-    inset 0 -2px 0 rgba(122, 16, 14, 0.24),
-    0 0 0 2px rgba(255, 255, 255, 0.18),
-    0 0 10px rgba(228, 0, 15, 0.16),
-    0 4px 6px rgba(0, 0, 0, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 0 0 2px rgba(248, 184, 0, 0.14),
+    0 4px 8px rgba(0, 0, 0, 0.14);
+}
+
+.action-button.pressed::before {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 -2px 0 rgba(127, 11, 10, 0.28),
+    0 2px 5px rgba(0, 0, 0, 0.16);
 }
 
 .action-button.secondary {
-  transform: translateY(2px);
+  transform: none;
 }
 
 .action-button.secondary.pressed {
-  transform: translateY(3px) scale(0.98);
+  transform: none;
 }
 
 .launcher-shell {
@@ -1275,48 +1325,47 @@ canvas:focus-visible {
   }
 
   .controller-body {
-    grid-template-columns: minmax(110px, 1fr) minmax(104px, 1fr);
-    grid-template-areas:
-      "dpad action"
-      "center center";
-    gap: 14px 12px;
+    grid-template-columns: 106px minmax(0, 1fr) 112px;
+    gap: 12px;
+    min-height: 120px;
   }
 
   .dpad-cluster {
-    grid-area: dpad;
     justify-self: center;
-    width: 116px;
-    height: 116px;
+    width: 102px;
+    height: 102px;
   }
 
   .controller-center-panel {
-    grid-area: center;
     gap: 12px;
   }
 
   .action-cluster {
-    grid-area: action;
     justify-self: center;
     gap: 8px;
     padding-right: 0;
   }
 
   .action-button {
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
   }
 
   .action-button-label {
-    bottom: -20px;
+    bottom: -18px;
     font-size: 9px;
   }
 
   .controller-brand {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .controller-player {
-    font-size: 9px;
+    font-size: 10px;
+  }
+
+  .controller-logo {
+    font-size: 14px;
   }
 
   .fullscreen-toggle {
@@ -1395,22 +1444,23 @@ canvas:focus-visible {
   }
 
   .controller-body {
-    grid-template-columns: 128px minmax(104px, 1fr) 128px;
-    gap: 14px;
+    grid-template-columns: 114px minmax(0, 1fr) 114px;
+    gap: 12px;
+    min-height: 112px;
   }
 
   .dpad-cluster {
-    width: 112px;
-    height: 112px;
+    width: 94px;
+    height: 94px;
   }
 
   .action-button {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
   }
 
   .action-button-label {
-    bottom: -19px;
+    bottom: -16px;
     font-size: 9px;
   }
 
@@ -1420,6 +1470,10 @@ canvas:focus-visible {
 
   .controller-player {
     font-size: 9px;
+  }
+
+  .controller-logo {
+    font-size: 13px;
   }
 
   .system-button {
@@ -1471,6 +1525,7 @@ canvas:focus-visible {
       "center center";
     gap: 12px 10px;
     align-items: center;
+    min-height: 0;
   }
 
   .dpad-cluster,
@@ -1480,6 +1535,7 @@ canvas:focus-visible {
   }
 
   .dpad-cluster {
+    grid-area: dpad;
     width: 96px;
     height: 96px;
   }
@@ -1490,21 +1546,23 @@ canvas:focus-visible {
   }
 
   .action-cluster {
+    grid-area: action;
     gap: 6px;
     align-self: center;
   }
 
   .action-button {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
   }
 
   .action-button-label {
-    bottom: -18px;
+    bottom: -16px;
     font-size: 8px;
   }
 
   .controller-center-panel {
+    grid-area: center;
     width: min(100%, 170px);
     gap: 10px;
   }
@@ -1515,6 +1573,10 @@ canvas:focus-visible {
 
   .controller-player {
     font-size: 8px;
+  }
+
+  .controller-logo {
+    display: none;
   }
 
   .system-button {

@@ -583,12 +583,13 @@
 
             <div class="controller-center-panel">
               <div class="controller-badge" aria-hidden="true">
-                <span class="controller-stripe"></span>
+                <span class="controller-stripe top"></span>
                 <span class="controller-badge-text">
                   <span class="controller-brand">Select</span>
                   <span class="controller-player">Start</span>
                 </span>
-                <span class="controller-stripe"></span>
+                <span class="controller-stripe bottom"></span>
+                <span class="controller-logo">Nintendo</span>
               </div>
 
               <div class="system-button-group" role="group" aria-label="System buttons">
