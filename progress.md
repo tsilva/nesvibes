@@ -12,3 +12,9 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Verification: `npm run check` passed after the controller pass. Browser inspection confirmed the updated controller layout rendered in-page.
 
 - Tooling note: the required `develop-web-game` Playwright client was invoked against `http://127.0.0.1:4173`, but the bundled Chromium process crashed on launch with `SEGV_ACCERR` before producing captures. Used the app's Playwright browser tooling for visual verification instead.
+
+- Debugger panel refinement: widened the desktop debugger drawer, removed the floating launcher while the drawer is open, pulled the content up to use the top edge, and added a smaller in-panel close button.
+
+- Verification: `npm run check` passed. Browser validation with a loaded ROM confirmed the debugger opens with the panel flush to the top and the close affordance rendered inside the panel header.
+
+- Tooling note: retried the `develop-web-game` Playwright client after the debugger update and hit the same Chromium `SEGV_ACCERR` launch crash, so browser-tool inspection remained the reliable verification path.

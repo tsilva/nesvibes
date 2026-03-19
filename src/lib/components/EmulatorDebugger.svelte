@@ -1,5 +1,5 @@
 <script>
-  import { Bug, Pause, Play, RefreshCw, StepForward } from "lucide-svelte";
+  import { Bug, Pause, Play, RefreshCw, StepForward, X } from "lucide-svelte";
 
   export let debuggerController;
 
@@ -46,61 +46,79 @@
 </script>
 
 <div class="debugger-dock">
-  <button
-    type="button"
-    class={`debugger-toggle ${state.open ? "open" : ""}`.trim()}
-    aria-controls="emulator-debugger-panel"
-    aria-expanded={state.open}
-    aria-label={state.open ? "Close debugger" : "Open debugger"}
-    on:click={() => debuggerController.toggleOpen()}
-  >
-    <span class={`debugger-status ${state.hasRom ? (state.paused ? "paused" : "running") : "idle"}`.trim()} aria-hidden="true"></span>
-    <Bug size={16} strokeWidth={2.25} aria-hidden="true" />
-  </button>
+  {#if !state.open}
+    <button
+      type="button"
+      class="debugger-toggle"
+      aria-controls="emulator-debugger-panel"
+      aria-expanded="false"
+      aria-label="Open debugger"
+      on:click={() => debuggerController.toggleOpen()}
+    >
+      <span class={`debugger-status ${state.hasRom ? (state.paused ? "paused" : "running") : "idle"}`.trim()} aria-hidden="true"></span>
+      <Bug size={16} strokeWidth={2.25} aria-hidden="true" />
+    </button>
+  {/if}
 
   {#if state.open}
     <section class="debugger-panel" id="emulator-debugger-panel" aria-label="Emulator debugger">
+      <div class="debugger-header">
+        {#if state.hasRom}
+          <div class="debugger-toolbar">
+            <button
+              type="button"
+              class="debugger-action"
+              aria-label={state.paused ? "Play" : "Pause"}
+              title={state.paused ? "Play" : "Pause"}
+              on:click={() => debuggerController.toggleRunning()}
+            >
+              {#if state.paused}
+                <Play size={15} strokeWidth={2.25} aria-hidden="true" />
+              {:else}
+                <Pause size={15} strokeWidth={2.25} aria-hidden="true" />
+              {/if}
+            </button>
+            <button
+              type="button"
+              class="debugger-action"
+              disabled={!state.paused}
+              aria-label="Step"
+              title="Step"
+              on:click={() => debuggerController.stepInstruction()}
+            >
+              <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="debugger-action ghost"
+              aria-label="Refresh"
+              title="Refresh"
+              on:click={() => debuggerController.refresh()}
+            >
+              <RefreshCw size={15} strokeWidth={2.25} aria-hidden="true" />
+            </button>
+          </div>
+        {:else}
+          <p class="debugger-title">Debugger</p>
+        {/if}
+
+        <button
+          type="button"
+          class="debugger-close"
+          aria-label="Close debugger"
+          title="Close debugger"
+          on:click={() => debuggerController.toggleOpen()}
+        >
+          <X size={15} strokeWidth={2.4} aria-hidden="true" />
+        </button>
+      </div>
+
       {#if !state.hasRom}
         <div class="debugger-empty">
           <strong>No ROM loaded</strong>
           <p>Load a cartridge to inspect registers and CPU memory.</p>
         </div>
       {:else}
-        <div class="debugger-toolbar">
-          <button
-            type="button"
-            class="debugger-action"
-            aria-label={state.paused ? "Play" : "Pause"}
-            title={state.paused ? "Play" : "Pause"}
-            on:click={() => debuggerController.toggleRunning()}
-          >
-            {#if state.paused}
-              <Play size={15} strokeWidth={2.25} aria-hidden="true" />
-            {:else}
-              <Pause size={15} strokeWidth={2.25} aria-hidden="true" />
-            {/if}
-          </button>
-          <button
-            type="button"
-            class="debugger-action"
-            disabled={!state.paused}
-            aria-label="Step"
-            title="Step"
-            on:click={() => debuggerController.stepInstruction()}
-          >
-            <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            class="debugger-action ghost"
-            aria-label="Refresh"
-            title="Refresh"
-            on:click={() => debuggerController.refresh()}
-          >
-            <RefreshCw size={15} strokeWidth={2.25} aria-hidden="true" />
-          </button>
-        </div>
-
         <div class="debugger-meta">
           <span>{state.paused ? "Paused" : "Running"}</span>
           <span>Scanline {snapshot.ppu.scanline}</span>
@@ -199,24 +217,24 @@
 
   .debugger-toggle {
     position: absolute;
-    top: 24px;
-    right: 24px;
+    top: 18px;
+    right: 18px;
     z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 10px;
     margin: 0;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 10px 14px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 8px 10px;
     color: #f4f0d8;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02)),
       rgba(29, 41, 22, 0.96);
-    border: 3px solid rgba(204, 230, 82, 0.45);
+    border: 2px solid rgba(204, 230, 82, 0.32);
     box-shadow:
       inset 0 0 0 2px rgba(215, 255, 102, 0.08),
-      0 12px 22px rgba(0, 0, 0, 0.35);
+      0 8px 16px rgba(0, 0, 0, 0.24);
     font-family: var(--font-display);
     font-size: 10px;
     letter-spacing: 0.08em;
@@ -225,10 +243,9 @@
   }
 
   .debugger-toggle:hover,
-  .debugger-toggle:focus-visible,
-  .debugger-toggle.open {
+  .debugger-toggle:focus-visible {
     color: #fcffef;
-    border-color: rgba(218, 255, 96, 0.78);
+    border-color: rgba(218, 255, 96, 0.6);
     transform: translateY(-1px);
   }
 
@@ -267,12 +284,12 @@
     right: 0;
     bottom: 0;
     pointer-events: auto;
-    width: min(560px, calc(100vw - 24px));
+    width: min(720px, calc(100vw - 24px));
     height: 100dvh;
     min-height: 100dvh;
     max-height: none;
     overflow: auto;
-    padding: 88px 20px 28px;
+    padding: 18px 24px 28px;
     color: #eef0cf;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 14%),
@@ -293,6 +310,23 @@
 
   .debugger-panel::-webkit-scrollbar-thumb {
     background: rgba(206, 255, 121, 0.3);
+  }
+
+  .debugger-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .debugger-title {
+    margin: 0;
+    align-self: center;
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .debugger-empty {
@@ -347,6 +381,29 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  .debugger-close {
+    pointer-events: auto;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: rgba(241, 244, 214, 0.84);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(212, 255, 118, 0.18);
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+  }
+
+  .debugger-close:hover,
+  .debugger-close:focus-visible {
+    color: #fcffef;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(212, 255, 118, 0.34);
   }
 
   .debugger-action.ghost {
@@ -499,8 +556,8 @@
     }
 
     .debugger-toggle {
-      top: 14px;
-      right: 14px;
+      top: 12px;
+      right: 12px;
     }
 
     .debugger-panel {
@@ -511,7 +568,7 @@
       height: 100dvh;
       min-height: 100dvh;
       max-height: none;
-      padding: 72px 14px 14px;
+      padding: 14px 14px 14px;
     }
 
     .debugger-meta,
