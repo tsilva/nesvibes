@@ -445,6 +445,11 @@ canvas {
   background: #000;
 }
 
+canvas:focus,
+canvas:focus-visible {
+  outline: none;
+}
+
 .overlay {
   appearance: none;
   position: absolute;
