@@ -4,13 +4,24 @@
   export let debuggerController;
 
   const REGISTER_FIELDS = [
-    { key: "pc", label: "PC", width: 4 },
-    { key: "a", label: "A", width: 2 },
-    { key: "x", label: "X", width: 2 },
-    { key: "y", label: "Y", width: 2 },
-    { key: "s", label: "SP", width: 2 },
-    { key: "p", label: "P", width: 2 },
+    { key: "pc", label: "PC", width: 4, description: "Program Counter" },
+    { key: "a", label: "A", width: 2, description: "Accumulator" },
+    { key: "x", label: "X", width: 2, description: "X Index Register" },
+    { key: "y", label: "Y", width: 2, description: "Y Index Register" },
+    { key: "s", label: "SP", width: 2, description: "Stack Pointer" },
+    { key: "p", label: "P", width: 2, description: "Processor Status Register" },
   ];
+
+  const FLAG_LABELS = {
+    N: "Negative",
+    V: "Overflow",
+    U: "Unused",
+    B: "Break",
+    D: "Decimal Mode",
+    I: "Interrupt Disable",
+    Z: "Zero",
+    C: "Carry",
+  };
 
   function chunk(bytes, size) {
     const rows = [];
@@ -38,6 +49,15 @@
 
   function submitMemoryAddress() {
     debuggerController.applyMemoryInput();
+  }
+
+  function registerTooltip(field, value) {
+    return `${field.description} (${field.label}): ${formatHex(value, field.width)}`;
+  }
+
+  function flagTooltip(flag) {
+    const description = FLAG_LABELS[flag.label] ?? flag.label;
+    return `${description} flag (${flag.label}): ${flag.enabled ? "set" : "clear"}`;
   }
 
   $: state = $debuggerController;
@@ -123,10 +143,10 @@
       {:else}
         <div class="debugger-body debugger-body-loaded">
           <div class="debugger-meta">
-            <span>{state.paused ? "Paused" : "Running"}</span>
-            <span>Scanline {snapshot.ppu.scanline}</span>
-            <span>Cycle {snapshot.ppu.cycle}</span>
-            <span>Stall {snapshot.cpu.stallCycles}</span>
+            <span title="Emulation run state">{state.paused ? "Paused" : "Running"}</span>
+            <span title={`Current PPU scanline: ${snapshot.ppu.scanline}`}>Scanline {snapshot.ppu.scanline}</span>
+            <span title={`Current PPU cycle within the scanline: ${snapshot.ppu.cycle}`}>Cycle {snapshot.ppu.cycle}</span>
+            <span title={`Remaining CPU stall cycles: ${snapshot.cpu.stallCycles}`}>Stall {snapshot.cpu.stallCycles}</span>
           </div>
 
           <section class="debugger-section" aria-label="CPU registers">
@@ -135,9 +155,9 @@
               <span class="debugger-chip">6502</span>
             </div>
 
-            <div class="register-grid">
+              <div class="register-grid">
               {#each REGISTER_FIELDS as field (field.key)}
-                <div class="register-card">
+                <div class="register-card" title={registerTooltip(field, snapshot.cpu[field.key])}>
                   <span class="register-label">{field.label}</span>
                   <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
                 </div>
@@ -146,7 +166,10 @@
 
             <div class="flag-row" aria-label="CPU flags">
               {#each snapshot.cpu.flags as flag (flag.label)}
-                <span class={`flag-chip ${flag.enabled ? "active" : ""}`.trim()}>
+                <span
+                  class={`flag-chip ${flag.enabled ? "active" : ""}`.trim()}
+                  title={flagTooltip(flag)}
+                >
                   {flag.label}
                 </span>
               {/each}
@@ -254,8 +277,7 @@
   }
 
   .debugger-toggle:focus-visible,
-  .debugger-action:focus-visible,
-  .memory-form input:focus-visible {
+  .debugger-action:focus-visible {
     outline: 2px solid rgba(248, 184, 0, 0.85);
     outline-offset: 2px;
   }
@@ -322,7 +344,7 @@
   .debugger-header {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
+    align-items: center;
     gap: 12px;
     margin-bottom: 10px;
   }
@@ -391,6 +413,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-height: 41px;
     padding: 9px 10px;
     color: #112500;
     background: linear-gradient(180deg, #d7f66b 0%, #8ec63f 100%);
@@ -407,12 +430,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 41px;
+    height: 41px;
     padding: 0;
-    color: rgba(241, 244, 214, 0.72);
-    background: transparent;
-    border: 1px solid transparent;
+    color: rgba(241, 244, 214, 0.88);
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(212, 255, 118, 0.25);
     cursor: pointer;
     transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
   }
@@ -507,7 +530,9 @@
   }
 
   .memory-form {
-    display: flex;
+    --memory-control-height: 41px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
     align-items: end;
   }
@@ -515,17 +540,32 @@
   .memory-form label {
     display: grid;
     gap: 6px;
-    flex: 1;
+    min-width: 0;
   }
 
   .memory-form input {
     width: 100%;
-    padding: 9px 10px;
+    min-height: var(--memory-control-height);
+    padding: 0 10px;
     color: #fffce8;
     background: rgba(0, 0, 0, 0.32);
     border: 2px solid rgba(213, 255, 118, 0.2);
     font: inherit;
     text-transform: uppercase;
+  }
+
+  .memory-form input:focus-visible {
+    outline: none;
+    border-color: rgba(248, 184, 0, 0.72);
+    box-shadow:
+      inset 0 0 0 1px rgba(248, 184, 0, 0.3),
+      0 0 0 2px rgba(248, 184, 0, 0.85);
+  }
+
+  .memory-form .debugger-action {
+    align-self: end;
+    height: var(--memory-control-height);
+    padding: 0 16px;
   }
 
   .memory-error {

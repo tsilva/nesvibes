@@ -5,7 +5,7 @@
   [![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://nesvibes.tsilva.eu)
   [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-  **Play public-domain and homebrew NES games right in your browser. No downloads, no plugins, just instant retro play.**
+  **Vibecoded with GPT-5.4. Play public-domain and homebrew NES games right in your browser.**
 
   [Live Demo](https://nesvibes.tsilva.eu) · [GitHub](https://github.com/tsilva/nesvibes)
 </div>
@@ -13,6 +13,8 @@
 ---
 
 ## 🕹️ Overview
+
+**The Punchline:** nesvibes is vibecoded with GPT-5.4, and that is the point.
 
 **The Pain:** Setting up NES emulators means downloading apps, hunting for ROMs, and fiddling with configs — just to play a quick round of a retro game.
 

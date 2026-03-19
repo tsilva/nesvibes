@@ -61,8 +61,10 @@
   let overlayCopy = DESKTOP_EMPTY_OVERLAY_COPY;
   let pressedButtons = createPressedButtons();
   let canToggleFullscreen = false;
+  let desktopControlsDismissed = false;
 
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
+  $: showCanvasControls = stageMode === "loaded" && (isMobileMode || !desktopControlsDismissed);
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -146,6 +148,9 @@
 
   function setStageMode(mode) {
     stageMode = mode;
+    if (mode !== "loaded" || !isMobileMode) {
+      desktopControlsDismissed = false;
+    }
   }
 
   function formatRomSize(sizeBytes) {
@@ -347,8 +352,15 @@
       : typeof stageElement?.requestFullscreen === "function";
 
     const syncDebuggerMode = () => {
-      isMobileMode = !debuggerQuery.matches;
+      const nextIsMobileMode = !debuggerQuery.matches;
+      const enteredDesktopMode = isMobileMode && !nextIsMobileMode;
+
+      isMobileMode = nextIsMobileMode;
       syncOverlayForViewport();
+
+      if (enteredDesktopMode && stageMode === "loaded") {
+        desktopControlsDismissed = false;
+      }
 
       if (debuggerQuery.matches) {
         void enableDesktopDebugger().catch((error) => {
@@ -371,6 +383,7 @@
         return;
       }
 
+      desktopControlsDismissed = true;
       setPressedButton(button, true);
       event.preventDefault();
     };
@@ -495,7 +508,7 @@
     <div class="hero-grid">
       <div>
         <h1 class="hero-title">NESVibes</h1>
-        <p class="hero-lede">Play NES directly in your browser.</p>
+        <p class="hero-lede">Vibecoded with GPT-5.4. Play NES directly in your browser.</p>
         <p class="hero-meta">
           <a
             class="hero-meta-link"
@@ -549,8 +562,8 @@
             <strong>{overlayTitle}</strong>
             <p id="loader-copy">{overlayCopy}</p>
           </button>
-          {#if isMobileMode && stageMode === "loaded"}
-            <div class="touch-controls active">
+          {#if showCanvasControls}
+            <div class={`touch-controls active ${isMobileMode ? "" : "desktop-hints"}`.trim()} aria-hidden={!isMobileMode}>
               <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
                   <button
@@ -558,6 +571,7 @@
                     class={`touch-button system ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
+                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
@@ -575,6 +589,7 @@
                     class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
+                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
@@ -592,6 +607,7 @@
                     class={`touch-button action ${control.button} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
+                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}

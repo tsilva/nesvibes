@@ -539,6 +539,15 @@ canvas:focus-visible {
   pointer-events: auto;
 }
 
+.touch-controls.desktop-hints {
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.touch-controls.desktop-hints .touch-button {
+  pointer-events: none;
+}
+
 .touch-cluster {
   position: absolute;
 }
