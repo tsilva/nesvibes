@@ -22,7 +22,6 @@
     Z: "Zero",
     C: "Carry",
   };
-  const MEMORY_SEARCH_RANGE = "0000-07FF";
   let memoryByteDrafts = {};
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
@@ -291,7 +290,6 @@
           <section class="debugger-section debugger-memory-section" aria-label="CPU RAM monitor">
             <div class="debugger-section-header">
               <h2>RAM Monitor</h2>
-              <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
             </div>
 
             <div class="memory-search-toolbar" aria-label="RAM search controls">
@@ -316,7 +314,6 @@
             </div>
 
             <div class="memory-search-stats">
-              <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
               <span>{memorySearch?.captureCount ?? 0} snapshots</span>
               <span>{memorySearch?.lastDiffCount ?? 0} changed last capture</span>
               {#if memorySearchActive}
@@ -819,9 +816,11 @@
   .memory-bytes span.changed,
   .memory-ascii span.changed,
   .memory-byte-input.changed {
-    color: #0b1100;
+    color: #142000;
+    -webkit-text-fill-color: #142000;
     background: #d5ff76;
     box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
+    text-shadow: none;
   }
 
   @media (max-width: 720px) {

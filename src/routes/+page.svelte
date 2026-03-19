@@ -662,40 +662,40 @@
         {#if debuggerComponent && debuggerController && stageMode === "loaded"}
           <svelte:component this={debuggerComponent} debuggerController={debuggerController} />
         {/if}
-        {#if stageMode === "loaded"}
-          <div class="stage-toolbar">
-            <button
-              type="button"
-              class="stage-toolbar-button controls-toggle"
-              aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel().toLowerCase()}.`}
-              title={`Controls overlay: ${getCanvasControlsModeLabel()}`}
-              on:click={cycleCanvasControlsMode}
-            >
-              <svelte:component this={getCanvasControlsModeIcon()} size={18} strokeWidth={2.25} aria-hidden="true" />
-            </button>
-            {#if canToggleFullscreen}
-              <button
-                type="button"
-                class="stage-toolbar-button fullscreen-toggle"
-                aria-pressed={isFullscreen}
-                aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                on:click={() => void toggleFullscreenMode()}
-              >
-                {#if isFullscreen}
-                  <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
-                {:else}
-                  <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
-                {/if}
-              </button>
-            {/if}
-          </div>
-        {/if}
         <section
           bind:this={stageElement}
           class={`stage ${stageMode}${isDragging ? " dragging" : ""}`}
           aria-label="ROM drop zone"
         >
+          {#if stageMode === "loaded"}
+            <div class="stage-toolbar">
+              <button
+                type="button"
+                class="stage-toolbar-button controls-toggle"
+                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel().toLowerCase()}.`}
+                title={`Controls overlay: ${getCanvasControlsModeLabel()}`}
+                on:click={cycleCanvasControlsMode}
+              >
+                <svelte:component this={getCanvasControlsModeIcon()} size={18} strokeWidth={2.25} aria-hidden="true" />
+              </button>
+              {#if canToggleFullscreen}
+                <button
+                  type="button"
+                  class="stage-toolbar-button fullscreen-toggle"
+                  aria-pressed={isFullscreen}
+                  aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  on:click={() => void toggleFullscreenMode()}
+                >
+                  {#if isFullscreen}
+                    <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+                  {:else}
+                    <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
+                  {/if}
+                </button>
+              {/if}
+            </div>
+          {/if}
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
           <button class="overlay" type="button" on:click={openRomPicker}>
             <p class="loader-kicker">PLAYER ONE READY</p>
