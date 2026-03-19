@@ -288,10 +288,6 @@
           </section>
 
           <section class="debugger-section debugger-memory-section" aria-label="CPU RAM monitor">
-            <div class="debugger-section-header">
-              <h2>RAM Monitor</h2>
-            </div>
-
             <div class="memory-search-toolbar" aria-label="RAM search controls">
               <div class="memory-search-copy">
                 <strong>RAM Search</strong>
