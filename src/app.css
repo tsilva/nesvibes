@@ -1250,37 +1250,61 @@ canvas {
     font-size: 18px;
   }
 
-  .controller-body {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "dpad"
-      "action"
-      "center";
-    gap: 12px;
+  .controller-shell {
+    width: min(100%, 360px);
+    padding: 12px 10px 14px;
   }
 
+  .controller-body {
+    grid-template-columns: minmax(96px, 1fr) minmax(96px, 1fr);
+    grid-template-areas:
+      "dpad action"
+      "center center";
+    gap: 12px 10px;
+    align-items: center;
+  }
+
+  .dpad-cluster,
   .action-cluster,
-  .controller-center-panel,
-  .dpad-cluster {
+  .controller-center-panel {
     justify-self: center;
   }
 
   .dpad-cluster {
-    width: 108px;
-    height: 108px;
+    width: 96px;
+    height: 96px;
   }
 
   .action-cluster {
-    gap: 8px;
+    gap: 6px;
+    align-self: center;
   }
 
   .action-button {
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .action-button-label {
+    font-size: 14px;
+  }
+
+  .controller-center-panel {
+    width: min(100%, 170px);
+    gap: 10px;
+  }
+
+  .controller-brand {
+    font-size: 5px;
+  }
+
+  .controller-player {
+    font-size: 6px;
   }
 
   .system-button {
-    min-width: 44px;
+    min-width: 42px;
+    min-height: 22px;
   }
 }
     
