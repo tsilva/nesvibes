@@ -30,6 +30,12 @@
     ["ArrowLeft", "left"],
     ["ArrowRight", "right"],
   ]);
+  const BUTTON_KEY_LABELS = new Map([
+    ["select", "Shift"],
+    ["start", "Enter"],
+    ["b", "Z"],
+    ["a", "X"],
+  ]);
   const TOUCH_DIRECTION_BUTTONS = [
     { button: "up", label: "Up", position: "up", icon: ArrowUp },
     { button: "left", label: "Left", position: "left", icon: ArrowLeft },
@@ -37,12 +43,12 @@
     { button: "down", label: "Down", position: "down", icon: ArrowDown },
   ];
   const SYSTEM_BUTTONS = [
-    { button: "select", label: "Select", key: "SHIFT" },
-    { button: "start", label: "Start", key: "ENTER" },
+    { button: "select", label: "Select" },
+    { button: "start", label: "Start" },
   ];
   const ACTION_BUTTONS = [
-    { button: "b", label: "B", key: "Z", tone: "secondary" },
-    { button: "a", label: "A", key: "X", tone: "primary" },
+    { button: "b", label: "B", tone: "secondary" },
+    { button: "a", label: "A", tone: "primary" },
   ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
   const EMPTY_OVERLAY_TITLE = "Drop a `.nes` ROM";
@@ -131,32 +137,34 @@
     canvasControlsMode = CANVAS_CONTROL_MODES[nextIndex];
   }
 
-  function getCanvasControlsModeLabel() {
-    if (canvasControlsMode === "keys") {
+  function getCanvasControlsModeLabel(mode) {
+    if (mode === "keys") {
       return "Keyboard overlay";
     }
 
-    if (canvasControlsMode === "hidden") {
+    if (mode === "hidden") {
       return "Overlay hidden";
     }
 
     return "Controls overlay";
   }
 
-  function getCanvasControlsModeIcon() {
-    if (canvasControlsMode === "keys") {
+  function getCanvasControlsModeIcon(mode) {
+    if (mode === "keys") {
       return Keyboard;
     }
 
-    if (canvasControlsMode === "hidden") {
+    if (mode === "hidden") {
       return EyeOff;
     }
 
     return Gamepad2;
   }
 
-  function getCanvasControlText(control) {
-    return canvasControlsMode === "keys" ? control.key : control.label;
+  function getCanvasControlText(control, mode) {
+    return mode === "keys"
+      ? BUTTON_KEY_LABELS.get(control.button) ?? control.label
+      : control.label;
   }
 
   function getEmptyOverlayCopy() {
@@ -672,11 +680,11 @@
               <button
                 type="button"
                 class="stage-toolbar-button controls-toggle"
-                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel().toLowerCase()}.`}
-                title={`Controls overlay: ${getCanvasControlsModeLabel()}`}
-                on:click={cycleCanvasControlsMode}
+                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(canvasControlsMode).toLowerCase()}.`}
+                title={`Controls overlay: ${getCanvasControlsModeLabel(canvasControlsMode)}`}
+                on:click={() => cycleCanvasControlsMode()}
               >
-                <svelte:component this={getCanvasControlsModeIcon()} size={18} strokeWidth={2.25} aria-hidden="true" />
+                <svelte:component this={getCanvasControlsModeIcon(canvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
               </button>
               {#if canToggleFullscreen}
                 <button
@@ -716,7 +724,7 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{getCanvasControlText(control)}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control, canvasControlsMode)}</span>
                   </button>
                 {/each}
               </div>
@@ -752,7 +760,7 @@
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{getCanvasControlText(control)}</span>
+                    <span class="touch-button-label">{getCanvasControlText(control, canvasControlsMode)}</span>
                   </button>
                 {/each}
               </div>
