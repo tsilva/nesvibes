@@ -162,6 +162,7 @@ strong,
 
 .hero-copy {
   display: grid;
+  gap: 4px;
   justify-items: start;
   text-align: left;
 }
@@ -333,7 +334,7 @@ strong,
   position: absolute;
   top: 24px;
   right: 24px;
-  z-index: 2;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -543,15 +544,6 @@ canvas:focus-visible {
 
 .touch-controls.active {
   opacity: 1;
-  pointer-events: auto;
-}
-
-.touch-controls.desktop-hints {
-  opacity: 0.88;
-  pointer-events: none;
-}
-
-.touch-controls.desktop-hints .touch-button {
   pointer-events: none;
 }
 
@@ -579,11 +571,10 @@ canvas:focus-visible {
     linear-gradient(90deg, transparent 0 33%, rgba(255, 255, 255, 0.08) 33% 67%, transparent 67%),
     linear-gradient(transparent 0 33%, rgba(255, 255, 255, 0.08) 33% 67%, transparent 67%),
     rgba(14, 14, 14, 0.1);
-  backdrop-filter: blur(12px);
 }
 
 .touch-system {
-  top: 14px;
+  bottom: 18px;
   left: 50%;
   display: flex;
   gap: 10px;
@@ -606,6 +597,7 @@ canvas:focus-visible {
   display: grid;
   place-items: center;
   padding: 0;
+  pointer-events: auto;
   user-select: none;
   touch-action: none;
   cursor: pointer;
@@ -618,8 +610,6 @@ canvas:focus-visible {
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2),
     0 10px 22px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(10px) saturate(135%);
-  -webkit-backdrop-filter: blur(10px) saturate(135%);
   transition:
     transform 110ms ease,
     border-color 110ms ease,
@@ -658,6 +648,12 @@ canvas:focus-visible {
   width: 46px;
   height: 46px;
   border-radius: 18px;
+}
+
+.touch-button.directional .touch-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .touch-button.directional.up {
@@ -1038,7 +1034,7 @@ canvas:focus-visible {
   }
 
   .touch-system {
-    top: 12px;
+    bottom: 14px;
     gap: 8px;
   }
 
@@ -1193,7 +1189,7 @@ canvas:focus-visible {
   }
 
   .touch-system {
-    top: 10px;
+    bottom: 10px;
     gap: 6px;
   }
 

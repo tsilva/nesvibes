@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { Maximize2, Minimize2 } from "lucide-svelte";
+  import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize2, Minimize2 } from "lucide-svelte";
   import "@fontsource/silkscreen/latin.css";
   import "../app.css";
 
@@ -20,10 +20,10 @@
     ["ArrowRight", "right"],
   ]);
   const TOUCH_DIRECTION_BUTTONS = [
-    { button: "up", label: "Up", position: "up" },
-    { button: "left", label: "Left", position: "left" },
-    { button: "right", label: "Right", position: "right" },
-    { button: "down", label: "Down", position: "down" },
+    { button: "up", label: "Up", position: "up", icon: ArrowUp },
+    { button: "left", label: "Left", position: "left", icon: ArrowLeft },
+    { button: "right", label: "Right", position: "right", icon: ArrowRight },
+    { button: "down", label: "Down", position: "down", icon: ArrowDown },
   ];
   const SYSTEM_BUTTONS = [
     { button: "select", label: "Select", key: "SHIFT" },
@@ -61,10 +61,9 @@
   let overlayCopy = DESKTOP_EMPTY_OVERLAY_COPY;
   let pressedButtons = createPressedButtons();
   let canToggleFullscreen = false;
-  let desktopControlsDismissed = false;
 
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
-  $: showCanvasControls = stageMode === "loaded" && (isMobileMode || !desktopControlsDismissed);
+  $: showCanvasControls = stageMode === "loaded";
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -148,9 +147,6 @@
 
   function setStageMode(mode) {
     stageMode = mode;
-    if (mode !== "loaded" || !isMobileMode) {
-      desktopControlsDismissed = false;
-    }
   }
 
   function formatRomSize(sizeBytes) {
@@ -354,14 +350,9 @@
 
     const syncDebuggerMode = () => {
       const nextIsMobileMode = !debuggerQuery.matches;
-      const enteredDesktopMode = isMobileMode && !nextIsMobileMode;
 
       isMobileMode = nextIsMobileMode;
       syncOverlayForViewport();
-
-      if (enteredDesktopMode && stageMode === "loaded") {
-        desktopControlsDismissed = false;
-      }
 
       if (debuggerQuery.matches) {
         void enableDesktopDebugger().catch((error) => {
@@ -384,7 +375,6 @@
         return;
       }
 
-      desktopControlsDismissed = true;
       setPressedButton(button, true);
       event.preventDefault();
     };
@@ -564,7 +554,7 @@
             <p id="loader-copy">{overlayCopy}</p>
           </button>
           {#if showCanvasControls}
-            <div class={`touch-controls active ${isMobileMode ? "" : "desktop-hints"}`.trim()} aria-hidden={!isMobileMode}>
+            <div class="touch-controls active">
               <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
                   <button
@@ -572,7 +562,6 @@
                     class={`touch-button system ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
-                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
@@ -590,13 +579,14 @@
                     class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
-                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}
                     on:lostpointercapture={() => setPressedButton(control.button, false)}
                   >
-                    <span class="touch-button-label">{control.label}</span>
+                    <span class="touch-button-label touch-button-icon" aria-hidden="true">
+                      <svelte:component this={control.icon} size={18} strokeWidth={2.75} />
+                    </span>
                   </button>
                 {/each}
               </div>
@@ -608,7 +598,6 @@
                     class={`touch-button action ${control.button} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
                     aria-label={control.label}
                     aria-pressed={pressedButtons[control.button]}
-                    tabindex={isMobileMode ? undefined : -1}
                     on:pointerdown={(event) => handleControllerPress(control.button, event)}
                     on:pointerup={(event) => handleControllerRelease(control.button, event)}
                     on:pointercancel={(event) => handleControllerRelease(control.button, event)}

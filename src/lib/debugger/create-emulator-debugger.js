@@ -1,8 +1,9 @@
 import { get, writable } from "svelte/store";
 
 const DEFAULT_MEMORY_ADDRESS = 0x0000;
-const DEFAULT_MEMORY_LENGTH = 0x100;
-const MEMORY_SEARCH_LENGTH = 0x0800;
+const DEBUG_SNAPSHOT_CHUNK_LENGTH = 0x100;
+const MEMORY_VIEW_LENGTH = 0x0800;
+const MEMORY_SEARCH_LENGTH = MEMORY_VIEW_LENGTH;
 const POLL_INTERVAL_MS = 150;
 
 function createInitialMemorySearchState() {
@@ -23,6 +24,7 @@ function createInitialState() {
     hasRom: false,
     memoryError: "",
     memorySearch: createInitialMemorySearchState(),
+    memoryJumpAddress: DEFAULT_MEMORY_ADDRESS,
     memoryInput: formatAddress(DEFAULT_MEMORY_ADDRESS),
     open: false,
     paused: false,
@@ -46,7 +48,6 @@ function parseAddress(value) {
 export function createEmulatorDebugger() {
   const store = writable(createInitialState());
   let emulator = null;
-  let memoryAddress = DEFAULT_MEMORY_ADDRESS;
   let memorySearchSnapshot = null;
   let memorySearchCandidates = null;
   let pollHandle = 0;
@@ -81,11 +82,19 @@ export function createEmulatorDebugger() {
       return null;
     }
 
-    const snapshot = emulator.getDebugSnapshot({
-      length: DEFAULT_MEMORY_LENGTH,
-      startAddress: memoryAddress,
+    const state = get(store);
+    const baseSnapshot = emulator.getDebugSnapshot({
+      length: DEBUG_SNAPSHOT_CHUNK_LENGTH,
+      startAddress: DEFAULT_MEMORY_ADDRESS,
     });
+    const memoryView = state.open ? readMemoryRange(DEFAULT_MEMORY_ADDRESS, MEMORY_VIEW_LENGTH) : null;
     const searchViewBytes = memorySearchCandidates ? readMemorySearchSnapshot() : null;
+    const snapshot = baseSnapshot && memoryView
+      ? {
+          ...baseSnapshot,
+          memory: memoryView,
+        }
+      : baseSnapshot;
 
     store.update((state) => ({
       ...state,
@@ -129,17 +138,17 @@ export function createEmulatorDebugger() {
     return result;
   }
 
-  function readMemorySearchSnapshot() {
+  function readMemoryRange(startAddress, length) {
     if (!emulator?.getDebugSnapshot) {
       return null;
     }
 
-    const bytes = new Array(MEMORY_SEARCH_LENGTH);
+    const bytes = new Array(length);
 
-    for (let offset = 0; offset < MEMORY_SEARCH_LENGTH; offset += DEFAULT_MEMORY_LENGTH) {
+    for (let offset = 0; offset < length; offset += DEBUG_SNAPSHOT_CHUNK_LENGTH) {
       const chunk = emulator.getDebugSnapshot({
-        length: Math.min(DEFAULT_MEMORY_LENGTH, MEMORY_SEARCH_LENGTH - offset),
-        startAddress: offset,
+        length: Math.min(DEBUG_SNAPSHOT_CHUNK_LENGTH, length - offset),
+        startAddress: startAddress + offset,
       });
 
       if (!chunk?.memory?.bytes) {
@@ -151,7 +160,15 @@ export function createEmulatorDebugger() {
       }
     }
 
-    return bytes;
+    return {
+      bytes,
+      length,
+      startAddress,
+    };
+  }
+
+  function readMemorySearchSnapshot() {
+    return readMemoryRange(DEFAULT_MEMORY_ADDRESS, MEMORY_SEARCH_LENGTH)?.bytes ?? null;
   }
 
   return {
@@ -159,21 +176,22 @@ export function createEmulatorDebugger() {
     applyMemoryInput() {
       const state = get(store);
       const nextAddress = parseAddress(state.memoryInput);
-      if (nextAddress === null) {
+      if (nextAddress === null || nextAddress >= MEMORY_VIEW_LENGTH) {
         store.update((current) => ({
           ...current,
-          memoryError: "Use a hex address from 0000 to FFFF.",
+          memoryError: `Use a RAM address from 0000 to ${formatAddress(MEMORY_VIEW_LENGTH - 1)}.`,
         }));
         return null;
       }
 
-      memoryAddress = nextAddress;
       store.update((current) => ({
         ...current,
         memoryError: "",
+        memoryJumpAddress: nextAddress,
         memoryInput: formatAddress(nextAddress),
       }));
-      return syncSnapshot();
+      syncSnapshot();
+      return nextAddress;
     },
     attachEmulator(nextEmulator) {
       emulator = nextEmulator;
@@ -265,7 +283,6 @@ export function createEmulatorDebugger() {
     detachEmulator() {
       stopPolling();
       emulator = null;
-      memoryAddress = DEFAULT_MEMORY_ADDRESS;
       memorySearchSnapshot = null;
       memorySearchCandidates = null;
       store.set(createInitialState());

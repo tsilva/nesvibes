@@ -1,4 +1,5 @@
 <script>
+  import { tick } from "svelte";
   import { Bug, Pause, Play, RefreshCw, StepForward, X } from "lucide-svelte";
 
   export let debuggerController;
@@ -24,6 +25,7 @@
   };
   const MEMORY_SEARCH_RANGE = "0000-07FF";
   let memoryByteDrafts = {};
+  let memoryGridElement;
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
@@ -70,8 +72,14 @@
     return value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 2);
   }
 
-  function submitMemoryAddress() {
-    debuggerController.applyMemoryInput();
+  async function submitMemoryAddress() {
+    const targetAddress = debuggerController.applyMemoryInput();
+    if (targetAddress === null) {
+      return;
+    }
+
+    await tick();
+    scrollMemoryAddressIntoView(targetAddress);
   }
 
   function captureMemorySearch() {
@@ -156,6 +164,19 @@
   function flagTooltip(flag) {
     const description = FLAG_LABELS[flag.label] ?? flag.label;
     return `${description} flag (${flag.label}): ${flag.enabled ? "set" : "clear"}`;
+  }
+
+  function scrollMemoryAddressIntoView(address) {
+    if (!memoryGridElement) {
+      return;
+    }
+
+    const rowAddress = address & 0xfff0;
+    const rowElement = memoryGridElement.querySelector(`[data-memory-row="${formatHex(rowAddress, 4)}"]`);
+    rowElement?.scrollIntoView({
+      block: "center",
+      inline: "nearest",
+    });
   }
 
   $: state = $debuggerController;
@@ -295,7 +316,7 @@
           <section class="debugger-section debugger-memory-section" aria-label="CPU RAM monitor">
             <div class="debugger-section-header">
               <h2>RAM Monitor</h2>
-              <span class="debugger-chip">CPU bus</span>
+              <span class="debugger-chip">CPU RAM {MEMORY_SEARCH_RANGE}</span>
             </div>
 
             <form class="memory-form" on:submit|preventDefault={submitMemoryAddress}>
@@ -348,13 +369,18 @@
             </div>
 
             <div
+              bind:this={memoryGridElement}
               class={`memory-grid ${memorySearchActive ? "filtered" : ""}`.trim()}
               role="table"
               aria-label="Live memory bytes"
             >
               {#if memoryRows.length > 0}
                 {#each memoryRows as row (`row-${row.address}`)}
-                <div class="memory-row" role="row">
+                <div
+                  class="memory-row"
+                  role="row"
+                  data-memory-row={formatHex(row.address, 4)}
+                >
                   <span class="memory-address" role="cell">
                     {formatHex(row.address, 4)}
                   </span>
