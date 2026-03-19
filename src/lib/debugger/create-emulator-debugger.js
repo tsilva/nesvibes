@@ -259,6 +259,9 @@ export function createEmulatorDebugger() {
       syncSnapshot();
       return [...nextCandidates.values()];
     },
+    canEditMemoryAddress(address) {
+      return emulator?.isDebugWritableAddress?.(address) ?? false;
+    },
     detachEmulator() {
       stopPolling();
       emulator = null;
@@ -273,6 +276,19 @@ export function createEmulatorDebugger() {
     resetMemorySearch() {
       resetMemorySearchState();
       syncSnapshot();
+    },
+    setMemoryByte(address, value) {
+      if (!emulator?.setDebugByte || !emulator?.isPaused?.()) {
+        return false;
+      }
+
+      const didWrite = emulator.setDebugByte(address, value);
+      if (!didWrite) {
+        return false;
+      }
+
+      syncSnapshot();
+      return true;
     },
     setMemoryInput(value) {
       store.update((state) => ({

@@ -23,6 +23,7 @@
     C: "Carry",
   };
   const MEMORY_SEARCH_RANGE = "0000-07FF";
+  let memoryByteDrafts = {};
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
@@ -65,6 +66,10 @@
     return value >= 32 && value <= 126 ? String.fromCharCode(value) : ".";
   }
 
+  function sanitizeHexByte(value) {
+    return value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 2);
+  }
+
   function submitMemoryAddress() {
     debuggerController.applyMemoryInput();
   }
@@ -75,6 +80,73 @@
 
   function resetMemorySearch() {
     debuggerController.resetMemorySearch();
+  }
+
+  function canEditMemoryByte(address) {
+    return state.paused && debuggerController.canEditMemoryAddress(address);
+  }
+
+  function getMemoryByteDraft(byte) {
+    return memoryByteDrafts[byte.address] ?? formatHex(byte.value, 2);
+  }
+
+  function setMemoryByteDraft(address, value) {
+    memoryByteDrafts = {
+      ...memoryByteDrafts,
+      [address]: value,
+    };
+  }
+
+  function commitMemoryByte(address, value) {
+    const nextValue = sanitizeHexByte(value).padStart(2, "0");
+    const didWrite = debuggerController.setMemoryByte(address, Number.parseInt(nextValue, 16));
+
+    if (didWrite) {
+      setMemoryByteDraft(address, nextValue);
+      return true;
+    }
+
+    return false;
+  }
+
+  function handleMemoryByteFocus(byte, event) {
+    setMemoryByteDraft(byte.address, getMemoryByteDraft(byte));
+    event.currentTarget.select();
+  }
+
+  function handleMemoryByteInput(byte, event) {
+    const nextValue = sanitizeHexByte(event.currentTarget.value);
+    setMemoryByteDraft(byte.address, nextValue);
+
+    if (nextValue.length === 2) {
+      commitMemoryByte(byte.address, nextValue);
+    }
+  }
+
+  function handleMemoryByteBlur(byte) {
+    const nextValue = sanitizeHexByte(memoryByteDrafts[byte.address] ?? "");
+
+    if (!nextValue) {
+      setMemoryByteDraft(byte.address, formatHex(byte.value, 2));
+      return;
+    }
+
+    commitMemoryByte(byte.address, nextValue);
+  }
+
+  function handleMemoryByteKeydown(byte, event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitMemoryByte(byte.address, memoryByteDrafts[byte.address] ?? formatHex(byte.value, 2));
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setMemoryByteDraft(byte.address, formatHex(byte.value, 2));
+      event.currentTarget.blur();
+    }
   }
 
   function registerTooltip(field, value) {
@@ -97,6 +169,9 @@
     : snapshot
       ? buildMemoryRows(snapshot.memory.bytes, snapshot.memory.startAddress, changedAddresses)
       : [];
+  $: if (!state.paused && Object.keys(memoryByteDrafts).length > 0) {
+    memoryByteDrafts = {};
+  }
   $: memorySearchSummary = !memorySearch?.baselineCaptured
     ? "Capture a baseline, reproduce the event, then capture again. Only addresses that changed every time remain."
     : memorySearch.comparisonCount === 0
@@ -285,7 +360,23 @@
                   </span>
                   <div class="memory-bytes" role="cell">
                     {#each row.bytes as byte (`byte-${byte.address}`)}
-                      <span class:changed={byte.changed}>{formatHex(byte.value, 2)}</span>
+                      {#if canEditMemoryByte(byte.address)}
+                        <input
+                          class={`memory-byte-input ${byte.changed ? "changed" : ""}`.trim()}
+                          type="text"
+                          inputmode="text"
+                          maxlength="2"
+                          spellcheck="false"
+                          aria-label={`Edit memory at ${formatHex(byte.address, 4)}`}
+                          value={getMemoryByteDraft(byte)}
+                          on:blur={() => handleMemoryByteBlur(byte)}
+                          on:focus={(event) => handleMemoryByteFocus(byte, event)}
+                          on:input={(event) => handleMemoryByteInput(byte, event)}
+                          on:keydown={(event) => handleMemoryByteKeydown(byte, event)}
+                        />
+                      {:else}
+                        <span class:changed={byte.changed}>{formatHex(byte.value, 2)}</span>
+                      {/if}
                     {/each}
                   </div>
                   <div class="memory-ascii" role="cell" aria-hidden="true">
@@ -714,6 +805,8 @@
   .memory-grid {
     gap: 6px;
     min-height: 0;
+    align-content: start;
+    grid-auto-rows: max-content;
     padding: 10px;
     background: rgba(0, 0, 0, 0.22);
     border: 1px solid rgba(213, 255, 118, 0.12);
@@ -746,14 +839,35 @@
     grid-template-columns: repeat(16, 2ch);
     justify-content: start;
     gap: 1.1ch;
+    align-items: center;
     color: #fffce8;
   }
 
   .memory-bytes span,
-  .memory-ascii span {
+  .memory-ascii span,
+  .memory-byte-input {
     display: block;
     border-radius: 3px;
     transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .memory-byte-input {
+    width: 2.3ch;
+    margin: 0;
+    padding: 0;
+    color: #fffce8;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    text-transform: uppercase;
+    caret-color: #d5ff76;
+  }
+
+  .memory-byte-input:focus-visible {
+    outline: 1px solid rgba(248, 184, 0, 0.85);
+    outline-offset: 1px;
   }
 
   .memory-ascii {
@@ -766,13 +880,15 @@
   }
 
   .memory-grid.filtered .memory-bytes span,
-  .memory-grid.filtered .memory-ascii span {
+  .memory-grid.filtered .memory-ascii span,
+  .memory-grid.filtered .memory-byte-input {
     color: rgba(235, 243, 196, 0.38);
   }
 
   .memory-bytes span.changed,
-  .memory-ascii span.changed {
-    color: #132500;
+  .memory-ascii span.changed,
+  .memory-byte-input.changed {
+    color: #243600;
     background: #d5ff76;
     box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
   }

@@ -2929,6 +2929,28 @@ export function createNesEmulator({
     return null;
   }
 
+  function isDebugWritableAddress(address) {
+    const normalizedAddress = address & 0xffff;
+    return normalizedAddress < 0x2000 || (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000);
+  }
+
+  function setDebugByte(address, value) {
+    if (!activeNES || !isDebugWritableAddress(address)) {
+      return false;
+    }
+
+    const normalizedAddress = address & 0xffff;
+    const normalizedValue = value & 0xff;
+
+    if (normalizedAddress < 0x2000) {
+      activeNES.bus.cpuRam[normalizedAddress & 0x07ff] = normalizedValue;
+      return true;
+    }
+
+    activeNES.bus.cartridge.writePrgRam(normalizedAddress, normalizedValue);
+    return true;
+  }
+
   function getDebugSnapshot({
     length = 0x80,
     startAddress = 0x0000,
@@ -3138,11 +3160,13 @@ export function createNesEmulator({
     enableAudio,
     getDebugSnapshot,
     hasActiveRom: () => activeNES !== null,
+    isDebugWritableAddress,
     isPaused: () => isPaused,
     loadRomBytes,
     pause,
     releaseAllButtons,
     resume,
+    setDebugByte,
     setButton,
     setButtonByCode,
     stepInstruction,
