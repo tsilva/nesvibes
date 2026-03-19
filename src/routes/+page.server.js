@@ -31,7 +31,7 @@ export async function load() {
   const emulatorSource = await readFile(EMULATOR_FILE_PATH, "utf8");
   const emulatorLocLabel = `Single javascript file (${formatApproximateLoc(
     countLines(emulatorSource)
-  )})`;
+  )}) · Vibecoded with GPT-5.4. ❤️`;
 
   return {
     emulatorLocLabel,
