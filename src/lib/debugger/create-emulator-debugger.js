@@ -192,20 +192,40 @@ export function createEmulatorDebugger() {
       }
 
       if (!memorySearchSnapshot) {
+        const initialCandidates = mode === "exact" && value !== null
+          ? new Map(
+              nextSnapshot
+                .map((currentValue, address) => currentValue === value
+                  ? {
+                      address,
+                      changeCount: 0,
+                      currentValue,
+                      previousValue: currentValue,
+                    }
+                  : null)
+                .filter(Boolean)
+                .map((entry) => [entry.address, entry]),
+            )
+          : null;
+
         memorySearchSnapshot = nextSnapshot;
+        memorySearchCandidates = initialCandidates;
         store.update((state) => ({
           ...state,
           memorySearch: {
             ...createInitialMemorySearchState(),
             baselineCaptured: true,
+            candidateCount: initialCandidates?.size ?? 0,
             captureCount: 1,
+            lastMatchCount: initialCandidates?.size ?? 0,
             mode,
+            results: initialCandidates ? [...initialCandidates.values()] : [],
             targetValue: value,
             viewBytes: nextSnapshot,
           },
         }));
         syncSnapshot();
-        return [];
+        return initialCandidates ? [...initialCandidates.values()] : [];
       }
 
       const candidateAddresses = memorySearchCandidates

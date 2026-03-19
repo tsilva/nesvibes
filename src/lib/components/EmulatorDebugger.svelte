@@ -178,7 +178,14 @@
   $: snapshot = state.snapshot;
   $: memorySearchResults = memorySearch?.results ?? [];
   $: changedAddresses = new Set(memorySearchResults.map((result) => result.address));
-  $: memorySearchActive = (memorySearch?.comparisonCount ?? 0) > 0;
+  $: memorySearchModeOptions = memorySearch?.baselineCaptured
+    ? MEMORY_SEARCH_MODE_OPTIONS
+    : MEMORY_SEARCH_MODE_OPTIONS.filter((option) => option.value === "exact");
+  $: if (!memorySearch?.baselineCaptured && memorySearchMode !== "exact") {
+    memorySearchMode = "exact";
+  }
+  $: memorySearchActive = (memorySearch?.comparisonCount ?? 0) > 0
+    || ((memorySearch?.mode ?? "") === "exact" && (memorySearch?.candidateCount ?? 0) > 0);
   $: memorySearchNeedsValue = memorySearchMode === "exact";
   $: memorySearchHasValue = sanitizeSearchExactValue(memorySearchExactValue).length > 0;
   $: memorySearchCanCapture = !memorySearch?.baselineCaptured || !memorySearchNeedsValue || memorySearchHasValue;
@@ -194,9 +201,11 @@
     memoryByteDrafts = {};
   }
   $: memorySearchSummary = !memorySearch?.baselineCaptured
-    ? "Capture a baseline, choose a compare rule, reproduce the event, then capture again to filter candidates."
+    ? "Before the first capture, only exact-value search is meaningful. Capture a value like 03 for lives to seed candidates."
     : memorySearch.comparisonCount === 0
-      ? "Baseline saved. Reproduce the target event, then capture again with the compare rule you want to apply."
+      ? memorySearch.mode === "exact" && memorySearch.targetValue !== null
+        ? `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} currently equal ${formatHex(memorySearch.targetValue, 2)}. Reproduce the target event, then capture again with another rule.`
+        : "Baseline saved. Reproduce the target event, then capture again with the compare rule you want to apply."
       : memorySearch.candidateCount === 0
         ? `No addresses matched ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`
         : `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} still match ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`;
@@ -324,7 +333,7 @@
                 <label class="memory-search-filter">
                   <span>Compare</span>
                   <select bind:value={memorySearchMode} aria-label="RAM search comparison mode">
-                    {#each MEMORY_SEARCH_MODE_OPTIONS as option (option.value)}
+                    {#each memorySearchModeOptions as option (option.value)}
                       <option value={option.value}>{option.label}</option>
                     {/each}
                   </select>
@@ -766,6 +775,7 @@
   .memory-search-actions {
     flex-wrap: wrap;
     flex-shrink: 0;
+    align-items: end;
   }
 
   .memory-search-filter {
@@ -802,6 +812,7 @@
 
   .memory-search-actions .debugger-action {
     min-width: 96px;
+    align-self: end;
   }
 
   .memory-search-stats {
