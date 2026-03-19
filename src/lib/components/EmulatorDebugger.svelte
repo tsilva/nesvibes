@@ -206,9 +206,7 @@
       ? memorySearch.mode === "exact" && memorySearch.targetValue !== null
         ? `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} currently equal ${formatHex(memorySearch.targetValue, 2)}. Reproduce the target event, then capture again with another rule.`
         : "Baseline saved. Reproduce the target event, then capture again with the compare rule you want to apply."
-      : memorySearch.candidateCount === 0
-        ? `No addresses matched ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`
-        : `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} still match ${memorySearchAppliedModeLabel.toLowerCase()}${memorySearchAppliedTargetValue === null ? "" : ` ${formatHex(memorySearchAppliedTargetValue, 2)}`} after ${memorySearch.comparisonCount} comparison${memorySearch.comparisonCount === 1 ? "" : "s"}.`;
+      : null;
 </script>
 
 <div class="debugger-dock">
@@ -326,7 +324,9 @@
             <div class="memory-search-toolbar" aria-label="RAM search controls">
               <div class="memory-search-copy">
                 <strong>RAM Search</strong>
-                <p>{memorySearchSummary}</p>
+                {#if memorySearchSummary}
+                  <p>{memorySearchSummary}</p>
+                {/if}
               </div>
 
               <div class="memory-search-actions">
