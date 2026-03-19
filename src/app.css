@@ -465,16 +465,14 @@ canvas {
 .controller-shell {
   position: relative;
   width: min(100%, 640px);
-  padding: 16px 18px 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02)),
-    linear-gradient(180deg, #d4d4d4 0%, #bababa 28%, #8d8d8d 100%);
-  border: 3px solid rgba(245, 245, 245, 0.92);
-  border-radius: 22px 22px 34px 34px;
+  padding: 20px 24px 28px;
+  background: linear-gradient(180deg, #f4f2ed 0%, #e8e4dc 64%, #dad4cb 100%);
+  border: 2px solid #d6d0c8;
+  border-radius: 10px;
   box-shadow:
-    0 0 0 3px #171717,
-    0 14px 22px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
+    0 0 0 2px #f8f6f1,
+    0 10px 24px rgba(0, 0, 0, 0.18);
+  overflow: visible;
   animation: banner-rise 720ms steps(6, end) 120ms both;
 }
 
@@ -486,38 +484,55 @@ canvas {
 }
 
 .controller-shell::before {
-  inset: 0;
-  background:
-    linear-gradient(90deg, transparent 0 5%, rgba(255, 255, 255, 0.18) 5% 6%, transparent 6% 94%, rgba(0, 0, 0, 0.16) 94% 95%, transparent 95%),
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.22), transparent 30%);
-  opacity: 0.8;
+  inset: 16px 18px 14px;
+  background: linear-gradient(180deg, #3b3d45 0%, #24262d 100%);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+  opacity: 1;
 }
 
 .controller-shell::after {
-  inset: 13px 18px auto;
-  height: 2px;
+  inset: 16px 18px 14px;
   background:
-    linear-gradient(90deg, rgba(190, 0, 10, 0.9), rgba(190, 0, 10, 0.4) 65%, transparent 65% 100%);
+    linear-gradient(90deg, transparent 0 30%, rgba(130, 136, 148, 0.8) 30% 62%, transparent 62%),
+    linear-gradient(180deg, transparent 0 10%, rgba(130, 136, 148, 0.82) 10% 21%, transparent 21% 38%, rgba(130, 136, 148, 0.82) 38% 49%, transparent 49% 74%, rgba(130, 136, 148, 0.82) 74% 85%, transparent 85% 100%);
+  border-radius: 4px;
+  opacity: 0.92;
 }
 
 .controller-body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 156px minmax(116px, 1fr) 154px;
+  grid-template-columns: 148px minmax(150px, 1fr) 148px;
   align-items: center;
-  gap: 18px;
+  gap: 24px;
 }
 
 .dpad-cluster {
+  position: relative;
   justify-self: start;
-  width: 132px;
-  height: 132px;
+  width: 116px;
+  height: 116px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 0;
-  align-items: stretch;
+  align-items: center;
+  justify-items: center;
+}
+
+.dpad-cluster::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  background:
+    linear-gradient(90deg, transparent 0 31%, rgba(236, 236, 242, 0.92) 31% 69%, transparent 69%),
+    linear-gradient(transparent 0 31%, rgba(236, 236, 242, 0.92) 31% 69%, transparent 69%);
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
+  opacity: 0.95;
 }
 
 .dpad-button.up {
@@ -541,61 +556,92 @@ canvas {
 }
 
 .dpad-core {
+  position: relative;
   grid-column: 2;
   grid-row: 2;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 2px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 26%),
-    #171717;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%),
+    #20222a;
   box-shadow:
-    inset 0 -3px 0 rgba(0, 0, 0, 0.4),
-    0 4px 8px rgba(0, 0, 0, 0.18);
+    inset 0 -3px 0 rgba(0, 0, 0, 0.42),
+    0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+.dpad-core::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  background: radial-gradient(circle, #656872 0%, #2d3038 72%, transparent 74%);
 }
 
 .controller-center-panel {
+  position: relative;
   display: grid;
   justify-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .controller-badge {
   display: grid;
-  gap: 4px;
+  gap: 8px;
+  justify-items: center;
   width: 100%;
-  padding: 8px 10px 9px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 32%),
-    #2c2c2c;
-  border-radius: 999px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
   text-align: center;
+}
+
+.controller-stripe {
+  display: block;
+  width: min(100%, 128px);
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #808691 0%, #696e79 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.controller-badge-text {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
 }
 
 .controller-brand,
 .controller-player {
   font-family: var(--font-display);
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .controller-brand {
-  font-size: 7px;
+  font-size: 12px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #d8d8d8;
+  color: #c8463c;
 }
 
 .controller-player {
-  font-size: 8px;
-  color: #cf2735;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #c8463c;
 }
 
 .system-button-group {
+  position: relative;
   justify-self: center;
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 20px;
+  padding: 14px 18px 12px;
+  background: linear-gradient(180deg, #f4f4f2 0%, #ddddda 100%);
+  border: 2px solid #cbc8c2;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .action-cluster {
@@ -603,8 +649,8 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  padding-right: 4px;
+  gap: 22px;
+  padding-right: 10px;
 }
 
 .pad-button {
@@ -638,32 +684,71 @@ canvas {
 .system-button {
   display: grid;
   place-items: center;
-  gap: 3px;
-  padding: 6px 4px;
+  gap: 0;
+  padding: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 22%),
-    #191919;
-  border-color: rgba(255, 255, 255, 0.05);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 24%),
+    #181a21;
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
     inset 0 -3px 0 rgba(0, 0, 0, 0.42),
     0 4px 8px rgba(0, 0, 0, 0.18);
 }
 
 .dpad-button {
-  border-radius: 7px;
-  margin: 6px;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.dpad-button .pad-button-face,
+.dpad-button .pad-button-key {
+  display: none;
+}
+
+.dpad-button::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.dpad-button.up::before {
+  border-width: 0 6px 9px 6px;
+  border-color: transparent transparent #5e646f transparent;
+}
+
+.dpad-button.left::before {
+  border-width: 6px 9px 6px 0;
+  border-color: transparent #5e646f transparent transparent;
+}
+
+.dpad-button.right::before {
+  border-width: 6px 0 6px 9px;
+  border-color: transparent transparent transparent #5e646f;
+}
+
+.dpad-button.down::before {
+  border-width: 9px 6px 0 6px;
+  border-color: #5e646f transparent transparent transparent;
 }
 
 .system-button {
-  min-width: 50px;
-  min-height: 26px;
-  padding-inline: 6px;
+  min-width: 42px;
+  min-height: 18px;
   border-radius: 999px;
-  transform: rotate(-18deg);
+  transform: none;
 }
 
 .system-button.pressed {
-  transform: rotate(-18deg) translateY(2px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
+}
+
+.system-button .pad-button-face,
+.system-button .pad-button-key {
+  display: none;
 }
 
 .dpad-button.pressed,
@@ -703,17 +788,31 @@ canvas {
 }
 
 .action-button {
-  width: 56px;
-  height: 56px;
+  position: relative;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  gap: 3px;
+  gap: 0;
   border-radius: 999px;
   border-width: 2px;
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(182, 68, 58, 0.55);
   box-shadow:
-    inset 0 -5px 0 rgba(0, 0, 0, 0.22),
-    0 7px 10px rgba(0, 0, 0, 0.16);
+    inset 0 -4px 0 rgba(122, 16, 14, 0.38),
+    0 5px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-button::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  background: linear-gradient(180deg, #faf9f4 0%, #d7d3cc 100%);
+  border: 2px solid #c4c0ba;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .action-button.primary {
@@ -730,18 +829,27 @@ canvas {
 
 .action-button-label {
   font-family: var(--font-display);
-  font-size: 18px;
+  position: absolute;
+  bottom: -22px;
+  font-size: 10px;
   line-height: 1;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.22);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d14a40;
+  text-shadow: none;
+}
+
+.action-button .pad-button-key {
+  display: none;
 }
 
 .action-button.pressed {
-  border-color: rgba(255, 255, 255, 0.52);
+  border-color: rgba(255, 255, 255, 0.42);
   box-shadow:
-    inset 0 -2px 0 rgba(0, 0, 0, 0.16),
+    inset 0 -2px 0 rgba(122, 16, 14, 0.24),
     0 0 0 2px rgba(255, 255, 255, 0.18),
-    0 0 16px rgba(228, 0, 15, 0.26),
-    0 5px 8px rgba(0, 0, 0, 0.16);
+    0 0 10px rgba(228, 0, 15, 0.16),
+    0 4px 6px rgba(0, 0, 0, 0.16);
 }
 
 .launcher-shell {
@@ -1074,8 +1182,8 @@ canvas {
   }
 
   .controller-shell {
-    padding: 14px 12px 16px;
-    border-radius: 18px 18px 28px 28px;
+    padding: 16px 14px 22px;
+    border-radius: 8px;
   }
 
   .controller-body {
@@ -1111,15 +1219,16 @@ canvas {
   }
 
   .action-button-label {
-    font-size: 16px;
+    bottom: -20px;
+    font-size: 9px;
   }
 
   .controller-brand {
-    font-size: 6px;
+    font-size: 9px;
   }
 
   .controller-player {
-    font-size: 7px;
+    font-size: 9px;
   }
 }
 
@@ -1186,8 +1295,8 @@ canvas {
 
   .controller-shell {
     width: min(100%, 560px);
-    padding: 12px 14px 14px;
-    border-radius: 18px 18px 28px 28px;
+    padding: 14px 16px 22px;
+    border-radius: 8px;
   }
 
   .controller-body {
@@ -1206,15 +1315,16 @@ canvas {
   }
 
   .action-button-label {
-    font-size: 15px;
+    bottom: -19px;
+    font-size: 9px;
   }
 
   .controller-brand {
-    font-size: 6px;
+    font-size: 9px;
   }
 
   .controller-player {
-    font-size: 7px;
+    font-size: 9px;
   }
 
   .system-button {
@@ -1255,7 +1365,8 @@ canvas {
 
   .controller-shell {
     width: min(100%, 360px);
-    padding: 12px 10px 14px;
+    padding: 14px 10px 20px;
+    border-radius: 8px;
   }
 
   .controller-body {
@@ -1289,7 +1400,8 @@ canvas {
   }
 
   .action-button-label {
-    font-size: 14px;
+    bottom: -18px;
+    font-size: 8px;
   }
 
   .controller-center-panel {
@@ -1298,11 +1410,11 @@ canvas {
   }
 
   .controller-brand {
-    font-size: 5px;
+    font-size: 8px;
   }
 
   .controller-player {
-    font-size: 6px;
+    font-size: 8px;
   }
 
   .system-button {

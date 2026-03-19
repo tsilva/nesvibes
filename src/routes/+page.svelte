@@ -353,7 +353,6 @@
     </div>
     <div class="hero-grid">
       <div>
-        <p class="eyebrow">8-bit ROM lab</p>
         <h1 class="hero-title">NESVibes</h1>
         <p class="hero-lede">Play NES directly in your browser.</p>
         <p class="hero-meta">
@@ -457,8 +456,12 @@
 
             <div class="controller-center-panel">
               <div class="controller-badge" aria-hidden="true">
-                <span class="controller-brand">Nintendo Entertainment System</span>
-                <span class="controller-player">Player One</span>
+                <span class="controller-stripe"></span>
+                <span class="controller-badge-text">
+                  <span class="controller-brand">Select</span>
+                  <span class="controller-player">Start</span>
+                </span>
+                <span class="controller-stripe"></span>
               </div>
 
               <div class="system-button-group" role="group" aria-label="System buttons">
