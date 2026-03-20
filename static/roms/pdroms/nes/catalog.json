@@ -10,7 +10,18 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "Fun little game, the only way i can describe it is as a real-time active bingo bonanza. Some nice sounds and fairly good graphics. Source included.",
-    "author": "Damian Yerrick"
+    "author": "Damian Yerrick",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/bingo.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11886",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Damian Yerrick",
+        "url": "https://pineight.com/"
+      }
+    ],
+    "romSha1": "a3f166c73cda9746d42a80439c3140aa199ea8df",
+    "romMd5": "7d595fe8571fb211dda0bba472f39bc7"
   },
   {
     "id": "bombsweeper-for-nes-bombsweeper",
@@ -23,7 +34,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is a clone of Nintendo's Game & Watch \"BombSweeper\" from 1987. It's a simple, addictive puzzler. You are John Solver, fearless bomb squad person, who has to save the city from Jack, a demented criminal who is trying to blow it all up with his bombs.",
-    "author": ""
+    "author": "Kent Hansen",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/bombsweeper-for-nes.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11839",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Kent Hansen"
+      }
+    ],
+    "romSha1": "8da7f7cdb106a9595b82f11b2841eec656f81093",
+    "romMd5": "176b18a259ad4529e6057d3f0cb88759"
   },
   {
     "id": "cmc-80s-cmc80s",
@@ -36,7 +57,17 @@
     "prgBanks": 2,
     "chrBanks": 2,
     "description": "This demo really pushes the NES to the max, so emulator authors should take a look at this one for compatibility. It's supposed to be a tribute to the 80's.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/cmc-80s.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11745",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "fd5e1654d8da6b2d8603f707a1d21f2ffc52b7bf",
+    "romMd5": "108d2c29a8fd6c0a87b0d89394d51e55"
   },
   {
     "id": "elite-elite",
@@ -49,7 +80,21 @@
     "prgBanks": 8,
     "chrBanks": 0,
     "description": "A futuristic space travel type game. Although Elite was ported to many different 8 bit platforms, the NES version was by far the best.",
-    "author": ""
+    "author": "Ian Bell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/elite.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11741",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Ian Bell"
+      },
+      {
+        "role": "Original co-creator",
+        "name": "David Braben"
+      }
+    ],
+    "romSha1": "17c4f91469931ea309bfff4faba3f3c34deed3c7",
+    "romMd5": "17e00ce36f1dac59f630066906ac54f1"
   },
   {
     "id": "flame-and-motion-flame",
@@ -62,7 +107,17 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "These demos show full-screen animation of an animated flame and of a quickly-edited mini-FMV.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/flame-and-motion.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11746",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "6e3f8880b5758e04a06bed68e2d339a576d2b1b1",
+    "romMd5": "da4d1cb29a64d9b0d2e320dcc681d270"
   },
   {
     "id": "flying-megaman-megamanjet",
@@ -75,7 +130,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is a demo of Megaman flying on his jet among the clouds, made by the creator of Solar Wars.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/flying-megaman.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11747",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "f361cf3aad8ff6c6578debe4829639ba85048cd3",
+    "romMd5": "7fdd8c744280420e550e25ff9532c61d"
   },
   {
     "id": "game-genie-genie",
@@ -88,7 +153,21 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is the ROM for the menu of the NES Game Genie. Unfortunately, it doesn't allow you to actually use the codes, but since most good emulators already have Game Genie support, that's no big deal. It's extremely cool just to look at for a few minutes for nostalgic purposes, though. Game Genie is (c) Copyright Codemasters Software Co., Ltd. All Rights Reserved.",
-    "author": ""
+    "author": "Galoob",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/game-genie.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11742",
+    "credits": [
+      {
+        "role": "Publisher",
+        "name": "Galoob"
+      },
+      {
+        "role": "Copyright holder",
+        "name": "Codemasters"
+      }
+    ],
+    "romSha1": "b9b071b44c0eada6a13639fa2e88ff69022b6562",
+    "romMd5": "e354fb5b20e1b9fe4e5ca330f9b3391a"
   },
   {
     "id": "flame-and-motion-greys",
@@ -101,7 +180,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "These demos show full-screen animation of an animated flame and of a quickly-edited mini-FMV.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/flame-and-motion.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11746",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "34eea8840f666fca69d85f6dfa5fdf77a297b3b3",
+    "romMd5": "4a59d845fcada8df00769f045d9b4c69"
   },
   {
     "id": "halloween-haloween",
@@ -114,7 +203,17 @@
     "prgBanks": 1,
     "chrBanks": 0,
     "description": "This is a sweet little demo that displays a halloween greeting, and does a couple of neat things when you press buttons. Enjoy!.",
-    "author": "Memblers"
+    "author": "Memblers",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/halloween.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11743",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Memblers"
+      }
+    ],
+    "romSha1": "36695205480f6a08d801189f5a962c2a79da94ee",
+    "romMd5": "89ee610851f4cfab7ea061a3600b5ab9"
   },
   {
     "id": "joystick-demo-demo-j",
@@ -127,7 +226,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is a simple demo which uses joystick input to draw on the screen. ROM file and assembly code included.",
-    "author": ""
+    "author": "Gavin",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/joystick-demo.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11888",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Gavin"
+      }
+    ],
+    "romSha1": "b42ea98b2cbf752d93cb43f0b7fa7a8d27eb67ba",
+    "romMd5": "b51ce283003e9354bc456c3842719016"
   },
   {
     "id": "flame-and-motion-motion",
@@ -140,7 +249,17 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "These demos show full-screen animation of an animated flame and of a quickly-edited mini-FMV.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/flame-and-motion.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11746",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "b454081dfda96307fa97294ddcd0c6669eb1521e",
+    "romMd5": "537f58074e497e3b379509ffed3b730c"
   },
   {
     "id": "raster-bar-demo-programs-rasterchromaluma",
@@ -153,7 +272,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "ec8accda7d5a48cb970293f4f034bfb243262eaa",
+    "romMd5": "237c81c847fcf9edead7210058e6759a"
   },
   {
     "id": "raster-bar-demo-programs-rastertest1",
@@ -166,7 +295,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "2936619f52641b617a264ccba2a01874910d1eb7",
+    "romMd5": "6bba928b5c75a665290c4a526cdc0cbe"
   },
   {
     "id": "raster-bar-demo-programs-rastertest2",
@@ -179,7 +318,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "a33207fb17db90f6c6535b9411908e2c2b659de9",
+    "romMd5": "edd59d2412d2e64a665dda5faae3b5b6"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3",
@@ -192,7 +341,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "4525790b10f642d7577e75c2ec5f9281348238ef",
+    "romMd5": "f0fb9fc0fe2b279d90981fdeb91e7033"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3a",
@@ -205,7 +364,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "9f654f3673e6328ffbd98783787f3d682a4c642f",
+    "romMd5": "cf2cdad7981b61858e40069ac587fc3c"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3b",
@@ -218,7 +387,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "eed65fa338172bff3b7b22f94bb0738ecd5ea7af",
+    "romMd5": "8ca3704d9eae0ae937541a72cadfc70c"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3c",
@@ -231,7 +410,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "044fbefce198ecf9e589d42215c201ececbbc159",
+    "romMd5": "9eb31671c2f9b6fbdf89813f535c273f"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3d",
@@ -244,7 +433,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "ce5221a1c831304844dbd253f46ca51386d62bb0",
+    "romMd5": "e40eda2191e221ac801a0e88363e6b8b"
   },
   {
     "id": "raster-bar-demo-programs-rastertest3e",
@@ -257,7 +456,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This collection of ROMs by demo master Chris Covell tests out the ability of the NES to do various raster effects. Test this one out in a very compatible emu like LoopyNES.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/raster-bar-demo-programs.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11811",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "0974e91e48a2c869eba117b0780d04202a6d9b9d",
+    "romMd5": "5eb8b20475394042e63116a2e862cd88"
   },
   {
     "id": "sack-of-flour-heart-of-gold-sof-v1d",
@@ -270,7 +479,17 @@
     "prgBanks": 8,
     "chrBanks": 4,
     "description": "This is a homebrew demo by Bob Rost. You control a sack of flour moving through 2d levels in order to avoid certain annihilation by the enemies around you.",
-    "author": ""
+    "author": "Bob Rost",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/sack-of-flour-heart-of-gold.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11877",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Bob Rost"
+      }
+    ],
+    "romSha1": "67417fa861b44dbe3a55bac2e29943943df3f41b",
+    "romMd5": "fb4b75249e370e31944e0d2f05fbee46"
   },
   {
     "id": "sayoonara-sayoonara",
@@ -283,7 +502,17 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "This is a demo by Chris Covell that has scrolling text and other effects on it. More importantly, however, is that this may be the last demo by Covell for some time, and he explains why if you read the scrolling text inside the demo.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/sayoonara-.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11828",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "e7963eb177d827e604c047944f0545d905af1262",
+    "romMd5": "36fdf405d2c6fe949fe14b14d6ee0982"
   },
   {
     "id": "snow-snow",
@@ -296,7 +525,35 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "This is a nice scrolling text demo with a snowman and falling snow flakes. It was coded by the Repulse (Tennessee Carmel-Veilleux) and _Bnu did the graphics, Memblers re-did the music Random had formerly made available as MOD and Bananmos wrote the music engine.. Phew, hehe.",
-    "author": ""
+    "author": "Tennessee Carmel-Veilleux",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/snow.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11748",
+    "licenseName": "Custom distribution terms",
+    "licenseFile": "roms/pdroms/nes/library/snow/snow.txt",
+    "credits": [
+      {
+        "role": "Code, design",
+        "name": "Tennessee Carmel-Veilleux"
+      },
+      {
+        "role": "Graphics",
+        "name": "_Bnu"
+      },
+      {
+        "role": "Music",
+        "name": "Memblers"
+      },
+      {
+        "role": "Music engine / tracker",
+        "name": "Bananmos"
+      },
+      {
+        "role": "Original MOD music",
+        "name": "Random"
+      }
+    ],
+    "romSha1": "74006e5c6b8ee73059c35e98c35caf17054cf374",
+    "romMd5": "533f354f0c65d0d809ca7a6fde9b1945"
   },
   {
     "id": "solar-wars-solarwars2001",
@@ -309,7 +566,25 @@
     "prgBanks": 2,
     "chrBanks": 4,
     "description": "Solar Wars is a tank combat game like Scorched Earth on the PC, or Scorched Tanks on the Amiga. The game is two-player and pits you against a foe throughout our solar system. An excellent homebrew game.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/solar-wars.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11744",
+    "credits": [
+      {
+        "role": "Game design, graphics, programming",
+        "name": "Chris Covell"
+      },
+      {
+        "role": "Music",
+        "name": "Joey \"Memblers\" Parsell"
+      },
+      {
+        "role": "Music engine / tracker",
+        "name": "Michael Iwaniec"
+      }
+    ],
+    "romSha1": "c05e8c0f26044ee2ed8873b9939f1a97e71fc29f",
+    "romMd5": "6bcd3b7e0b6cc5a3b138ad3fb31e7621"
   },
   {
     "id": "sounds-demo-sounds",
@@ -322,7 +597,17 @@
     "prgBanks": 1,
     "chrBanks": 0,
     "description": "This is a demo where you press the A and B buttons to produce different sounds. ROM and assembly included.",
-    "author": ""
+    "author": "Gavin",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/sounds-demo.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11889",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Gavin"
+      }
+    ],
+    "romSha1": "2a11245ab07086fe8795e9a7821d1a52befa8945",
+    "romMd5": "a167dab51cd43046cc2ec045912cb055"
   },
   {
     "id": "stars-stars",
@@ -335,7 +620,17 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "This is a C-64 style demo for the NES called Stars. It has a picture of a NES in the center with a starfield floating by. It has the title at the top with the info scrolling at the bottom. Also has background music from Journey to Silius. It also comes with two other demos which are stars floating in different patterns. Download Stars SE (Stars + Source code)",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/stars.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11749",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "420488b09f57dbcf4e2ab58dd28b89a26f03db1d",
+    "romMd5": "af4737d830fcd5b487bc1accaf214c24"
   },
   {
     "id": "stars-stars-biology",
@@ -348,7 +643,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is a C-64 style demo for the NES called Stars. It has a picture of a NES in the center with a starfield floating by. It has the title at the top with the info scrolling at the bottom. Also has background music from Journey to Silius. It also comes with two other demos which are stars floating in different patterns. Download Stars SE (Stars + Source code)",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/stars.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11749",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "07c945a89984dd0d6bdc3e72e55b6e4158973437",
+    "romMd5": "aaafd8faf2cb8edf0b7a53e658d3342c"
   },
   {
     "id": "stars-stars-field",
@@ -361,7 +666,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is a C-64 style demo for the NES called Stars. It has a picture of a NES in the center with a starfield floating by. It has the title at the top with the info scrolling at the bottom. Also has background music from Journey to Silius. It also comes with two other demos which are stars floating in different patterns. Download Stars SE (Stars + Source code)",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/stars.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11749",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "7bda2ca88dacb669b7e3eb45aee51f943d3ef3cd",
+    "romMd5": "b6f8e79cea3111558dadedc93b793089"
   },
   {
     "id": "stretch-stretch",
@@ -374,7 +689,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This demo shows a really neat graphic effect: it scales and warps an image vertically.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/stretch.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11806",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "f5391038938d1c8577e572f0480ebf600bfd6482",
+    "romMd5": "09c0239685689f9649fd86154adaa080"
   },
   {
     "id": "super-fighter-sfdemo",
@@ -387,7 +712,25 @@
     "prgBanks": 1,
     "chrBanks": 2,
     "description": "This has a picture of the Super Fighter cast picture which was ripped from the game's end sequence.",
-    "author": "Chris Covell &"
+    "author": "Chris Covell & Death Adder",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/super-fighter.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11750",
+    "credits": [
+      {
+        "role": "Code",
+        "name": "Chris Covell"
+      },
+      {
+        "role": "Graphics",
+        "name": "Death Adder"
+      },
+      {
+        "role": "Music",
+        "name": "Memblers"
+      }
+    ],
+    "romSha1": "b6b35a712a8e00e0ceb38745b1f6f1f5c0ae19fd",
+    "romMd5": "3b63d7bcce3a9140fbcefc7393eb51bf"
   },
   {
     "id": "super-mario-clouds-supermarioclouds",
@@ -400,7 +743,18 @@
     "prgBanks": 2,
     "chrBanks": 1,
     "description": "This is a homebrew demo that displays some scrolling clouds from Super Mario Brothers.",
-    "author": ""
+    "author": "Cory Arcangel",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/super-mario-clouds.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11876",
+    "credits": [
+      {
+        "role": "Artist / developer",
+        "name": "Cory Arcangel",
+        "url": "https://coryarcangel.com/"
+      }
+    ],
+    "romSha1": "98f3c2de55680006772c41a406cb9ca9096ea791",
+    "romMd5": "4b5239e3cb7d0fb90e07fd259bd1cc2b"
   },
   {
     "id": "tetramino-t",
@@ -413,7 +767,20 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This is an implementation of an action puzzle game invented by Alexey Pajitnov. It works much like the classic Tetris games and has support for two players. It also includes music and attract mode.",
-    "author": "pin eight"
+    "author": "Damian Yerrick",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/tetramino.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11882",
+    "licenseName": "GPL-2.0-or-later",
+    "licenseFile": "roms/pdroms/nes/library/tetramino/GPL.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Damian Yerrick",
+        "url": "https://pineight.com/"
+      }
+    ],
+    "romSha1": "92da870d92a13a2c2c78525180efe064389ed4cb",
+    "romMd5": "a7e993ebaf4e85406f518f2229874f0d"
   },
   {
     "id": "tmnt-demo-tmntdemo",
@@ -426,7 +793,17 @@
     "prgBanks": 64,
     "chrBanks": 1,
     "description": "Rather impressive nes demo that shows the Teenage Mutant Ninja Turtle logo and plays the theme song, rather accurately.",
-    "author": "Xodnizel"
+    "author": "Xodnizel",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/tmnt-demo.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11831",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Xodnizel"
+      }
+    ],
+    "romSha1": "a9322dc81f1b0ecfa6fbf894ea584bf3aa8c4391",
+    "romMd5": "e107efd9b247273b1b6be0b0ea4a2e53"
   },
   {
     "id": "wall-wall",
@@ -439,7 +816,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This demo shows that translucency is possible on the NES, through the use of \"Color Emphasis\" bits.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/wall.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11751",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "061dac090a1738a5ebda6a3e3a2300dee523a659",
+    "romMd5": "4f7aaae42381fadcf998461cc17e6756"
   },
   {
     "id": "wavy-cmcwavy",
@@ -452,7 +839,17 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "This demo is a wavy trippy colored CMC logo.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/wavy.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11752",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "663b86a1c72d82be640bd65736e1dcb0b60e743b",
+    "romMd5": "513578820f5cf60e17249e26bb83eac5"
   },
   {
     "id": "xmas-2001-demo-xmas2001",
@@ -465,6 +862,16 @@
     "prgBanks": 1,
     "chrBanks": 1,
     "description": "Christmas demo for 2001 to bring some Yultide cheer. It has some softly-falling snowflakes and a little text-scroller.",
-    "author": ""
+    "author": "Chris Covell",
+    "originalPageUrl": "https://www.zophar.net/pdroms/nes/xmas-2001-demo.html",
+    "archiveDownloadUrl": "https://www.zophar.net/download_file/11832",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Chris Covell"
+      }
+    ],
+    "romSha1": "694687346810c4db52c9cad7c7cdf77cda77fc5a",
+    "romMd5": "a1394287057b0e3c3fac0b8899fec35b"
   }
 ]

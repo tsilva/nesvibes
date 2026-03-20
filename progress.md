@@ -32,3 +32,7 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Mobile follow-up: the mobile viewport now forces the touch overlay into analog joystick mode and hides the controls-mode toggle button. Desktop keeps the existing overlay cycling behavior.
 
 - Joystick tuning: reduced the analog stick clamp radius from 34px to 24px so directional engagement happens with a shorter throw, which should make quick left/right movement in platformers like Super Mario feel easier.
+
+- Touch layout follow-up: made the analog joystick shell smaller again, reduced the thumb travel clamp from 24px to 20px, bottom-aligned the joystick shell with the lower action button, and switched the A/B cluster to a tighter absolute layout so both buttons could grow slightly while moving closer together.
+
+- Verification: `npm run check` passed. Browser verification at a `390x844` viewport confirmed the joystick shell and B button share the same bottom edge (`bottomDeltaJoystickToB = 0`), and the action buttons now render at 48px with a tighter 50px center-to-center gap on the narrow mobile breakpoint. Playwright screenshot capture still timed out on this page after fonts loaded, so this pass used live DOM measurements plus the accessibility snapshot instead of a saved image artifact.

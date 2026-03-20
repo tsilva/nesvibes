@@ -17,6 +17,7 @@
   export let data;
 
   const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
+  const MOBILE_CANVAS_CONTROL_MODES = ["controls", "gamepad"];
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
   const DIRECTIONAL_BUTTONS = ["up", "down", "left", "right"];
   const KEYBOARD_BUTTON_MAP = new Map([
@@ -64,7 +65,7 @@
     ["next-most-valuable-rom", 1],
     ["next-most-valuable-rom-mode", 1],
   ]);
-  const JOYSTICK_MAX_DISTANCE = 24;
+  const JOYSTICK_MAX_DISTANCE = 20;
   const JOYSTICK_DEAD_ZONE = 0.38;
 
   let canvas;
@@ -95,7 +96,10 @@
   let requestedRomMode = null;
   let canvasControlsMode = "controls";
 
-  $: effectiveCanvasControlsMode = isMobileMode ? "gamepad" : canvasControlsMode;
+  $: effectiveCanvasControlsMode =
+    isMobileMode && !MOBILE_CANVAS_CONTROL_MODES.includes(canvasControlsMode)
+      ? "gamepad"
+      : canvasControlsMode;
   $: libraryEntries = [
     ...romCatalog.map((entry) => ({
       ...entry,
@@ -172,7 +176,9 @@
   }
 
   function setCanvasControlsMode(mode) {
-    if (isMobileMode) {
+    const availableModes = isMobileMode ? MOBILE_CANVAS_CONTROL_MODES : CANVAS_CONTROL_MODES;
+
+    if (!availableModes.includes(mode)) {
       return;
     }
 
@@ -184,7 +190,7 @@
   }
 
   function cycleCanvasControlsMode() {
-    const availableModes = CANVAS_CONTROL_MODES;
+    const availableModes = isMobileMode ? MOBILE_CANVAS_CONTROL_MODES : CANVAS_CONTROL_MODES;
     const currentMode = availableModes.includes(effectiveCanvasControlsMode)
       ? effectiveCanvasControlsMode
       : availableModes[0];
@@ -856,17 +862,15 @@
         >
           {#if stageMode === "loaded"}
             <div class="stage-toolbar">
-              {#if !isMobileMode}
-                <button
-                  type="button"
-                  class="stage-toolbar-button controls-toggle"
-                  aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(effectiveCanvasControlsMode).toLowerCase()}.`}
-                  title={`Controls overlay: ${getCanvasControlsModeLabel(effectiveCanvasControlsMode)}`}
-                  on:click={() => cycleCanvasControlsMode()}
-                >
-                  <svelte:component this={getCanvasControlsModeIcon(effectiveCanvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
-                </button>
-              {/if}
+              <button
+                type="button"
+                class="stage-toolbar-button controls-toggle"
+                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(effectiveCanvasControlsMode).toLowerCase()}.`}
+                title={`Controls overlay: ${getCanvasControlsModeLabel(effectiveCanvasControlsMode)}`}
+                on:click={() => cycleCanvasControlsMode()}
+              >
+                <svelte:component this={getCanvasControlsModeIcon(effectiveCanvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
+              </button>
               {#if canToggleFullscreen}
                 <button
                   type="button"
@@ -1008,10 +1012,13 @@
                 </p>
               {/if}
 
-              {#if selectedLibraryEntry.originalPageUrl || selectedLibraryEntry.sourceUrl || selectedLibraryEntry.licenseUrl || selectedLibraryEntry.noticeFile || selectedLibraryEntry.licenseFile}
+              {#if selectedLibraryEntry.originalPageUrl || selectedLibraryEntry.archiveDownloadUrl || selectedLibraryEntry.sourceUrl || selectedLibraryEntry.licenseUrl || selectedLibraryEntry.noticeFile || selectedLibraryEntry.licenseFile}
                 <div class="launcher-link-row">
                   {#if selectedLibraryEntry.originalPageUrl}
                     <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
+                  {/if}
+                  {#if selectedLibraryEntry.archiveDownloadUrl}
+                    <a href={selectedLibraryEntry.archiveDownloadUrl} target="_blank" rel="noreferrer">Archive</a>
                   {/if}
                   {#if selectedLibraryEntry.sourceUrl}
                     <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source</a>
@@ -1043,8 +1050,8 @@
                       : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
                     on:click={() => void loadBundledRom(entry)}
                   >
-                    <span class="launcher-item-eyebrow">{entry.collectionLabel}</span>
                     <strong>{entry.title}</strong>
+                    <span class="launcher-item-eyebrow">{entry.collectionLabel}</span>
                   </button>
                 </li>
               {/each}

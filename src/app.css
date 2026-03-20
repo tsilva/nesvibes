@@ -583,10 +583,10 @@ canvas:focus-visible {
 }
 
 .touch-joystick-shell {
-  left: 12px;
-  bottom: 14px;
-  width: 136px;
-  height: 136px;
+  left: 14px;
+  bottom: 18px;
+  width: 126px;
+  height: 126px;
 }
 
 .touch-joystick {
@@ -617,7 +617,7 @@ canvas:focus-visible {
 .touch-joystick-base::after {
   content: "";
   position: absolute;
-  inset: 16px;
+  inset: 14px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
@@ -634,13 +634,13 @@ canvas:focus-visible {
 }
 
 .touch-joystick-guide.horizontal {
-  width: 88px;
+  width: 80px;
   height: 2px;
 }
 
 .touch-joystick-guide.vertical {
   width: 2px;
-  height: 88px;
+  height: 80px;
 }
 
 .touch-joystick-thumb {
@@ -649,9 +649,9 @@ canvas:focus-visible {
   left: 50%;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
   color: rgba(248, 248, 248, 0.94);
   border-radius: 50%;
   background:
@@ -695,12 +695,8 @@ canvas:focus-visible {
 .touch-actions {
   right: 18px;
   bottom: 18px;
-  width: 128px;
-  height: 108px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  place-items: center;
+  width: 118px;
+  height: 100px;
 }
 
 .touch-button {
@@ -803,19 +799,20 @@ canvas:focus-visible {
 }
 
 .touch-button.action {
-  width: 58px;
-  height: 58px;
+  position: absolute;
+  width: 62px;
+  height: 62px;
   border-radius: 999px;
 }
 
 .touch-button.action.a {
-  grid-column: 2;
-  grid-row: 1;
+  top: 0;
+  right: 0;
 }
 
 .touch-button.action.b {
-  grid-column: 1;
-  grid-row: 2;
+  left: 8px;
+  bottom: 0;
 }
 
 .touch-button.action .touch-button-label {
@@ -934,16 +931,20 @@ canvas:focus-visible {
 .launcher-item strong {
   display: block;
   margin: 0;
-  font-size: 9px;
-  line-height: 1.25;
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 1.2;
+  color: #ffffff;
 }
 
 .launcher-item-eyebrow {
   display: block;
-  margin-bottom: 2px;
-  font-size: 9px;
+  margin-top: 2px;
+  font-size: 8px;
   line-height: 1.2;
-  color: #f8b800;
+  color: rgba(239, 230, 255, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .launcher-details {
@@ -1219,31 +1220,31 @@ canvas:focus-visible {
   }
 
   .touch-joystick-shell {
-    left: 10px;
-    bottom: 12px;
-    width: 122px;
-    height: 122px;
+    left: 12px;
+    bottom: 14px;
+    width: 112px;
+    height: 112px;
   }
 
   .touch-joystick-guide.horizontal {
-    width: 78px;
+    width: 72px;
   }
 
   .touch-joystick-guide.vertical {
-    height: 78px;
+    height: 72px;
   }
 
   .touch-joystick-thumb {
-    width: 50px;
-    height: 50px;
-    margin: -25px 0 0 -25px;
+    width: 46px;
+    height: 46px;
+    margin: -23px 0 0 -23px;
   }
 
   .touch-actions {
     right: 14px;
     bottom: 14px;
-    width: 112px;
-    height: 96px;
+    width: 104px;
+    height: 88px;
   }
 
   .touch-button.directional {
@@ -1259,8 +1260,12 @@ canvas:focus-visible {
   }
 
   .touch-button.action {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .touch-button.action.b {
+    left: 6px;
   }
 
   .touch-button.action .touch-button-label {
@@ -1394,31 +1399,31 @@ canvas:focus-visible {
   }
 
   .touch-joystick-shell {
-    left: 8px;
-    bottom: 8px;
-    width: 108px;
-    height: 108px;
+    left: 10px;
+    bottom: 10px;
+    width: 100px;
+    height: 100px;
   }
 
   .touch-joystick-guide.horizontal {
-    width: 66px;
+    width: 62px;
   }
 
   .touch-joystick-guide.vertical {
-    height: 66px;
+    height: 62px;
   }
 
   .touch-joystick-thumb {
-    width: 44px;
-    height: 44px;
-    margin: -22px 0 0 -22px;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
   }
 
   .touch-actions {
     right: 10px;
     bottom: 10px;
-    width: 96px;
-    height: 84px;
+    width: 92px;
+    height: 78px;
   }
 
   .touch-button.directional {
@@ -1439,8 +1444,12 @@ canvas:focus-visible {
   }
 
   .touch-button.action {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .touch-button.action.b {
+    left: 4px;
   }
 
   .touch-button.action .touch-button-label {
