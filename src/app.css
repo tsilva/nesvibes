@@ -400,6 +400,25 @@ strong,
   pointer-events: none;
 }
 
+.stage-skeleton {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  width: min(100%, calc((100dvh - 290px) * 256 / 240));
+  max-height: calc(100dvh - 290px);
+  aspect-ratio: 256 / 240;
+  padding: 16px;
+  text-align: center;
+  background: #000;
+  border: 3px solid #0d0714;
+  box-shadow: inset 0 0 0 4px #1e1e1e;
+  color: var(--muted);
+}
+
+.stage-skeleton p {
+  margin: 0;
+}
+
 .stage {
   position: relative;
   width: min(100%, calc((100dvh - 290px) * 256 / 240));
@@ -1111,6 +1130,10 @@ canvas:focus-visible {
     overflow-y: auto;
   }
 
+  body::before {
+    display: none;
+  }
+
   .page-shell {
     width: min(100%, 1240px);
     height: auto;
@@ -1122,6 +1145,24 @@ canvas:focus-visible {
   .hero-banner {
     padding: 16px 18px 14px;
     padding-right: 64px;
+    background: var(--panel-strong);
+    box-shadow:
+      0 0 0 4px #1a1a1a,
+      0 10px 20px rgba(0, 0, 0, 0.28);
+    animation: none;
+  }
+
+  .hero-banner::before,
+  .hero-banner::after,
+  .stage::before,
+  .stage::after,
+  .overlay {
+    animation: none;
+  }
+
+  .hero-banner::before,
+  .hero-banner::after {
+    display: none;
   }
 
   .hero-grid,
@@ -1146,8 +1187,35 @@ canvas:focus-visible {
     overflow: visible;
   }
 
+  .stage-shell {
+    background: rgba(18, 18, 18, 0.94);
+    box-shadow:
+      0 0 0 5px #171717,
+      0 14px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .stage {
+    background: #000;
+    box-shadow: inset 0 0 0 4px #1e1e1e;
+  }
+
+  .stage::before,
+  .stage::after {
+    display: none;
+  }
+
+  .overlay {
+    background: rgba(20, 20, 20, 0.96);
+    box-shadow:
+      0 0 0 3px rgba(12, 12, 12, 0.96),
+      0 12px 24px rgba(0, 0, 0, 0.32);
+    backdrop-filter: none;
+  }
+
   .side-rail {
     align-items: start;
+    content-visibility: auto;
+    contain-intrinsic-size: 720px;
   }
 
   .launcher-shell {
@@ -1155,6 +1223,11 @@ canvas:focus-visible {
   }
 
   .stage {
+    width: 100%;
+    max-height: none;
+  }
+
+  .stage-skeleton {
     width: 100%;
     max-height: none;
   }

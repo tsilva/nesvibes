@@ -3,6 +3,7 @@
   import { afterNavigate } from "$app/navigation";
   import { initGoogleAnalytics, trackPageView } from "$lib/google-analytics.js";
   import { site } from "$lib/site.js";
+  import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
   import { onMount } from "svelte";
 
   const jsonLd = JSON.stringify({
@@ -102,6 +103,7 @@
   <meta name="format-detection" content="telephone=no" />
 
   <link rel="canonical" href={site.url} />
+  <link rel="preload" href={silkscreenFontUrl} as="font" type="font/woff2" crossorigin="anonymous" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/x-icon" href={site.icons.faviconIco} />
   <link rel="icon" type="image/png" sizes="16x16" href={site.icons.favicon16} />
