@@ -49,11 +49,7 @@ class Cartridge {
     });
   }
   constructor({ prgRom, chrRom, hasChrRam, mirroring, fourScreen = false, prgRamSize = 0 }) {
-    this.prgRom = prgRom;
-    this.chrRom = chrRom;
-    this.hasChrRam = hasChrRam;
-    this.mirroring = mirroring;
-    this.fourScreen = fourScreen;
+    Object.assign(this, { prgRom, chrRom, hasChrRam, mirroring, fourScreen });
     this.prgRam = new Uint8Array(prgRamSize);
     this.prgRamEnabled = this.prgRam.length > 0;
     this.prgRamWriteProtected = false;
@@ -62,21 +58,11 @@ class Cartridge {
   getNametableRamSize() { return this.fourScreen ? 0x1000 : 0x0800; }
   normalizePrgBank(bank, shift) { return wrapIndex(bank, Math.max(1, this.prgRom.length >> shift)); }
   normalizeChrBank(bank, shift) { return wrapIndex(bank, Math.max(1, this.chrRom.length >> shift)); }
-  getPrgBankAddress(addr, bank, shift) {
-    return this.normalizePrgBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift);
-  }
-  getChrBankAddress(addr, bank, shift) {
-    return this.normalizeChrBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift);
-  }
-  readBankedPrg(addr, bank, shift) {
-    return this.prgRom[this.getPrgBankAddress(addr, bank, shift)];
-  }
-  readBankedChr(addr, bank, shift) {
-    return this.chrRom[this.getChrBankAddress(addr, bank, shift)];
-  }
-  writeBankedChr(addr, value, bank, shift) {
-    if (this.hasChrRam) this.chrRom[this.getChrBankAddress(addr, bank, shift)] = value & 0xff;
-  }
+  getPrgBankAddress(addr, bank, shift) { return this.normalizePrgBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift); }
+  getChrBankAddress(addr, bank, shift) { return this.normalizeChrBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift); }
+  readBankedPrg(addr, bank, shift) { return this.prgRom[this.getPrgBankAddress(addr, bank, shift)]; }
+  readBankedChr(addr, bank, shift) { return this.chrRom[this.getChrBankAddress(addr, bank, shift)]; }
+  writeBankedChr(addr, value, bank, shift) { if (this.hasChrRam) this.chrRom[this.getChrBankAddress(addr, bank, shift)] = value & 0xff; }
   readPrg() { return 0; }
   writePrg() {}
   readPrgRam(addr) { return !this.prgRamEnabled || this.prgRam.length === 0 ? 0 : this.prgRam[wrapIndex(addr - 0x6000, this.prgRam.length)]; }
@@ -117,17 +103,10 @@ class MMC1Cartridge extends Cartridge {
     return this.readBankedPrg(addr, bank, 14);
   }
   writePrg(addr, value) {
-    if (value & 0x80) {
-      this.shiftRegister = 0x10;
-      this.control |= 0x0c;
-      this.updateMirroring();
-      return;
-    }
+    if (value & 0x80) return this.shiftRegister = 0x10, this.control |= 0x0c, void this.updateMirroring();
     const commit = (this.shiftRegister & 0x01) !== 0;
     this.shiftRegister = (this.shiftRegister >> 1) | ((value & 0x01) << 4);
-    if (!commit) {
-      return;
-    }
+    if (!commit) return;
     const data = this.shiftRegister & 0x1f;
     if (addr < 0xa000) { this.control = data; this.updateMirroring(); }
     else if (addr < 0xc000) this.chrBank0 = data;
@@ -137,20 +116,12 @@ class MMC1Cartridge extends Cartridge {
   }
   readChr(addr) { return this.readBankedChr(addr, this.resolveChrBank(addr), 12); }
   writeChr(addr, value) { this.writeBankedChr(addr, value, this.resolveChrBank(addr), 12); }
-  resolveChrBank(addr) {
-    if (((this.control >> 4) & 0x01) === 0) return this.normalizeChrBank((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), 12);
-    return this.normalizeChrBank((addr & 0x1000) === 0 ? this.chrBank0 : this.chrBank1, 12);
-  }
+  resolveChrBank(addr) { return ((this.control >> 4) & 0x01) === 0 ? this.normalizeChrBank((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), 12) : this.normalizeChrBank((addr & 0x1000) === 0 ? this.chrBank0 : this.chrBank1, 12); }
   updateMirroring() { if (!this.fourScreen) this.mirroring = MMC1_MIRRORING_MODES[this.control & 0x03]; }
 }
 class MMC3Cartridge extends Cartridge {
   bankRegisters = new Uint8Array(8);
-  reset() {
-    super.reset();
-    resetFields(this, MMC3_DEFAULTS);
-    this.bankRegisters.fill(0);
-    this.bankRegisters[7] = 1;
-  }
+  reset() { super.reset(); resetFields(this, MMC3_DEFAULTS); this.bankRegisters.fill(0); this.bankRegisters[7] = 1; }
   readPrg(addr) {
     const slot = (addr - 0x8000) >> 13, lastBank = (this.prgRom.length >> 13) - 1, secondLastBank = Math.max(0, lastBank - 1);
     const bank = [this.prgMode ? secondLastBank : this.bankRegisters[6], this.bankRegisters[7], this.prgMode ? this.bankRegisters[6] : secondLastBank, lastBank][slot];
@@ -173,55 +144,34 @@ class MMC3Cartridge extends Cartridge {
       else { this.prgRamWriteProtected = (value & 0x40) !== 0; this.prgRamEnabled = (value & 0x80) !== 0; }
       return;
     }
-    if (address < 0xe000) {
-      if ((address & 1) === 0) this.irqLatch = value & 0xff;
-      else this.irqReload = true;
-      return;
-    }
-    if ((address & 1) === 0) { this.irqEnabled = false; this.irqPending = false; }
+    if (address < 0xe000) return (address & 1) === 0 ? this.irqLatch = value & 0xff : this.irqReload = true;
+    if ((address & 1) === 0) this.irqEnabled = false, this.irqPending = false;
     else this.irqEnabled = true;
   }
   writeBankData(value) { this.bankRegisters[this.bankSelect] = value & (this.bankSelect <= 1 ? 0xfe : 0xff); }
-  getChrAddress(addr) {
-    const [registerIndex, offset] = MMC3_CHR_BANK_SELECTORS[this.chrMode][(addr & 0x1fff) >> 10];
-    return this.normalizeChrBank(this.bankRegisters[registerIndex] + offset, 10) * 0x0400 + (addr & 0x03ff);
-  }
+  getChrAddress(addr) { const [registerIndex, offset] = MMC3_CHR_BANK_SELECTORS[this.chrMode][(addr & 0x1fff) >> 10]; return this.normalizeChrBank(this.bankRegisters[registerIndex] + offset, 10) * 0x0400 + (addr & 0x03ff); }
   readChr(addr) { return this.chrRom[this.getChrAddress(addr)]; }
   writeChr(addr, value) { if (this.hasChrRam) this.chrRom[this.getChrAddress(addr)] = value & 0xff; }
-  clockScanline() {
-    if (this.irqCounter === 0 || this.irqReload) { this.irqCounter = this.irqLatch; this.irqReload = false; }
-    else this.irqCounter = (this.irqCounter - 1) & 0xff;
-    if (this.irqCounter === 0 && this.irqEnabled) this.irqPending = true;
-  }
+  clockScanline() { if (this.irqCounter === 0 || this.irqReload) this.irqCounter = this.irqLatch, this.irqReload = false; else this.irqCounter = (this.irqCounter - 1) & 0xff; if (this.irqCounter === 0 && this.irqEnabled) this.irqPending = true; }
   hasIRQ() { return this.irqPending; }
 }
-Object.assign(CARTRIDGE_TYPES, {
-  0: NROMCartridge,
-  1: MMC1Cartridge,
-  2: UxROMCartridge,
-  3: CNROMCartridge,
-  4: MMC3Cartridge,
-});
+Object.assign(CARTRIDGE_TYPES, { 0: NROMCartridge, 1: MMC1Cartridge, 2: UxROMCartridge, 3: CNROMCartridge, 4: MMC3Cartridge });
 class Controller {
-  constructor() {
-    resetFields(this, { state: 0, shift: 0, strobe: 0 });
-  }
+  constructor() { resetFields(this, { state: 0, shift: 0, strobe: 0 }); }
   setButton(button, pressed) {
     const bit = CONTROLLER_BUTTON_BITS[button];
     if (bit === undefined) return;
-    if (pressed) this.state |= 1 << bit;
-    else this.state &= ~(1 << bit);
+    this.state = pressed ? this.state | (1 << bit) : this.state & ~(1 << bit);
   }
   write(value) {
     const nextStrobe = value & 1;
-    if (this.strobe === 1 && nextStrobe === 0) this.shift = this.state;
+    if (this.strobe && !nextStrobe) this.shift = this.state;
     this.strobe = nextStrobe;
-    if (this.strobe) this.shift = this.state;
+    if (nextStrobe) this.shift = this.state;
   }
   read() {
-    let value;
-    if (this.strobe) { value = this.state & 1; this.shift = this.state; }
-    else { value = this.shift & 1; this.shift = (this.shift >> 1) | 0x80; }
+    const value = this.strobe ? this.state & 1 : this.shift & 1;
+    this.shift = this.strobe ? this.state : (this.shift >> 1) | 0x80;
     return value | 0x40;
   }
 }
@@ -234,29 +184,12 @@ class PPU {
     this.framebuffer = new Uint8ClampedArray(256 * 240 * 4);
     this.reset();
   }
-  reset() {
-    resetFields(this, PPU_DEFAULTS);
-    this.lineSprites = [];
-  }
-  isRenderingEnabled() {
-    return (this.mask & 0x18) !== 0;
-  }
-  backgroundEnabled() {
-    return (this.mask & 0x08) !== 0;
-  }
-  spritesEnabled() {
-    return (this.mask & 0x10) !== 0;
-  }
-  triggerNMI() {
-    this.nmiPending = true;
-  }
-  pollNMI() {
-    if (!this.nmiPending) {
-      return false;
-    }
-    this.nmiPending = false;
-    return true;
-  }
+  reset() { resetFields(this, PPU_DEFAULTS); this.lineSprites = []; }
+  isRenderingEnabled() { return (this.mask & 0x18) !== 0; }
+  backgroundEnabled() { return (this.mask & 0x08) !== 0; }
+  spritesEnabled() { return (this.mask & 0x10) !== 0; }
+  triggerNMI() { this.nmiPending = true; }
+  pollNMI() { if (!this.nmiPending) return false; this.nmiPending = false; return true; }
   readRegister(addr) {
     const reg = addr & 0x2007;
     let value = this.openBus;
@@ -272,18 +205,11 @@ class PPU {
       case 0x2007: {
         const address = this.v & 0x3fff;
         const readValue = this.read(address);
-        if (address >= 0x3f00) {
-          value = readValue;
-          this.readBuffer = this.read(address - 0x1000);
-        } else {
-          value = this.readBuffer;
-          this.readBuffer = readValue;
-        }
+        if (address >= 0x3f00) value = readValue, this.readBuffer = this.read(address - 0x1000);
+        else value = this.readBuffer, this.readBuffer = readValue;
         this.incrementVramAddress();
         break;
       }
-      default:
-        break;
     }
     this.openBus = value;
     return value;
@@ -295,136 +221,63 @@ class PPU {
         const wasNmiEnabled = (this.ctrl & 0x80) !== 0;
         this.ctrl = value;
         this.t = (this.t & 0xf3ff) | ((value & 0x03) << 10);
-        if (!wasNmiEnabled && (this.ctrl & 0x80) && (this.status & 0x80)) {
-          this.triggerNMI();
-        }
+        if (!wasNmiEnabled && (this.ctrl & 0x80) && (this.status & 0x80)) this.triggerNMI();
         break;
       }
-      case 0x2001:
-        this.mask = value;
-        break;
-      case 0x2003:
-        this.oamAddr = value;
-        break;
+      case 0x2001: this.mask = value; break;
+      case 0x2003: this.oamAddr = value; break;
       case 0x2004:
         this.oam[this.oamAddr] = value;
         this.oamAddr = (this.oamAddr + 1) & 0xff;
         break;
       case 0x2005:
-        if (this.w === 0) {
-          this.t = (this.t & 0x7fe0) | (value >> 3);
-          this.x = value & 0x07;
-          this.w = 1;
-        } else {
-          this.t = (this.t & 0x0c1f) | ((value & 0x07) << 12) | ((value & 0xf8) << 2);
-          this.w = 0;
-        }
+        if (this.w === 0) this.t = (this.t & 0x7fe0) | (value >> 3), this.x = value & 0x07, this.w = 1;
+        else this.t = (this.t & 0x0c1f) | ((value & 0x07) << 12) | ((value & 0xf8) << 2), this.w = 0;
         break;
       case 0x2006:
-        if (this.w === 0) {
-          this.t = (this.t & 0x00ff) | ((value & 0x3f) << 8);
-          this.w = 1;
-        } else {
-          this.t = (this.t & 0x7f00) | value;
-          this.v = this.t;
-          this.w = 0;
-        }
+        if (this.w === 0) this.t = (this.t & 0x00ff) | ((value & 0x3f) << 8), this.w = 1;
+        else this.t = (this.t & 0x7f00) | value, this.v = this.t, this.w = 0;
         break;
-      case 0x2007:
-        this.write(this.v & 0x3fff, value);
-        this.incrementVramAddress();
-        break;
-      default:
-        break;
+      case 0x2007: this.write(this.v & 0x3fff, value); this.incrementVramAddress(); break;
     }
   }
-  writeOamDma(buffer) {
-    for (let i = 0; i < 256; i += 1) {
-      this.oam[(this.oamAddr + i) & 0xff] = buffer[i];
-    }
-  }
-  incrementVramAddress() {
-    this.v = (this.v + ((this.ctrl & 0x04) ? 32 : 1)) & 0x7fff;
-  }
+  writeOamDma(buffer) { for (let i = 0; i < 256; i += 1) this.oam[(this.oamAddr + i) & 0xff] = buffer[i]; }
+  incrementVramAddress() { this.v = (this.v + ((this.ctrl & 0x04) ? 32 : 1)) & 0x7fff; }
   read(addr) {
     const address = addr & 0x3fff;
-    if (address < 0x2000) {
-      return this.cartridge.readChr(address);
-    }
-    if (address < 0x3f00) {
-      return this.nametableRam[this.cartridge.mirrorNametableAddress(address)];
-    }
+    if (address < 0x2000) return this.cartridge.readChr(address);
+    if (address < 0x3f00) return this.nametableRam[this.cartridge.mirrorNametableAddress(address)];
     return this.paletteRam[this.normalizePaletteAddress(address)];
   }
   write(addr, value) {
     const address = addr & 0x3fff;
-    if (address < 0x2000) {
-      this.cartridge.writeChr(address, value);
-      return;
-    }
-    if (address < 0x3f00) {
-      this.nametableRam[this.cartridge.mirrorNametableAddress(address)] = value;
-      return;
-    }
+    if (address < 0x2000) return void this.cartridge.writeChr(address, value);
+    if (address < 0x3f00) return void (this.nametableRam[this.cartridge.mirrorNametableAddress(address)] = value);
     this.paletteRam[this.normalizePaletteAddress(address)] = value & 0x3f;
   }
-  normalizePaletteAddress(addr) {
-    let index = addr & 0x1f;
-    if (index === 0x10 || index === 0x14 || index === 0x18 || index === 0x1c) {
-      index -= 0x10;
-    }
-    return index;
-  }
-  incrementX() {
-    if ((this.v & 0x001f) === 31) {
-      this.v &= ~0x001f;
-      this.v ^= 0x0400;
-    } else {
-      this.v += 1;
-    }
-  }
+  normalizePaletteAddress(addr) { const index = addr & 0x1f; return index >= 0x10 && (index & 0x03) === 0 ? index - 0x10 : index; }
+  incrementX() { if ((this.v & 0x001f) === 31) this.v = (this.v & ~0x001f) ^ 0x0400; else this.v += 1; }
   incrementY() {
-    if ((this.v & 0x7000) !== 0x7000) {
-      this.v += 0x1000;
-      return;
-    }
+    if ((this.v & 0x7000) !== 0x7000) return void (this.v += 0x1000);
     this.v &= ~0x7000;
     let y = (this.v & 0x03e0) >> 5;
-    if (y === 29) {
-      y = 0;
-      this.v ^= 0x0800;
-    } else if (y === 31) {
-      y = 0;
-    } else {
-      y += 1;
-    }
+    if (y === 29) y = 0, this.v ^= 0x0800;
+    else if (y === 31) y = 0;
+    else y += 1;
     this.v = (this.v & ~0x03e0) | (y << 5);
   }
-  copyHorizontalBits() {
-    this.v = (this.v & ~0x041f) | (this.t & 0x041f);
-  }
-  copyVerticalBits() {
-    this.v = (this.v & ~0x7be0) | (this.t & 0x7be0);
-  }
+  copyHorizontalBits() { this.v = (this.v & ~0x041f) | (this.t & 0x041f); }
+  copyVerticalBits() { this.v = (this.v & ~0x7be0) | (this.t & 0x7be0); }
   rewindHorizontalTiles(addr, count) {
     let value = addr;
     for (let i = 0; i < count; i += 1) {
-      if ((value & 0x001f) === 0) {
-        value = (value & ~0x001f) | 31;
-        value ^= 0x0400;
-      } else {
-        value -= 1;
-      }
+      if ((value & 0x001f) === 0) value = ((value & ~0x001f) | 31) ^ 0x0400;
+      else value -= 1;
     }
     return value;
   }
   decodeBackgroundPixel(screenX) {
-    if (!this.backgroundEnabled()) {
-      return { pixel: 0, palette: 0 };
-    }
-    if (screenX < 8 && (this.mask & 0x02) === 0) {
-      return { pixel: 0, palette: 0 };
-    }
+    if (!this.backgroundEnabled() || (screenX < 8 && (this.mask & 0x02) === 0)) return { pixel: 0, palette: 0 };
     const coarseXBase = this.lineBaseV & 0x001f;
     const coarseY = (this.lineBaseV >> 5) & 0x001f;
     const nametableXBase = (this.lineBaseV >> 10) & 0x01;
@@ -448,35 +301,21 @@ class PPU {
     return { pixel, palette };
   }
   getSpritePixel(screenX, screenY) {
-    if (!this.spritesEnabled()) {
-      return null;
-    }
-    if (screenX < 8 && (this.mask & 0x04) === 0) {
-      return null;
-    }
+    if (!this.spritesEnabled() || (screenX < 8 && (this.mask & 0x04) === 0)) return null;
     const spriteHeight = (this.ctrl & 0x20) ? 16 : 8;
     for (const sprite of this.lineSprites) {
-      if (screenX < sprite.x || screenX >= sprite.x + 8) {
-        continue;
-      }
+      if (screenX < sprite.x || screenX >= sprite.x + 8) continue;
       let row = screenY - (sprite.y + 1);
       let column = screenX - sprite.x;
-      if (sprite.attributes & 0x80) {
-        row = spriteHeight - 1 - row;
-      }
-      if (sprite.attributes & 0x40) {
-        column = 7 - column;
-      }
+      if (sprite.attributes & 0x80) row = spriteHeight - 1 - row;
+      if (sprite.attributes & 0x40) column = 7 - column;
       let patternBase;
       let tileIndex;
       let fineY = row;
       if (spriteHeight === 16) {
         patternBase = (sprite.tileIndex & 0x01) * 0x1000;
         tileIndex = sprite.tileIndex & 0xfe;
-        if (fineY >= 8) {
-          tileIndex += 1;
-          fineY -= 8;
-        }
+        if (fineY >= 8) tileIndex += 1, fineY -= 8;
       } else {
         patternBase = (this.ctrl & 0x08) ? 0x1000 : 0x0000;
         tileIndex = sprite.tileIndex;
@@ -486,15 +325,7 @@ class PPU {
       const high = this.read(patternAddress + 8);
       const bit = 7 - column;
       const pixel = ((low >> bit) & 0x01) | (((high >> bit) & 0x01) << 1);
-      if (pixel === 0) {
-        continue;
-      }
-      return {
-        pixel,
-        palette: (sprite.attributes & 0x03) + 4,
-        priorityBehindBackground: (sprite.attributes & 0x20) !== 0,
-        sprite0: sprite.index === 0,
-      };
+      if (pixel !== 0) return { pixel, palette: (sprite.attributes & 0x03) + 4, priorityBehindBackground: (sprite.attributes & 0x20) !== 0, sprite0: sprite.index === 0 };
     }
     return null;
   }
@@ -506,61 +337,32 @@ class PPU {
       const base = i * 4;
       const y = this.oam[base];
       const row = scanline - (y + 1);
-      if (row < 0 || row >= spriteHeight) {
-        continue;
-      }
+      if (row < 0 || row >= spriteHeight) continue;
       visibleCount += 1;
-      if (this.lineSprites.length < 8) {
-        this.lineSprites.push({
-          index: i,
-          y,
-          tileIndex: this.oam[base + 1],
-          attributes: this.oam[base + 2],
-          x: this.oam[base + 3],
-        });
-      }
+      if (this.lineSprites.length < 8) this.lineSprites.push({ index: i, y, tileIndex: this.oam[base + 1], attributes: this.oam[base + 2], x: this.oam[base + 3] });
     }
-    if (visibleCount > 8) {
-      this.status |= 0x20;
-    }
+    if (visibleCount > 8) this.status |= 0x20;
   }
-  readColor(paletteIndex, pixel) {
-    const colorIndex = pixel === 0
-      ? this.paletteRam[0] & 0x3f
-      : this.paletteRam[this.normalizePaletteAddress(0x3f00 + paletteIndex * 4 + pixel)] & 0x3f;
-    return NES_PALETTE[colorIndex];
-  }
+  readColor(paletteIndex, pixel) { return NES_PALETTE[pixel === 0 ? this.paletteRam[0] & 0x3f : this.paletteRam[this.normalizePaletteAddress(0x3f00 + paletteIndex * 4 + pixel)] & 0x3f]; }
   renderPixel() {
     const screenX = this.cycle - 1;
     const screenY = this.scanline;
     const bg = this.decodeBackgroundPixel(screenX);
     const sprite = this.getSpritePixel(screenX, screenY);
     let color = this.readColor(0, 0);
-    if (sprite && sprite.sprite0 && sprite.pixel !== 0 && bg.pixel !== 0 && screenX < 255) {
-      this.status |= 0x40;
-    }
-    if (sprite && sprite.pixel !== 0 && (bg.pixel === 0 || !sprite.priorityBehindBackground)) {
-      color = this.readColor(sprite.palette, sprite.pixel);
-    } else if (bg.pixel !== 0) {
-      color = this.readColor(bg.palette, bg.pixel);
-    }
+    if (sprite && sprite.sprite0 && sprite.pixel !== 0 && bg.pixel !== 0 && screenX < 255) this.status |= 0x40;
+    if (sprite && sprite.pixel !== 0 && (bg.pixel === 0 || !sprite.priorityBehindBackground)) color = this.readColor(sprite.palette, sprite.pixel);
+    else if (bg.pixel !== 0) color = this.readColor(bg.palette, bg.pixel);
     const offset = (screenY * 256 + screenX) * 4;
-    this.framebuffer[offset] = color[0];
-    this.framebuffer[offset + 1] = color[1];
-    this.framebuffer[offset + 2] = color[2];
-    this.framebuffer[offset + 3] = 255;
+    this.framebuffer[offset] = color[0]; this.framebuffer[offset + 1] = color[1]; this.framebuffer[offset + 2] = color[2]; this.framebuffer[offset + 3] = 255;
   }
   step() {
     const rendering = this.isRenderingEnabled();
-    if (this.scanline === 261 && this.cycle === 1) {
-      this.status &= ~0xe0;
-    }
+    if (this.scanline === 261 && this.cycle === 1) this.status &= ~0xe0;
     if (this.scanline === 241 && this.cycle === 1) {
       this.status |= 0x80;
       this.frameReady = true;
-      if (this.ctrl & 0x80) {
-        this.triggerNMI();
-      }
+      if (this.ctrl & 0x80) this.triggerNMI();
     }
     if (this.scanline >= 0 && this.scanline < 240 && this.cycle === 0) {
       // `v` has already advanced through the two background prefetch tiles
@@ -569,36 +371,22 @@ class PPU {
       this.lineBaseV = this.rewindHorizontalTiles(this.v, 2);
       this.evaluateSpritesForScanline(this.scanline);
     }
-    if (this.scanline >= 0 && this.scanline < 240 && this.cycle >= 1 && this.cycle <= 256) {
-      this.renderPixel();
-    }
+    if (this.scanline >= 0 && this.scanline < 240 && this.cycle >= 1 && this.cycle <= 256) this.renderPixel();
     if (rendering) {
       const isVisibleCycle = (this.cycle >= 1 && this.cycle <= 256) || (this.cycle >= 321 && this.cycle <= 336);
       if ((this.scanline >= 0 && this.scanline < 240) || this.scanline === 261) {
-        if (isVisibleCycle && (this.cycle & 0x07) === 0) {
-          this.incrementX();
-        }
-        if (this.cycle === 256) {
-          this.incrementY();
-        }
-        if (this.cycle === 257) {
-          this.copyHorizontalBits();
-        }
-        if (this.scanline === 261 && this.cycle >= 280 && this.cycle <= 304) {
-          this.copyVerticalBits();
-        }
+        if (isVisibleCycle && (this.cycle & 0x07) === 0) this.incrementX();
+        if (this.cycle === 256) this.incrementY();
+        if (this.cycle === 257) this.copyHorizontalBits();
+        if (this.scanline === 261 && this.cycle >= 280 && this.cycle <= 304) this.copyVerticalBits();
       }
     }
-    if (rendering && this.scanline >= 0 && this.scanline < 240 && this.cycle === 260) {
-      this.cartridge.clockScanline();
-    }
+    if (rendering && this.scanline >= 0 && this.scanline < 240 && this.cycle === 260) this.cartridge.clockScanline();
     this.cycle += 1;
     if (this.cycle > 340) {
       this.cycle = 0;
       this.scanline += 1;
-      if (this.scanline > 261) {
-        this.scanline = 0;
-      }
+      if (this.scanline > 261) this.scanline = 0;
     }
   }
 }
@@ -1018,112 +806,49 @@ class APU {
   reset() { for (const channel of this.frameChannels) channel.reset(); resetFields(this, APU_DEFAULTS); }
   hasIRQ() { return this.frameInterruptFlag; }
   configureFilters(sampleRate) {
-    if (sampleRate <= 0 || sampleRate === this.sampleRate) {
-      return;
-    }
+    if (sampleRate <= 0 || sampleRate === this.sampleRate) return;
     this.sampleRate = sampleRate;
     this.sampleClock = 0;
     this.highPass90 = new HighPassFilter(sampleRate, 90);
     this.highPass440 = new HighPassFilter(sampleRate, 440);
     this.lowPass14k = new LowPassFilter(sampleRate, 14000);
   }
-  readStatus() {
-    const status =
-      (this.frameInterruptFlag ? 0x40 : 0) |
-      (this.noise.lengthCounter > 0 ? 0x08 : 0) |
-      (this.triangle.lengthCounter > 0 ? 0x04 : 0) |
-      (this.pulse2.lengthCounter > 0 ? 0x02 : 0) |
-      (this.pulse1.lengthCounter > 0 ? 0x01 : 0);
-    this.frameInterruptFlag = false;
-    return status;
-  }
-  writeStatus(value) {
-    for (const [index, channel] of this.frameChannels.entries()) {
-      channel.setEnabled((value & (1 << index)) !== 0);
-    }
-    this.dmcEnabled = (value & 0x10) !== 0;
-  }
-  writeFrameCounter(value) {
-    if (value & 0x40) {
-      this.frameInterruptFlag = false;
-    }
-    this.pendingFrameCounterWrite = {
-      value,
-      delay: (this.cpuCycles & 0x01) === 0 ? 4 : 3,
-    };
-  }
+  readStatus() { const status = (this.frameInterruptFlag ? 0x40 : 0) | (this.noise.lengthCounter > 0 ? 0x08 : 0) | (this.triangle.lengthCounter > 0 ? 0x04 : 0) | (this.pulse2.lengthCounter > 0 ? 0x02 : 0) | (this.pulse1.lengthCounter > 0 ? 0x01 : 0); this.frameInterruptFlag = false; return status; }
+  writeStatus(value) { for (const [index, channel] of this.frameChannels.entries()) channel.setEnabled((value & (1 << index)) !== 0); this.dmcEnabled = (value & 0x10) !== 0; }
+  writeFrameCounter(value) { if (value & 0x40) this.frameInterruptFlag = false; this.pendingFrameCounterWrite = { value, delay: (this.cpuCycles & 0x01) === 0 ? 4 : 3 }; }
   applyFrameCounterWrite(value) {
     this.frameMode = (value >> 7) & 0x01;
     this.frameInterruptInhibit = (value & 0x40) !== 0;
-    if (this.frameInterruptInhibit) {
-      this.frameInterruptFlag = false;
-    }
+    if (this.frameInterruptInhibit) this.frameInterruptFlag = false;
     this.cpuCycles = 0;
-    if (this.frameMode === 1) {
-      this.clockQuarterFrame();
-      this.clockHalfFrame();
-    }
+    if (this.frameMode === 1) this.clockQuarterFrame(), this.clockHalfFrame();
   }
   writeRegister(address, value) {
     const registerWrite = APU_REGISTER_WRITES[address];
-    if (registerWrite) {
-      const [channel, method] = registerWrite;
-      this[channel][method](value);
-      return;
-    }
-    if (address === 0x4011) {
-      this.dmcOutput = value & 0x7f;
-    } else if (address === 0x4015) {
-      this.writeStatus(value);
-    } else if (address === 0x4017) {
-      this.writeFrameCounter(value);
-    }
+    if (registerWrite) return this[registerWrite[0]][registerWrite[1]](value);
+    if (address === 0x4011) this.dmcOutput = value & 0x7f;
+    else if (address === 0x4015) this.writeStatus(value);
+    else if (address === 0x4017) this.writeFrameCounter(value);
   }
   clockQuarterFrame() { for (const channel of this.frameChannels) channel.clockQuarterFrame(); }
   clockHalfFrame() { for (const channel of this.frameChannels) channel.clockHalfFrame(); }
   clockFrameCounter() {
     if (this.frameMode === 0) {
-      if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
-        this.clockQuarterFrame();
-      } else if (this.cpuCycles === 7457) {
-        this.clockQuarterFrame();
-        this.clockHalfFrame();
-      } else if (this.cpuCycles === 14915) {
-        this.clockQuarterFrame();
-        this.clockHalfFrame();
-        if (!this.frameInterruptInhibit) {
-          this.frameInterruptFlag = true;
-        }
-        this.cpuCycles = 0;
-      }
+      if (this.cpuCycles === 3729 || this.cpuCycles === 11186) this.clockQuarterFrame();
+      else if (this.cpuCycles === 7457) this.clockQuarterFrame(), this.clockHalfFrame();
+      else if (this.cpuCycles === 14915) this.clockQuarterFrame(), this.clockHalfFrame(), this.frameInterruptFlag ||= !this.frameInterruptInhibit, this.cpuCycles = 0;
       return;
     }
-    if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
-      this.clockQuarterFrame();
-    } else if (this.cpuCycles === 7457 || this.cpuCycles === 18641) {
-      this.clockQuarterFrame();
-      this.clockHalfFrame();
-      if (this.cpuCycles === 18641) {
-        this.cpuCycles = 0;
-      }
-    }
+    if (this.cpuCycles === 3729 || this.cpuCycles === 11186) this.clockQuarterFrame();
+    else if (this.cpuCycles === 7457 || this.cpuCycles === 18641) this.clockQuarterFrame(), this.clockHalfFrame(), this.cpuCycles === 18641 && (this.cpuCycles = 0);
   }
   mixSample() {
-    const pulse1 = this.pulse1.output();
-    const pulse2 = this.pulse2.output();
-    const triangle = this.triangle.output();
-    const noise = this.noise.output();
-    const dmc = this.dmcOutput;
-    const pulseSum = pulse1 + pulse2;
+    const pulseSum = this.pulse1.output() + this.pulse2.output();
     const pulseOut = pulseSum === 0 ? 0 : 95.88 / ((8128 / pulseSum) + 100);
-    const tndDenominator = (triangle / 8227) + (noise / 12241) + (dmc / 22638);
+    const tndDenominator = (this.triangle.output() / 8227) + (this.noise.output() / 12241) + (this.dmcOutput / 22638);
     const tndOut = tndDenominator === 0 ? 0 : 159.79 / ((1 / tndDenominator) + 100);
     let sample = pulseOut + tndOut;
-    if (this.highPass90 && this.highPass440 && this.lowPass14k) {
-      sample = this.highPass90.step(sample);
-      sample = this.highPass440.step(sample);
-      sample = this.lowPass14k.step(sample);
-    }
+    if (this.highPass90 && this.highPass440 && this.lowPass14k) sample = this.lowPass14k.step(this.highPass440.step(this.highPass90.step(sample)));
     return sample * 1.8;
   }
   stepCpuCycle() {
@@ -1137,20 +862,13 @@ class APU {
     }
     this.cpuCycles += 1;
     this.triangle.clockTimer();
-    if ((this.cpuCycles & 0x01) === 0) {
-      this.pulse1.clockTimer();
-      this.pulse2.clockTimer();
-      this.noise.clockTimer();
-    }
+    if ((this.cpuCycles & 0x01) === 0) this.pulse1.clockTimer(), this.pulse2.clockTimer(), this.noise.clockTimer();
     this.clockFrameCounter();
     const sampleRate = this.audioDriver.getSampleRate();
     if (sampleRate > 0) {
       this.configureFilters(sampleRate);
       this.sampleClock += sampleRate;
-      if (this.sampleClock >= NTSC_CPU_CLOCK) {
-        this.sampleClock -= NTSC_CPU_CLOCK;
-        this.audioDriver.pushSample(this.mixSample());
-      }
+      if (this.sampleClock >= NTSC_CPU_CLOCK) this.sampleClock -= NTSC_CPU_CLOCK, this.audioDriver.pushSample(this.mixSample());
     }
   }
 }
@@ -1163,79 +881,35 @@ class Bus {
     this.controller1 = new Controller();
     this.controller2 = new Controller();
   }
-  reset() {
-    this.cpuRam.fill(0);
-    this.cartridge.reset();
-    this.ppu.reset();
-    this.apu.reset();
-  }
-  pollNMI() {
-    return this.ppu.pollNMI();
-  }
-  hasIRQ() {
-    return this.cartridge.hasIRQ() || this.apu.hasIRQ();
-  }
+  reset() { this.cpuRam.fill(0); this.cartridge.reset(); this.ppu.reset(); this.apu.reset(); }
+  pollNMI() { return this.ppu.pollNMI(); }
+  hasIRQ() { return this.cartridge.hasIRQ() || this.apu.hasIRQ(); }
   read(addr) {
     const address = addr & 0xffff;
-    if (address < 0x2000) {
-      return this.cpuRam[address & 0x07ff];
-    }
-    if (address < 0x4000) {
-      return this.ppu.readRegister(0x2000 | (address & 0x0007));
-    }
-    if (address === 0x4016) {
-      return this.controller1.read();
-    }
-    if (address === 0x4015) {
-      return this.apu.readStatus();
-    }
-    if (address === 0x4017) {
-      return this.controller2.read();
-    }
-    if (address >= 0x6000 && address < 0x8000) {
-      return this.cartridge.readPrgRam(address);
-    }
-    if (address >= 0x8000) {
-      return this.cartridge.readPrg(address);
-    }
+    if (address < 0x2000) return this.cpuRam[address & 0x07ff];
+    if (address < 0x4000) return this.ppu.readRegister(0x2000 | (address & 0x0007));
+    if (address === 0x4016) return this.controller1.read();
+    if (address === 0x4015) return this.apu.readStatus();
+    if (address === 0x4017) return this.controller2.read();
+    if (address >= 0x6000 && address < 0x8000) return this.cartridge.readPrgRam(address);
+    if (address >= 0x8000) return this.cartridge.readPrg(address);
     return 0;
   }
   write(addr, value) {
     const address = addr & 0xffff;
-    if (address < 0x2000) {
-      this.cpuRam[address & 0x07ff] = value;
-      return 0;
-    }
-    if (address < 0x4000) {
-      this.ppu.writeRegister(0x2000 | (address & 0x0007), value);
-      return 0;
-    }
+    if (address < 0x2000) return this.cpuRam[address & 0x07ff] = value, 0;
+    if (address < 0x4000) return this.ppu.writeRegister(0x2000 | (address & 0x0007), value), 0;
     if (address === 0x4014) {
       const page = value << 8;
       const buffer = new Uint8Array(256);
-      for (let i = 0; i < 256; i += 1) {
-        buffer[i] = this.read(page + i);
-      }
+      for (let i = 0; i < 256; i += 1) buffer[i] = this.read(page + i);
       this.ppu.writeOamDma(buffer);
       return 513;
     }
-    if (address === 0x4016) {
-      this.controller1.write(value);
-      this.controller2.write(value);
-      return 0;
-    }
-    if ((address >= 0x4000 && address <= 0x4013) || address === 0x4015 || address === 0x4017) {
-      this.apu.writeRegister(address, value);
-      return 0;
-    }
-    if (address >= 0x6000 && address < 0x8000) {
-      this.cartridge.writePrgRam(address, value);
-      return 0;
-    }
-    if (address >= 0x8000) {
-      this.cartridge.writePrg(address, value);
-      return 0;
-    }
+    if (address === 0x4016) return this.controller1.write(value), this.controller2.write(value), 0;
+    if ((address >= 0x4000 && address <= 0x4013) || address === 0x4015 || address === 0x4017) return this.apu.writeRegister(address, value), 0;
+    if (address >= 0x6000 && address < 0x8000) return this.cartridge.writePrgRam(address, value), 0;
+    if (address >= 0x8000) return this.cartridge.writePrg(address, value), 0;
     return 0;
   }
 }
@@ -1255,24 +929,10 @@ class NES {
     this.bus.reset();
     this.cpu.reset();
   }
-  setButton(button, pressed) {
-    this.bus.controller1.setButton(button, pressed);
-  }
-  releaseAllButtons() {
-    for (const button of CONTROLLER_BUTTON_ORDER) {
-      this.bus.controller1.setButton(button, false);
-    }
-  }
-  runFrame() {
-    this.bus.ppu.frameReady = false;
-    while (!this.bus.ppu.frameReady) {
-      stepNesInstruction(this);
-    }
-  }
-  present() {
-    this.imageData.data.set(this.bus.ppu.framebuffer);
-    this.context.putImageData(this.imageData, 0, 0);
-  }
+  setButton(button, pressed) { this.bus.controller1.setButton(button, pressed); }
+  releaseAllButtons() { for (const button of CONTROLLER_BUTTON_ORDER) this.bus.controller1.setButton(button, false); }
+  runFrame() { this.bus.ppu.frameReady = false; while (!this.bus.ppu.frameReady) stepNesInstruction(this); }
+  present() { this.imageData.data.set(this.bus.ppu.framebuffer); this.context.putImageData(this.imageData, 0, 0); }
 }
 const BUTTON_MAP = new Map([["KeyZ", "b"], ["KeyX", "a"], ["ShiftLeft", "select"], ["ShiftRight", "select"], ["Enter", "start"], ["ArrowUp", "up"], ["ArrowDown", "down"], ["ArrowLeft", "left"], ["ArrowRight", "right"]]);
 export function getButtonForKeyboardCode(code) { return BUTTON_MAP.get(code) ?? null; }
@@ -1290,10 +950,7 @@ export function createNesEmulator({
   let loopGeneration = 0;
   const normalizeAddress = (address) => address & 0xffff;
   const withActiveNES = (callback, fallback = false) => (activeNES ? callback(activeNES) : fallback);
-  const isDebugWritableAddress = (address) => {
-    const normalizedAddress = normalizeAddress(address);
-    return normalizedAddress < 0x2000 || (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000);
-  };
+  const isDebugWritableAddress = (address) => { const normalizedAddress = normalizeAddress(address); return normalizedAddress < 0x2000 || (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000); };
   function getDebugByte(nes, address) {
     const normalizedAddress = normalizeAddress(address);
     if (normalizedAddress < 0x2000) return nes.bus.cpuRam[normalizedAddress & 0x07ff];
@@ -1320,21 +977,9 @@ export function createNesEmulator({
         memory: { bytes: memory, length: safeLength, startAddress: baseAddress },
         paused: isPaused,
         cpu: {
-          a: nes.cpu.a,
-          flags: DEBUG_CPU_FLAGS.map(([label, flag]) => ({ label, enabled: nes.cpu.getFlag(flag) })),
-          p: nes.cpu.p,
-          pc: nes.cpu.pc,
-          s: nes.cpu.s,
-          stallCycles: nes.cpu.stallCycles,
-          x: nes.cpu.x,
-          y: nes.cpu.y,
+          a: nes.cpu.a, flags: DEBUG_CPU_FLAGS.map(([label, flag]) => ({ label, enabled: nes.cpu.getFlag(flag) })), p: nes.cpu.p, pc: nes.cpu.pc, s: nes.cpu.s, stallCycles: nes.cpu.stallCycles, x: nes.cpu.x, y: nes.cpu.y,
         },
-        ppu: {
-          cycle: nes.bus.ppu.cycle,
-          frameReady: nes.bus.ppu.frameReady,
-          scanline: nes.bus.ppu.scanline,
-          status: nes.bus.ppu.status,
-        },
+        ppu: { cycle: nes.bus.ppu.cycle, frameReady: nes.bus.ppu.frameReady, scanline: nes.bus.ppu.scanline, status: nes.bus.ppu.status },
       };
     }, null);
   }
@@ -1368,16 +1013,11 @@ export function createNesEmulator({
     const frame = (now) => {
       if (generation !== loopGeneration || activeNES !== nes) return;
       try {
-        if (isPaused) {
-          previousFrameTime = now;
-          lag = 0;
-        } else {
+        if (isPaused) previousFrameTime = now, lag = 0;
+        else {
           lag += Math.min(100, now - previousFrameTime);
           previousFrameTime = now;
-          while (lag >= frameDuration) {
-            nes.runFrame();
-            lag -= frameDuration;
-          }
+          while (lag >= frameDuration) nes.runFrame(), lag -= frameDuration;
         }
         nes.present();
         frameHandle = requestAnimationFrame(frame);
@@ -1403,17 +1043,8 @@ export function createNesEmulator({
       return true;
     }, false);
   }
-  function setButtonByCode(code, pressed) {
-    const button = getButtonForKeyboardCode(code);
-    return button ? setButton(button, pressed) : false;
-  }
-  function setPaused(paused) {
-    return withActiveNES((nes) => {
-      isPaused = paused;
-      if (paused) nes.releaseAllButtons();
-      return true;
-    }, false);
-  }
+  function setButtonByCode(code, pressed) { const button = getButtonForKeyboardCode(code); return button ? setButton(button, pressed) : false; }
+  function setPaused(paused) { return withActiveNES((nes) => (isPaused = paused, paused && nes.releaseAllButtons(), true), false); }
   function stepInstruction() {
     return withActiveNES((nes) => {
       isPaused = true;
@@ -1429,22 +1060,5 @@ export function createNesEmulator({
   }
   function destroy() { stopActiveLoop(); audioDriver.destroy(); }
   drawPlaceholder();
-  return {
-    destroy,
-    drawPlaceholder,
-    enableAudio,
-    getDebugSnapshot,
-    hasActiveRom: () => activeNES !== null,
-    isDebugWritableAddress,
-    isPaused: () => isPaused,
-    loadRomBytes,
-    pause: () => setPaused(true),
-    releaseAllButtons,
-    resume: () => setPaused(false),
-    setDebugByte,
-    setButton,
-    setButtonByCode,
-    stepInstruction,
-    stop: stopActiveLoop,
-  };
+  return { destroy, drawPlaceholder, enableAudio, getDebugSnapshot, hasActiveRom: () => activeNES !== null, isDebugWritableAddress, isPaused: () => isPaused, loadRomBytes, pause: () => setPaused(true), releaseAllButtons, resume: () => setPaused(false), setDebugByte, setButton, setButtonByCode, stepInstruction, stop: stopActiveLoop };
 }
