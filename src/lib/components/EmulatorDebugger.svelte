@@ -699,6 +699,7 @@
   .debugger-meta {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     color: rgba(235, 243, 196, 0.75);
+    overflow: visible;
   }
 
   .debugger-meta-item {
@@ -969,16 +970,16 @@
 
     .debugger-meta-item::before {
       content: "";
-      bottom: calc(100% + 8px);
-      border-width: 7px 7px 0;
+      top: calc(100% + 8px);
+      border-width: 0 7px 7px;
       border-style: solid;
-      border-color: rgba(215, 255, 118, 0.2) transparent transparent;
+      border-color: transparent transparent rgba(215, 255, 118, 0.2);
       z-index: 2;
     }
 
     .debugger-meta-item::after {
       content: attr(data-tooltip);
-      bottom: calc(100% + 15px);
+      top: calc(100% + 15px);
       width: min(220px, 28vw);
       padding: 8px 10px;
       color: #f8fbeb;
