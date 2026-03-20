@@ -1487,9 +1487,7 @@ class AudioDriver {
       typeof this.context.audioWorklet.addModule === "function"
     ) {
       try {
-        await this.context.audioWorklet.addModule(
-          new URL("./audio-output-worklet.js", import.meta.url),
-        );
+        await this.context.audioWorklet.addModule("/audio-output-worklet.js");
         this.workletNode = new AudioWorkletNode(
           this.context,
           AUDIO_WORKLET_PROCESSOR_NAME,
