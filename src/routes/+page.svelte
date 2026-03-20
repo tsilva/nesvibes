@@ -19,7 +19,6 @@
   const PUBLIC_DOMAIN_CATALOG_URL = "/roms/pdroms/nes/catalog.json";
   const LICENSED_CATALOG_URL = "/roms/licensed/nes/catalog.json";
   const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
-  const DESKTOP_CANVAS_CONTROL_MODES = CANVAS_CONTROL_MODES.filter((mode) => mode !== "gamepad");
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
   const DIRECTIONAL_BUTTONS = ["up", "down", "left", "right"];
   const KEYBOARD_BUTTON_MAP = new Map([
@@ -54,7 +53,6 @@
     { button: "a", label: "A", tone: "primary" },
   ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
-  const COARSE_POINTER_QUERY = "(pointer: coarse)";
   const EMPTY_OVERLAY_TITLE = "Drop a `.nes` ROM";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
@@ -96,15 +94,10 @@
   let pressedButtons = createPressedButtons();
   let joystickState = createJoystickState();
   let canToggleFullscreen = false;
-  let hasTouchInput = false;
   let requestedRomMode = null;
   let canvasControlsMode = "controls";
 
-  $: effectiveCanvasControlsMode = isMobileMode
-    ? "gamepad"
-    : canvasControlsMode === "gamepad"
-      ? "controls"
-      : canvasControlsMode;
+  $: effectiveCanvasControlsMode = isMobileMode ? "gamepad" : canvasControlsMode;
   $: libraryEntries = [
     ...romCatalog.map((entry) => ({
       ...entry,
@@ -125,7 +118,7 @@
   ].filter(Boolean);
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
-  $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad" && (hasTouchInput || isMobileMode);
+  $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -187,7 +180,7 @@
   }
 
   function cycleCanvasControlsMode() {
-    const availableModes = isMobileMode ? CANVAS_CONTROL_MODES : DESKTOP_CANVAS_CONTROL_MODES;
+    const availableModes = CANVAS_CONTROL_MODES;
     const currentMode = availableModes.includes(effectiveCanvasControlsMode)
       ? effectiveCanvasControlsMode
       : availableModes[0];
@@ -677,25 +670,16 @@
 
   onMount(() => {
     const debuggerQuery = window.matchMedia(DESKTOP_DEBUGGER_QUERY);
-    const coarsePointerQuery = window.matchMedia(COARSE_POINTER_QUERY);
     requestedRomMode = getRequestedRomMode(window.location.search);
 
     fullscreenSupported = typeof document.fullscreenEnabled === "boolean"
       ? document.fullscreenEnabled
       : typeof stageElement?.requestFullscreen === "function";
 
-    const syncTouchInput = () => {
-      hasTouchInput = navigator.maxTouchPoints > 0 || coarsePointerQuery.matches;
-    };
-
     const syncDebuggerMode = () => {
       const nextIsMobileMode = !debuggerQuery.matches;
 
       isMobileMode = nextIsMobileMode;
-      if (!nextIsMobileMode && canvasControlsMode === "gamepad") {
-        releaseJoystick();
-        canvasControlsMode = "controls";
-      }
       syncOverlayForViewport();
 
       if (debuggerQuery.matches) {
@@ -807,9 +791,7 @@
 
     void Promise.all([loadBundledCatalog(), loadLicensedCatalog()]);
     syncFullscreenState();
-    syncTouchInput();
     syncDebuggerMode();
-    coarsePointerQuery.addEventListener("change", syncTouchInput);
     debuggerQuery.addEventListener("change", syncDebuggerMode);
 
     return () => {
@@ -822,7 +804,6 @@
       window.removeEventListener("drop", handleDrop);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      coarsePointerQuery.removeEventListener("change", syncTouchInput);
       debuggerQuery.removeEventListener("change", syncDebuggerMode);
       releaseAllInputs();
       disableDesktopDebugger();

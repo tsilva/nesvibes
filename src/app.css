@@ -856,13 +856,6 @@ canvas:focus-visible {
   color: var(--accent-2);
 }
 
-.launcher-subcopy {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.35;
-  color: var(--muted);
-}
-
 .launcher-scroll {
   display: grid;
   gap: 14px;
@@ -958,14 +951,6 @@ canvas:focus-visible {
   font-size: 9px;
   line-height: 1.2;
   color: #f8b800;
-}
-
-.launcher-item-meta {
-  display: block;
-  margin-top: 2px;
-  font-size: 9px;
-  line-height: 1.2;
-  color: var(--muted);
 }
 
 .launcher-details {
