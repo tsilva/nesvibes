@@ -71,7 +71,14 @@
   }
 
   onMount(() => {
+    let started = false;
+
     const startAnalytics = () => {
+      if (started) {
+        return;
+      }
+
+      started = true;
       analyticsReady = initGoogleAnalytics();
 
       if (!analyticsReady) {
@@ -81,15 +88,18 @@
       queuePageView(new URL(window.location.href));
     };
 
+    const timeoutId = window.setTimeout(startAnalytics, 0);
+
     if ("requestIdleCallback" in window) {
       const idleCallbackId = window.requestIdleCallback(startAnalytics, {
         timeout: 2000
       });
 
-      return () => window.cancelIdleCallback(idleCallbackId);
+      return () => {
+        window.cancelIdleCallback(idleCallbackId);
+        window.clearTimeout(timeoutId);
+      };
     }
-
-    const timeoutId = window.setTimeout(startAnalytics, 0);
 
     return () => window.clearTimeout(timeoutId);
   });

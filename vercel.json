@@ -1,6 +1,15 @@
 {
   "headers": [
     {
+      "source": "/_app/env.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {
