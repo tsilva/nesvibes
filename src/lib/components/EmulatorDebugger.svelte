@@ -296,28 +296,24 @@
           <div class="debugger-meta">
             <span
               class="debugger-meta-item"
-              title={debuggerMetaTooltip("running")}
               data-tooltip={debuggerMetaTooltip("running")}
             >
               {state.paused ? "Paused" : "Running"}
             </span>
             <span
               class="debugger-meta-item"
-              title={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
               data-tooltip={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
             >
               Scanline {snapshot.ppu.scanline}
             </span>
             <span
               class="debugger-meta-item"
-              title={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
               data-tooltip={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
             >
               Cycle {snapshot.ppu.cycle}
             </span>
             <span
               class="debugger-meta-item"
-              title={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
               data-tooltip={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
             >
               Stall {snapshot.cpu.stallCycles}
@@ -635,7 +631,7 @@
   }
 
   .debugger-toolbar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .debugger-body {
@@ -961,15 +957,15 @@
     .debugger-meta-item::before,
     .debugger-meta-item::after {
       position: absolute;
-      left: 50%;
       opacity: 0;
       pointer-events: none;
-      transform: translate(-50%, 6px);
+      transform: translateY(6px);
       transition: opacity 140ms ease, transform 140ms ease;
     }
 
     .debugger-meta-item::before {
       content: "";
+      left: 18px;
       top: calc(100% + 8px);
       border-width: 0 7px 7px;
       border-style: solid;
@@ -979,6 +975,7 @@
 
     .debugger-meta-item::after {
       content: attr(data-tooltip);
+      left: 0;
       top: calc(100% + 15px);
       width: min(220px, 28vw);
       padding: 8px 10px;
@@ -994,10 +991,20 @@
       z-index: 3;
     }
 
+    .debugger-meta-item:nth-last-child(-n + 2)::before {
+      left: auto;
+      right: 18px;
+    }
+
+    .debugger-meta-item:nth-last-child(-n + 2)::after {
+      left: auto;
+      right: 0;
+    }
+
     .debugger-meta-item:hover::before,
     .debugger-meta-item:hover::after {
       opacity: 1;
-      transform: translate(-50%, 0);
+      transform: translateY(0);
     }
   }
 
