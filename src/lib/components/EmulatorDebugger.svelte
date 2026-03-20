@@ -456,35 +456,6 @@
             </div>
           </section>
 
-          <section class="debugger-section debugger-disassembly-section" aria-label="CPU disassembly">
-            <div class="debugger-section-header">
-              <h2>Disassembly</h2>
-              <span class="debugger-chip">PC centered</span>
-            </div>
-
-            {#if instruction}
-              <div class="instruction-summary">
-                <span class="instruction-address">{formatHex(instruction.address, 4)}</span>
-                <span class="instruction-bytes">{formatInstructionBytes(instruction.bytes)}</span>
-                <strong class="instruction-text">{formatInstructionText(instruction)}</strong>
-                {#if formatInstructionAnnotation(instruction)}
-                  <span class="instruction-annotation">{formatInstructionAnnotation(instruction)}</span>
-                {/if}
-              </div>
-            {/if}
-
-            <div class="disassembly-list" role="table" aria-label="Decoded CPU instructions around the current PC">
-              {#each disassemblyEntries as entry (`instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`)}
-                <div class={`disassembly-row ${entry.isCurrent ? "current" : ""}`.trim()} role="row">
-                  <span class="disassembly-address" role="cell">{formatHex(entry.address, 4)}</span>
-                  <span class="disassembly-bytes" role="cell">{formatInstructionBytes(entry.bytes)}</span>
-                  <span class="disassembly-text" role="cell">{formatInstructionText(entry)}</span>
-                  <span class="disassembly-annotation" role="cell">{formatInstructionAnnotation(entry)}</span>
-                </div>
-              {/each}
-            </div>
-          </section>
-
           <section class="debugger-section debugger-memory-section" aria-label="CPU RAM monitor">
             <div class="memory-search-toolbar" aria-label="RAM search controls">
               <div class="memory-search-copy">
@@ -589,6 +560,35 @@
                   No addresses survived the latest filter. Reset to start a new search.
                 </p>
               {/if}
+            </div>
+          </section>
+
+          <section class="debugger-section debugger-disassembly-section" aria-label="CPU disassembly">
+            <div class="debugger-section-header">
+              <h2>Disassembly</h2>
+              <span class="debugger-chip">PC centered</span>
+            </div>
+
+            {#if instruction}
+              <div class="instruction-summary">
+                <span class="instruction-address">{formatHex(instruction.address, 4)}</span>
+                <span class="instruction-bytes">{formatInstructionBytes(instruction.bytes)}</span>
+                <strong class="instruction-text">{formatInstructionText(instruction)}</strong>
+                {#if formatInstructionAnnotation(instruction)}
+                  <span class="instruction-annotation">{formatInstructionAnnotation(instruction)}</span>
+                {/if}
+              </div>
+            {/if}
+
+            <div class="disassembly-list" role="table" aria-label="Decoded CPU instructions around the current PC">
+              {#each disassemblyEntries as entry (`instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`)}
+                <div class={`disassembly-row ${entry.isCurrent ? "current" : ""}`.trim()} role="row">
+                  <span class="disassembly-address" role="cell">{formatHex(entry.address, 4)}</span>
+                  <span class="disassembly-bytes" role="cell">{formatInstructionBytes(entry.bytes)}</span>
+                  <span class="disassembly-text" role="cell">{formatInstructionText(entry)}</span>
+                  <span class="disassembly-annotation" role="cell">{formatInstructionAnnotation(entry)}</span>
+                </div>
+              {/each}
             </div>
           </section>
         </div>
@@ -787,7 +787,7 @@
   }
 
   .debugger-body-loaded {
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
   .debugger-action {
@@ -943,6 +943,7 @@
   .debugger-disassembly-section {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
+    max-height: min(240px, 30vh);
   }
 
   .instruction-summary,
