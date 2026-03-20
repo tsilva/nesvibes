@@ -911,7 +911,7 @@ canvas:focus-visible {
 .launcher-item {
   display: block;
   width: 100%;
-  padding: 8px 9px;
+  padding: 6px 8px;
   text-align: left;
   border: 2px solid rgba(255, 255, 255, 0.12);
   background:
@@ -948,23 +948,23 @@ canvas:focus-visible {
 .launcher-item strong {
   display: block;
   margin: 0;
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 9px;
+  line-height: 1.25;
 }
 
 .launcher-item-eyebrow {
   display: block;
-  margin-bottom: 4px;
-  font-size: 10px;
+  margin-bottom: 2px;
+  font-size: 9px;
   line-height: 1.2;
   color: #f8b800;
 }
 
 .launcher-item-meta {
   display: block;
-  margin-top: 4px;
-  font-size: 10px;
-  line-height: 1.35;
+  margin-top: 2px;
+  font-size: 9px;
+  line-height: 1.2;
   color: var(--muted);
 }
 
