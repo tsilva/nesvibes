@@ -56,6 +56,7 @@
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click to choose a ROM file from your computer.";
   const MOBILE_EMPTY_OVERLAY_COPY = "Tap to choose a ROM file from your device.";
+  const DRAG_OVERLAY_COPY = "Drop ROM to load it.";
   const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];
   const ROM_MODE_RANK_BY_ALIAS = new Map([
     ["most-valuable", 0],
@@ -889,12 +890,14 @@
           {/if}
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
           <button class="overlay" type="button" on:click={openRomPicker}>
-            <p class="loader-kicker">PLAYER ONE READY</p>
-            {#if overlayTitle && !(isMobileMode && overlayVariant === "empty")}
+            {#if !isDragging}
+              <p class="loader-kicker">PLAYER ONE READY</p>
+            {/if}
+            {#if !isDragging && overlayTitle && !(isMobileMode && overlayVariant === "empty")}
               <strong>{overlayTitle}</strong>
             {/if}
-            <p id="loader-copy">{overlayCopy}</p>
-            {#if overlayVariant === "empty"}
+            <p id="loader-copy">{isDragging ? DRAG_OVERLAY_COPY : overlayCopy}</p>
+            {#if !isDragging && overlayVariant === "empty"}
               <p class="overlay-note">Try the Super Mario Bros ROM if you have it :)</p>
             {/if}
           </button>
