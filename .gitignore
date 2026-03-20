@@ -5,3 +5,5 @@ node_modules
 *.nes
 !static/roms/pdroms/nes/library/**/*.nes
 !static/roms/pdroms/nes/library/**/*.NES
+!static/roms/licensed/nes/library/**/*.nes
+!static/roms/licensed/nes/library/**/*.NES
