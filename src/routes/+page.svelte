@@ -16,7 +16,8 @@
 
   export let data;
 
-  const CATALOG_URL = "/roms/pdroms/nes/catalog.json";
+  const PUBLIC_DOMAIN_CATALOG_URL = "/roms/pdroms/nes/catalog.json";
+  const LICENSED_CATALOG_URL = "/roms/licensed/nes/catalog.json";
   const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
   const DESKTOP_CANVAS_CONTROL_MODES = CANVAS_CONTROL_MODES.filter((mode) => mode !== "gamepad");
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
@@ -79,8 +80,11 @@
   let debuggerEnabled = false;
   let filePicker;
   let romCatalog = [];
+  let licensedCatalog = [];
   let activeCatalogId = "";
+  let activeLicensedId = "";
   let catalogMessage = "Loading bundled ROMs...";
+  let licensedCatalogMessage = "Loading redistributable homebrew...";
   let stageMode = "empty";
   let isMobileMode = false;
   let isDragging = false;
@@ -102,6 +106,8 @@
     : canvasControlsMode === "gamepad"
       ? "controls"
       : canvasControlsMode;
+  $: featuredLicensedEntry =
+    licensedCatalog.find((entry) => entry.id === activeLicensedId) ?? licensedCatalog[0] ?? null;
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad" && (hasTouchInput || isMobileMode);
@@ -267,6 +273,14 @@
     return path.startsWith("/") ? path : `/${path}`;
   }
 
+  function getLicenseLabel(entry) {
+    if (entry.assetLicenseName) {
+      return `${entry.licenseName} code / ${entry.assetLicenseName} assets`;
+    }
+
+    return entry.licenseName;
+  }
+
   function normalizeRomMode(value) {
     return value
       .trim()
@@ -388,6 +402,7 @@
 
     await enableAudio();
     activeCatalogId = "";
+    activeLicensedId = "";
 
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -397,7 +412,7 @@
     }
   }
 
-  async function loadBundledRom(entry) {
+  async function loadBundledRom(entry, source = "public-domain") {
     try {
       await enableAudio();
       const response = await fetch(assetPath(entry.file), { cache: "no-store" });
@@ -407,7 +422,8 @@
 
       const bytes = new Uint8Array(await response.arrayBuffer());
       loadRomBytes(bytes, `${entry.title} launched from Quicklaunch`);
-      activeCatalogId = entry.id;
+      activeCatalogId = source === "public-domain" ? entry.id : "";
+      activeLicensedId = source === "licensed" ? entry.id : "";
     } catch (error) {
       console.error(error);
     }
@@ -416,25 +432,49 @@
   async function loadBundledCatalog() {
     if (location.protocol === "file:") {
       catalogMessage = "Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.";
+      licensedCatalogMessage = "Licensed quicklaunch also needs HTTP(S). Drag-and-drop still works from disk.";
       return;
     }
 
     try {
-      const response = await fetch(CATALOG_URL, { cache: "no-store" });
+      const response = await fetch(PUBLIC_DOMAIN_CATALOG_URL, { cache: "no-store" });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while loading ${CATALOG_URL}`);
+        throw new Error(`HTTP ${response.status} while loading ${PUBLIC_DOMAIN_CATALOG_URL}`);
       }
 
       romCatalog = await response.json();
       catalogMessage = romCatalog.length === 0 ? "No bundled ROMs available." : "";
       const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
       if (modeEntry) {
-        await loadBundledRom(modeEntry);
+        await loadBundledRom(modeEntry, "public-domain");
       }
 
     } catch (error) {
       console.error(error);
       catalogMessage = "Bundled ROM catalog failed to load. Drag-and-drop remains available.";
+    }
+  }
+
+  async function loadLicensedCatalog() {
+    if (location.protocol === "file:") {
+      licensedCatalogMessage = "Licensed quicklaunch needs HTTP(S). Drag-and-drop still works from disk.";
+      return;
+    }
+
+    try {
+      const response = await fetch(LICENSED_CATALOG_URL, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} while loading ${LICENSED_CATALOG_URL}`);
+      }
+
+      licensedCatalog = await response.json();
+      licensedCatalogMessage = licensedCatalog.length === 0 ? "No redistributable homebrew bundled." : "";
+      if (!activeLicensedId && licensedCatalog.length > 0) {
+        activeLicensedId = licensedCatalog[0].id;
+      }
+    } catch (error) {
+      console.error(error);
+      licensedCatalogMessage = "Licensed homebrew catalog failed to load.";
     }
   }
 
@@ -751,7 +791,7 @@
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
-    void loadBundledCatalog();
+    void Promise.all([loadBundledCatalog(), loadLicensedCatalog()]);
     syncFullscreenState();
     syncTouchInput();
     syncDebuggerMode();
@@ -959,32 +999,105 @@
     </section>
 
     <aside class="side-rail" aria-label="Setup notes">
-      <article class="launcher-shell" aria-label="Bundled public domain quicklaunch">
+      <article class="launcher-shell" aria-label="Bundled ROM library">
         <div class="launcher-header">
-          <h2>Public Domain ROMs</h2>
+          <h2>ROM Library</h2>
+          <p class="launcher-subcopy">
+            Public-domain ROMs plus redistributable homebrew with bundled notices, credits, and upstream links.
+          </p>
         </div>
+        <div class="launcher-scroll">
+          <section class="launcher-section" aria-label="Bundled public domain quicklaunch">
+            <div class="launcher-section-header">
+              <h3>Public Domain ROMs</h3>
+            </div>
 
-        {#if catalogMessage}
-          <p class="launcher-empty">{catalogMessage}</p>
-        {:else}
-          <ul class="launcher-grid" aria-label="Bundled ROM list">
-            {#each romCatalog as entry (entry.id)}
-              <li class="launcher-list-item">
-                <button
-                  type="button"
-                  class={`launcher-item ${entry.id === activeCatalogId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
-                  disabled={!entry.supported}
-                  title={entry.supported
-                    ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)}`
-                    : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
-                  on:click={() => void loadBundledRom(entry)}
-                >
-                  <strong>{entry.title}</strong>
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
+            {#if catalogMessage}
+              <p class="launcher-empty">{catalogMessage}</p>
+            {:else}
+              <ul class="launcher-grid" aria-label="Bundled ROM list">
+                {#each romCatalog as entry (entry.id)}
+                  <li class="launcher-list-item">
+                    <button
+                      type="button"
+                      class={`launcher-item ${entry.id === activeCatalogId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
+                      disabled={!entry.supported}
+                      title={entry.supported
+                        ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)}`
+                        : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
+                      on:click={() => void loadBundledRom(entry, "public-domain")}
+                    >
+                      <strong>{entry.title}</strong>
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </section>
+
+          <section class="launcher-section launcher-section-licensed" aria-label="Bundled licensed homebrew">
+            <div class="launcher-section-header">
+              <h3>Licensed Homebrew</h3>
+              <p class="launcher-note">
+                Redistributed unmodified. Keep upstream notices with the ROMs and follow each bundled notice before reusing code or assets separately.
+              </p>
+            </div>
+
+            {#if licensedCatalogMessage}
+              <p class="launcher-empty">{licensedCatalogMessage}</p>
+            {:else}
+              <ul class="launcher-grid" aria-label="Licensed homebrew ROM list">
+                {#each licensedCatalog as entry (entry.id)}
+                  <li class="launcher-list-item">
+                    <button
+                      type="button"
+                      class={`launcher-item ${entry.id === activeLicensedId ? "active" : ""}`.trim()}
+                      title={`${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)} • ${getLicenseLabel(entry)}`}
+                      on:click={() => void loadBundledRom(entry, "licensed")}
+                    >
+                      <strong>{entry.title}</strong>
+                      <span class="launcher-item-meta">{getLicenseLabel(entry)}</span>
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+
+              {#if featuredLicensedEntry}
+                <div class="launcher-details" aria-live="polite">
+                  <p class="launcher-details-title">{featuredLicensedEntry.title}</p>
+                  <p class="launcher-details-copy">{featuredLicensedEntry.description}</p>
+                  <p class="launcher-details-meta">
+                    <span>By {featuredLicensedEntry.author}</span>
+                    <span>{featuredLicensedEntry.releaseDate}</span>
+                    <span>{formatRomSize(featuredLicensedEntry.sizeBytes)}</span>
+                  </p>
+                  <p class="launcher-details-license">
+                    <strong>License:</strong> {getLicenseLabel(featuredLicensedEntry)}
+                  </p>
+                  <div class="launcher-link-row">
+                    <a href={featuredLicensedEntry.originalPageUrl} target="_blank" rel="noreferrer">Original page</a>
+                    <a href={featuredLicensedEntry.sourceUrl} target="_blank" rel="noreferrer">Source repo</a>
+                    <a href={assetPath(featuredLicensedEntry.noticeFile)} target="_blank" rel="noreferrer">Bundled notice</a>
+                    <a href={assetPath(featuredLicensedEntry.licenseFile)} target="_blank" rel="noreferrer">Bundled license</a>
+                  </div>
+
+                  <ul class="launcher-credits" aria-label="Game credits">
+                    {#each featuredLicensedEntry.credits as credit, index (`${featuredLicensedEntry.id}-${index}`)}
+                      <li>
+                        <span>{credit.role}:</span>
+                        {#if credit.url}
+                          <a href={credit.url} target="_blank" rel="noreferrer">{credit.name}</a>
+                        {:else}
+                          <span>{credit.name}</span>
+                        {/if}
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
+            {/if}
+          </section>
+        </div>
       </article>
     </aside>
   </main>

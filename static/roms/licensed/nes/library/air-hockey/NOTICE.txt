@@ -1,0 +1,19 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Air Hockey - NES Black Box
+Original page: https://bthacker.itch.io/air-hockey-nes-black-box
+Source repository: https://github.com/BThacker/nes_air_hockey_public
+Bundled file: air-hockey-v1.0.nes
+Original filename on itch.io: Air Hockey v1.0.nes
+
+Upstream license:
+- MIT, as published in the upstream repository LICENSE file bundled here as LICENSE.txt
+
+Upstream credits:
+- Programming, design, art: Brandon Thacker
+- Music, sound effects: Grayson Solis
+- Art consulting, cover art: Igor (grigoreen)
+
+Redistribution notes:
+- This copy is redistributed as the original game ROM, with upstream links and credits preserved.
+- Keep the bundled MIT license notice with substantial copies of the software.

@@ -856,6 +856,50 @@ canvas:focus-visible {
   color: var(--accent-2);
 }
 
+.launcher-subcopy {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.launcher-scroll {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.launcher-section {
+  display: grid;
+  gap: 8px;
+}
+
+.launcher-section + .launcher-section {
+  padding-top: 12px;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.launcher-section-header {
+  display: grid;
+  gap: 4px;
+}
+
+.launcher-section-header h3 {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #f6f6f6;
+}
+
+.launcher-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 .launcher-empty {
   margin: 0;
   font-size: 18px;
@@ -872,23 +916,13 @@ canvas:focus-visible {
 .launcher-grid {
   display: grid;
   gap: 6px;
-  min-height: 0;
   margin: 0;
-  padding: 0 4px 0 0;
+  padding: 0;
   list-style: none;
-  overflow: auto;
 }
 
 .launcher-list-item {
   list-style: none;
-}
-
-.launcher-grid::-webkit-scrollbar {
-  width: 10px;
-}
-
-.launcher-grid::-webkit-scrollbar-thumb {
-  background: rgba(199, 199, 199, 0.28);
 }
 
 .launcher-item {
@@ -933,6 +967,79 @@ canvas:focus-visible {
   margin: 0;
   font-size: 10px;
   line-height: 1.35;
+}
+
+.launcher-item-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.launcher-details {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.launcher-details-title,
+.launcher-details-copy,
+.launcher-details-meta,
+.launcher-details-license {
+  margin: 0;
+}
+
+.launcher-details-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.launcher-details-copy,
+.launcher-details-license,
+.launcher-details-meta,
+.launcher-link-row a,
+.launcher-credits li {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.launcher-details-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.launcher-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.launcher-link-row a {
+  color: #f8b800;
+  text-underline-offset: 0.18em;
+}
+
+.launcher-credits {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.launcher-credits li {
+  color: var(--muted);
+}
+
+.launcher-credits span:first-child {
+  color: var(--accent-2);
 }
 
 .side-card h2 {

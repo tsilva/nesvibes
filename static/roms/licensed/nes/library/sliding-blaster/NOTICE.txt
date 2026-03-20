@@ -1,0 +1,19 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Sliding Blaster
+Original page: https://novasquirrel.itch.io/sliding-blaster
+Source repository: https://github.com/NovaSquirrel/SlidingBlaster
+Bundled file: blaster.nes
+Original filename on itch.io: blaster.nes
+
+Upstream licensing:
+- Code license: zlib, as published in the upstream repository LICENSE.txt bundled here
+- Asset license: Creative Commons Attribution 4.0 International, as listed on the original itch.io page
+
+Upstream credits:
+- Developer: NovaSquirrel
+
+Redistribution notes:
+- This copy is redistributed as the original game ROM, with upstream links preserved.
+- If you separately reuse extracted assets, you must comply with CC BY 4.0 attribution requirements.
+- If you redistribute source or altered versions, preserve the upstream zlib notice.

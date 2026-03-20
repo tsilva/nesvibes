@@ -1,5 +1,9 @@
 <script>
+  import { browser } from "$app/environment";
+  import { afterNavigate } from "$app/navigation";
+  import { initGoogleAnalytics, trackPageView } from "$lib/google-analytics.js";
   import { site } from "$lib/site.js";
+  import { onMount } from "svelte";
 
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
@@ -29,6 +33,60 @@
     ]
   });
   const jsonLdScript = `<script type="application/ld+json">${jsonLd}<\/script>`;
+
+  let analyticsReady = false;
+  let lastTrackedUrl = null;
+  let pendingUrl = null;
+
+  function queuePageView(url) {
+    pendingUrl = new URL(url.href);
+    flushPageView();
+  }
+
+  function flushPageView() {
+    if (!analyticsReady || pendingUrl === null) {
+      return;
+    }
+
+    if (pendingUrl.href === lastTrackedUrl) {
+      pendingUrl = null;
+      return;
+    }
+
+    trackPageView(pendingUrl);
+    lastTrackedUrl = pendingUrl.href;
+    pendingUrl = null;
+  }
+
+  if (browser) {
+    afterNavigate(({ to }) => {
+      queuePageView(to?.url ?? new URL(window.location.href));
+    });
+  }
+
+  onMount(() => {
+    const startAnalytics = () => {
+      analyticsReady = initGoogleAnalytics();
+
+      if (!analyticsReady) {
+        return;
+      }
+
+      queuePageView(new URL(window.location.href));
+    };
+
+    if ("requestIdleCallback" in window) {
+      const idleCallbackId = window.requestIdleCallback(startAnalytics, {
+        timeout: 2000
+      });
+
+      return () => window.cancelIdleCallback(idleCallbackId);
+    }
+
+    const timeoutId = window.setTimeout(startAnalytics, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  });
 </script>
 
 <svelte:head>

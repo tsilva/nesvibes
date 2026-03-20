@@ -1,0 +1,91 @@
+[
+  {
+    "id": "air-hockey",
+    "title": "Air Hockey - NES Black Box",
+    "file": "roms/licensed/nes/library/air-hockey/air-hockey-v1.0.nes",
+    "sizeBytes": 40976,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 2,
+    "chrBanks": 1,
+    "description": "Fast arcade-style air hockey for NES with replay moments, multiple table themes, 1P vs AI, and 2P support.",
+    "author": "Brandon Thacker",
+    "releaseDate": "2025-09-19",
+    "originalPageUrl": "https://bthacker.itch.io/air-hockey-nes-black-box",
+    "sourceUrl": "https://github.com/BThacker/nes_air_hockey_public",
+    "licenseName": "MIT",
+    "licenseUrl": "https://github.com/BThacker/nes_air_hockey_public/blob/main/LICENSE",
+    "noticeFile": "roms/licensed/nes/library/air-hockey/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/air-hockey/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Programming, design, art",
+        "name": "Brandon Thacker",
+        "url": "https://github.com/BThacker"
+      },
+      {
+        "role": "Music, sound effects",
+        "name": "Grayson Solis",
+        "url": "https://graysonsolis.com/"
+      },
+      {
+        "role": "Art consulting, cover art",
+        "name": "Igor (grigoreen)",
+        "url": "https://www.instagram.com/grigoreen/"
+      }
+    ]
+  },
+  {
+    "id": "sliding-blaster",
+    "title": "Sliding Blaster",
+    "file": "roms/licensed/nes/library/sliding-blaster/blaster.nes",
+    "sizeBytes": 24592,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 1,
+    "chrBanks": 1,
+    "description": "Top-down shooter for NES where momentum never stops, with local co-op, a built-in level editor, and SNES mouse support.",
+    "author": "NovaSquirrel",
+    "releaseDate": "2014-07-12",
+    "originalPageUrl": "https://novasquirrel.itch.io/sliding-blaster",
+    "sourceUrl": "https://github.com/NovaSquirrel/SlidingBlaster",
+    "licenseName": "zlib",
+    "assetLicenseName": "CC BY 4.0",
+    "licenseUrl": "https://github.com/NovaSquirrel/SlidingBlaster/blob/master/LICENSE.txt",
+    "noticeFile": "roms/licensed/nes/library/sliding-blaster/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/sliding-blaster/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "NovaSquirrel",
+        "url": "https://novasquirrel.itch.io/"
+      }
+    ]
+  },
+  {
+    "id": "squirrel-domino",
+    "title": "Squirrel Domino",
+    "file": "roms/licensed/nes/library/squirrel-domino/squirrel_domino.nes",
+    "sizeBytes": 24592,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 1,
+    "chrBanks": 1,
+    "description": "A faster, more modern puzzle game for NES with 1-2 player support and a polished puzzle-first ruleset.",
+    "author": "NovaSquirrel",
+    "releaseDate": "2024-05-05",
+    "originalPageUrl": "https://novasquirrel.itch.io/squirrel-domino",
+    "sourceUrl": "https://github.com/NovaSquirrel/SquirrelDomino",
+    "licenseName": "zlib",
+    "licenseUrl": "https://github.com/NovaSquirrel/SquirrelDomino/blob/main/LICENSE.txt",
+    "noticeFile": "roms/licensed/nes/library/squirrel-domino/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/squirrel-domino/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "NovaSquirrel",
+        "url": "https://novasquirrel.itch.io/"
+      }
+    ]
+  }
+]

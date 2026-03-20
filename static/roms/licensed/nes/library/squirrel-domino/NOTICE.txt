@@ -1,0 +1,21 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Squirrel Domino
+Original page: https://novasquirrel.itch.io/squirrel-domino
+Source repository: https://github.com/NovaSquirrel/SquirrelDomino
+Official release asset used for this copy:
+https://github.com/NovaSquirrel/SquirrelDomino/releases/tag/v1.0.0
+Bundled file: squirrel_domino.nes
+Original filename: squirrel_domino.nes
+
+Upstream licensing:
+- Code license: zlib, as published in the upstream repository LICENSE.txt bundled here
+- The itch.io page explicitly lists the code license and links to source
+
+Upstream credits:
+- Developer: NovaSquirrel
+
+Redistribution notes:
+- This copy is redistributed as the original game ROM, with upstream links preserved.
+- The upstream README asks that background graphics not be reused for other projects.
+- NESVibes does not claim authorship and does not relicense extracted art assets separately from the original game ROM.
