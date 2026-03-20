@@ -861,49 +861,45 @@ canvas:focus-visible {
 .launcher-item-local {
   appearance: none;
   font: inherit;
-  color: #fff9e1;
+  color: #fff8e2;
   background:
-    linear-gradient(180deg, rgba(224, 181, 61, 0.98), rgba(150, 107, 20, 0.98) 58%, rgba(103, 69, 11, 0.98)),
-    rgba(52, 34, 5, 0.98);
-  border-color: rgba(196, 145, 29, 0.98);
+    linear-gradient(180deg, #c79628 0%, #9c6e14 52%, #6f4a0b 100%);
+  border-color: #b17b17;
   box-shadow:
-    inset 0 1px 0 rgba(255, 230, 141, 0.5),
-    inset 0 -1px 0 rgba(96, 61, 7, 0.55),
-    0 0 0 1px rgba(110, 73, 9, 0.4);
-  text-shadow: 0 1px 0 rgba(71, 42, 5, 0.85);
+    inset 0 1px 0 rgba(247, 221, 147, 0.5),
+    inset 0 -1px 0 rgba(87, 55, 7, 0.65);
+  text-shadow: 0 1px 0 rgba(79, 48, 6, 0.9);
+  transform: none;
 }
 
 .launcher-item-local strong {
   letter-spacing: 0.05em;
 }
 
-.launcher-item-local:hover,
-.launcher-item-local:focus-visible {
-  border-color: rgba(231, 179, 52, 0.98);
+.launcher-item-local:hover {
+  transform: none;
+  border-color: #b17b17;
   background:
-    linear-gradient(180deg, rgba(234, 193, 74, 0.98), rgba(161, 116, 24, 0.98) 58%, rgba(112, 75, 12, 0.98)),
-    rgba(56, 37, 6, 0.98);
+    linear-gradient(180deg, #c79628 0%, #9c6e14 52%, #6f4a0b 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 236, 156, 0.56),
-    inset 0 -1px 0 rgba(105, 67, 8, 0.58),
-    0 0 0 1px rgba(120, 80, 11, 0.42),
-    0 12px 18px rgba(0, 0, 0, 0.24);
+    inset 0 1px 0 rgba(247, 221, 147, 0.5),
+    inset 0 -1px 0 rgba(87, 55, 7, 0.65);
 }
 
 .launcher-item-local:active {
   transform: translateY(1px);
-  border-color: rgba(168, 122, 20, 0.98);
+  border-color: #8f6311;
   background:
-    linear-gradient(180deg, rgba(161, 119, 28, 0.98), rgba(124, 86, 15, 0.98) 58%, rgba(78, 51, 8, 0.98)),
-    rgba(41, 26, 4, 0.98);
+    linear-gradient(180deg, #9f7117 0%, #7b550f 52%, #563808 100%);
   box-shadow:
-    inset 0 2px 0 rgba(97, 63, 7, 0.52),
-    inset 0 -1px 0 rgba(42, 26, 3, 0.7),
-    0 0 0 1px rgba(92, 61, 8, 0.34);
+    inset 0 2px 0 rgba(101, 66, 8, 0.55),
+    inset 0 -1px 0 rgba(49, 30, 3, 0.72);
 }
 
 .launcher-item-local:focus-visible {
-  outline: 2px solid rgba(255, 226, 122, 0.96);
+  transform: none;
+  border-color: #d9a234;
+  outline: 2px solid rgba(255, 220, 116, 0.96);
   outline-offset: 3px;
 }
 
