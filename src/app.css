@@ -858,7 +858,7 @@ canvas:focus-visible {
   color: var(--accent-2);
 }
 
-.launcher-item-local {
+.launcher-item.launcher-item-local {
   appearance: none;
   font: inherit;
   color: #fff8e2;
@@ -872,11 +872,11 @@ canvas:focus-visible {
   transform: none;
 }
 
-.launcher-item-local strong {
+.launcher-item.launcher-item-local strong {
   letter-spacing: 0.05em;
 }
 
-.launcher-item-local:hover {
+.launcher-item.launcher-item-local:hover {
   transform: none;
   border-color: #b17b17;
   background:
@@ -886,7 +886,7 @@ canvas:focus-visible {
     inset 0 -1px 0 rgba(87, 55, 7, 0.65);
 }
 
-.launcher-item-local:active {
+.launcher-item.launcher-item-local:active {
   transform: translateY(1px);
   border-color: #8f6311;
   background:
@@ -896,7 +896,7 @@ canvas:focus-visible {
     inset 0 -1px 0 rgba(49, 30, 3, 0.72);
 }
 
-.launcher-item-local:focus-visible {
+.launcher-item.launcher-item-local:focus-visible {
   transform: none;
   border-color: #d9a234;
   outline: 2px solid rgba(255, 220, 116, 0.96);
