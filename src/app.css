@@ -187,7 +187,6 @@ strong,
 
 .hero-title {
   margin: 0;
-  margin-left: -0.12em;
   font-size: clamp(28px, 5vw, 52px);
   line-height: 1.05;
   text-shadow: 4px 4px 0 #111111;
@@ -695,8 +694,8 @@ canvas:focus-visible {
 .touch-actions {
   right: 18px;
   bottom: 18px;
-  width: 118px;
-  height: 100px;
+  width: 124px;
+  height: 104px;
 }
 
 .touch-button {
@@ -811,7 +810,7 @@ canvas:focus-visible {
 }
 
 .touch-button.action.b {
-  left: 8px;
+  left: 0;
   bottom: 0;
 }
 
@@ -883,7 +882,7 @@ canvas:focus-visible {
   display: grid;
   gap: 6px;
   margin: 0;
-  padding: 0;
+  padding: 2px 0 6px;
   list-style: none;
 }
 
@@ -935,16 +934,6 @@ canvas:focus-visible {
   font-size: 12px;
   line-height: 1.2;
   color: #ffffff;
-}
-
-.launcher-item-eyebrow {
-  display: block;
-  margin-top: 2px;
-  font-size: 8px;
-  line-height: 1.2;
-  color: rgba(239, 230, 255, 0.72);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .launcher-details {
@@ -1243,8 +1232,8 @@ canvas:focus-visible {
   .touch-actions {
     right: 14px;
     bottom: 14px;
-    width: 104px;
-    height: 88px;
+    width: 110px;
+    height: 92px;
   }
 
   .touch-button.directional {
@@ -1265,7 +1254,7 @@ canvas:focus-visible {
   }
 
   .touch-button.action.b {
-    left: 6px;
+    left: 0;
   }
 
   .touch-button.action .touch-button-label {
@@ -1422,8 +1411,8 @@ canvas:focus-visible {
   .touch-actions {
     right: 10px;
     bottom: 10px;
-    width: 92px;
-    height: 78px;
+    width: 98px;
+    height: 82px;
   }
 
   .touch-button.directional {
@@ -1449,7 +1438,7 @@ canvas:focus-visible {
   }
 
   .touch-button.action.b {
-    left: 4px;
+    left: 0;
   }
 
   .touch-button.action .touch-button-label {

@@ -54,8 +54,8 @@
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
   const EMPTY_OVERLAY_TITLE = "";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
-  const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
-  const MOBILE_EMPTY_OVERLAY_COPY = "Click this prompt to choose a ROM.";
+  const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click to choose a ROM file from your computer.";
+  const MOBILE_EMPTY_OVERLAY_COPY = "Tap to choose a ROM file from your device.";
   const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];
   const ROM_MODE_RANK_BY_ALIAS = new Map([
     ["most-valuable", 0],
@@ -103,12 +103,10 @@
   $: libraryEntries = [
     ...romCatalog.map((entry) => ({
       ...entry,
-      collectionLabel: "Public domain",
       sourceKind: "public-domain"
     })),
     ...licensedCatalog.map((entry) => ({
       ...entry,
-      collectionLabel: "Licensed homebrew",
       sourceKind: "licensed"
     }))
   ].sort((a, b) => {
@@ -1051,7 +1049,6 @@
                     on:click={() => void loadBundledRom(entry)}
                   >
                     <strong>{entry.title}</strong>
-                    <span class="launcher-item-eyebrow">{entry.collectionLabel}</span>
                   </button>
                 </li>
               {/each}

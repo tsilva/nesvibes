@@ -36,3 +36,7 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Touch layout follow-up: made the analog joystick shell smaller again, reduced the thumb travel clamp from 24px to 20px, bottom-aligned the joystick shell with the lower action button, and switched the A/B cluster to a tighter absolute layout so both buttons could grow slightly while moving closer together.
 
 - Verification: `npm run check` passed. Browser verification at a `390x844` viewport confirmed the joystick shell and B button share the same bottom edge (`bottomDeltaJoystickToB = 0`), and the action buttons now render at 48px with a tighter 50px center-to-center gap on the narrow mobile breakpoint. Playwright screenshot capture still timed out on this page after fonts loaded, so this pass used live DOM measurements plus the accessibility snapshot instead of a saved image artifact.
+
+- ROM picker copy update: changed the empty-state prompt so it explicitly says the click action opens a local ROM file from the user's computer/device, avoiding the "gallery" interpretation from "choose one."
+
+- Verification: `npm run check` passed after the ROM picker copy change. The required develop-web-game helper client was retried against `http://127.0.0.1:4173` and still failed with `page.goto: net::ERR_ABORTED`, so final visual verification used the app browser tooling instead.
