@@ -861,17 +861,15 @@ canvas:focus-visible {
 .launcher-item-local {
   appearance: none;
   font: inherit;
-  color: #fff7cf;
+  color: #fff9e1;
   background:
-    linear-gradient(180deg, rgba(255, 236, 162, 0.42), rgba(214, 154, 25, 0.28) 54%, rgba(104, 62, 6, 0.2)),
-    linear-gradient(135deg, rgba(255, 211, 86, 0.44), rgba(205, 135, 20, 0.28)),
-    rgba(33, 21, 6, 0.98);
-  border-color: rgba(255, 208, 92, 0.96);
+    linear-gradient(180deg, rgba(224, 181, 61, 0.98), rgba(150, 107, 20, 0.98) 58%, rgba(103, 69, 11, 0.98)),
+    rgba(52, 34, 5, 0.98);
+  border-color: rgba(196, 145, 29, 0.98);
   box-shadow:
-    inset 0 1px 0 rgba(255, 247, 210, 0.3),
-    inset 0 0 0 1px rgba(255, 232, 145, 0.16),
-    0 0 0 1px rgba(255, 201, 77, 0.3),
-    0 0 18px rgba(255, 188, 43, 0.16);
+    inset 0 1px 0 rgba(255, 230, 141, 0.5),
+    inset 0 -1px 0 rgba(96, 61, 7, 0.55),
+    0 0 0 1px rgba(110, 73, 9, 0.4);
   text-shadow: 0 1px 0 rgba(71, 42, 5, 0.85);
 }
 
@@ -881,16 +879,27 @@ canvas:focus-visible {
 
 .launcher-item-local:hover,
 .launcher-item-local:focus-visible {
-  border-color: rgba(255, 231, 151, 0.98);
+  border-color: rgba(231, 179, 52, 0.98);
   background:
-    linear-gradient(180deg, rgba(255, 235, 158, 0.34), rgba(191, 133, 21, 0.2) 56%, rgba(88, 52, 5, 0.14)),
-    linear-gradient(135deg, rgba(255, 214, 97, 0.34), rgba(197, 137, 24, 0.24)),
-    rgba(33, 21, 6, 0.98);
+    linear-gradient(180deg, rgba(234, 193, 74, 0.98), rgba(161, 116, 24, 0.98) 58%, rgba(112, 75, 12, 0.98)),
+    rgba(56, 37, 6, 0.98);
   box-shadow:
-    inset 0 1px 0 rgba(255, 244, 194, 0.24),
-    inset 0 0 0 1px rgba(255, 233, 156, 0.16),
-    0 0 0 1px rgba(248, 196, 72, 0.28),
+    inset 0 1px 0 rgba(255, 236, 156, 0.56),
+    inset 0 -1px 0 rgba(105, 67, 8, 0.58),
+    0 0 0 1px rgba(120, 80, 11, 0.42),
     0 12px 18px rgba(0, 0, 0, 0.24);
+}
+
+.launcher-item-local:active {
+  transform: translateY(1px);
+  border-color: rgba(168, 122, 20, 0.98);
+  background:
+    linear-gradient(180deg, rgba(161, 119, 28, 0.98), rgba(124, 86, 15, 0.98) 58%, rgba(78, 51, 8, 0.98)),
+    rgba(41, 26, 4, 0.98);
+  box-shadow:
+    inset 0 2px 0 rgba(97, 63, 7, 0.52),
+    inset 0 -1px 0 rgba(42, 26, 3, 0.7),
+    0 0 0 1px rgba(92, 61, 8, 0.34);
 }
 
 .launcher-item-local:focus-visible {
