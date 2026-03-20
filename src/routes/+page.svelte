@@ -54,7 +54,7 @@
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
   const EMPTY_OVERLAY_TITLE = "";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
-  const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click to choose a ROM file from your computer.";
+  const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click to load a ROM from your device.";
   const MOBILE_EMPTY_OVERLAY_COPY = "Tap to choose a ROM file from your device.";
   const DRAG_OVERLAY_COPY = "Drop ROM to load it.";
   const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];

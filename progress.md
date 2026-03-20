@@ -40,3 +40,15 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - ROM picker copy update: changed the empty-state prompt so it explicitly says the click action opens a local ROM file from the user's computer/device, avoiding the "gallery" interpretation from "choose one."
 
 - Verification: `npm run check` passed after the ROM picker copy change. The required develop-web-game helper client was retried against `http://127.0.0.1:4173` and still failed with `page.goto: net::ERR_ABORTED`, so final visual verification used the app browser tooling instead.
+
+- Mobile header follow-up: loosened the wrapped hero metadata typography by increasing line-height, switching the source link from `inline-block` to `inline`, and reducing the hero-meta font size at the narrow breakpoints so the long source label can wrap cleanly without lines colliding.
+
+- Mobile header spacing refinement: added a narrow-breakpoint max-width on `.hero-copy` so the wrapped source label keeps a visible gutter beside the GitHub button instead of running flush into the icon column at 320px widths.
+
+- Control opacity pass: normalized the toolbar buttons, touch buttons, and joystick shell/thumb onto one shared shell alpha token so the fullscreen and mode-toggle buttons no longer read heavier than the rest of the on-screen controls.
+
+- Verification: `npm run check` passed. A live phone-viewport browser pass at `390x844` with a loaded ROM confirmed the toolbar controls and touch controls now sit in the same opacity family. The required develop-web-game helper client was retried and still crashed Chromium at launch with `SEGV_ACCERR`, so this pass relied on the app browser tooling for visual verification.
+
+- Font loading fix: changed the bundled `Silkscreen` face from `font-display: optional` to `font-display: swap` after reproducing the first-paint fallback behavior where the hero and loader headings only picked up the pixel font after a later window resize/reflow.
+
+- Verification: `npm run check` passed. Local production preview at `http://127.0.0.1:4173` reported `document.fonts.status === "loaded"` on first load, and computed styles for `.hero-title` and `.loader-kicker` resolved to `Silkscreen` without requiring a manual resize. The required develop-web-game helper client was retried and still crashed Chromium at launch with `SEGV_ACCERR`, so this pass again used the app browser tooling for verification.

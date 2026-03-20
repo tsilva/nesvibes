@@ -2,7 +2,8 @@
   font-family: "Silkscreen";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  /* `optional` can leave fallback metrics on first paint until a later reflow. */
+  font-display: swap;
   src:
     url("@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2") format("woff2"),
     url("@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff") format("woff");
@@ -13,6 +14,10 @@
   --bg: #252525;
   --panel: rgba(42, 42, 42, 0.9);
   --panel-strong: rgba(20, 20, 20, 0.94);
+  --control-shell-top: rgba(255, 255, 255, 0.16);
+  --control-shell-bottom: rgba(255, 255, 255, 0.03);
+  --control-shell-fill: rgba(12, 12, 12, 0.42);
+  --control-shell-border: rgba(255, 255, 255, 0.24);
   --ink: #f3f3f3;
   --muted: #d2d2d2;
   --accent: #e4000f;
@@ -203,19 +208,20 @@ strong,
 .hero-meta {
   margin: 0;
   font-size: 16px;
-  line-height: 1;
+  line-height: 1.22;
   color: var(--accent-2);
 }
 
 .hero-meta-link {
   position: relative;
   z-index: 2;
-  display: inline-block;
+  display: inline;
   pointer-events: auto;
   color: inherit;
   text-decoration: underline;
   text-decoration-thickness: 2px;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 0.16em;
+  overflow-wrap: anywhere;
   transition: color 120ms ease;
 }
 
@@ -359,9 +365,9 @@ strong,
   padding: 0;
   color: var(--ink);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
-    rgba(12, 12, 12, 0.9);
-  border: 3px solid rgba(199, 199, 199, 0.72);
+    linear-gradient(180deg, var(--control-shell-top), var(--control-shell-bottom)),
+    var(--control-shell-fill);
+  border: 3px solid var(--control-shell-border);
   border-radius: 999px;
   box-shadow:
     inset 0 0 0 2px rgba(255, 255, 255, 0.04),
@@ -605,8 +611,8 @@ canvas:focus-visible {
   background:
     radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.22), transparent 34%),
     radial-gradient(circle at 50% 52%, rgba(10, 10, 10, 0.22), rgba(10, 10, 10, 0.08) 58%, rgba(255, 255, 255, 0.04) 100%),
-    rgba(8, 8, 8, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+    var(--control-shell-fill);
+  border: 1px solid var(--control-shell-border);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset 0 -16px 24px rgba(0, 0, 0, 0.2),
@@ -655,9 +661,9 @@ canvas:focus-visible {
   border-radius: 50%;
   background:
     radial-gradient(circle at 36% 32%, rgba(255, 255, 255, 0.28), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-    rgba(20, 20, 20, 0.84);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+    linear-gradient(180deg, var(--control-shell-top), var(--control-shell-bottom)),
+    var(--control-shell-fill);
+  border: 1px solid var(--control-shell-border);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     inset 0 -2px 0 rgba(0, 0, 0, 0.2),
@@ -709,9 +715,9 @@ canvas:focus-visible {
   cursor: pointer;
   color: rgba(248, 248, 248, 0.96);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02)),
-    rgba(12, 12, 12, 0.26);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+    linear-gradient(180deg, var(--control-shell-top), var(--control-shell-bottom)),
+    var(--control-shell-fill);
+  border: 1px solid var(--control-shell-border);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2),
@@ -1187,6 +1193,21 @@ canvas:focus-visible {
     padding: 12px 58px 12px 14px;
   }
 
+  .hero-copy {
+    gap: 6px;
+    max-width: calc(100% - 54px);
+  }
+
+  .hero-meta {
+    max-width: calc(100% - 2px);
+    font-size: 14px;
+    line-height: 1.28;
+  }
+
+  .hero-meta-link {
+    text-wrap: balance;
+  }
+
   .overlay {
     width: calc(100% - 22px);
     padding: 14px;
@@ -1348,6 +1369,19 @@ canvas:focus-visible {
   .hero-lede {
     font-size: 16px;
     line-height: 1.05;
+  }
+
+  .hero-banner {
+    padding-right: 52px;
+  }
+
+  .hero-copy {
+    max-width: calc(100% - 58px);
+  }
+
+  .hero-meta {
+    font-size: 13px;
+    line-height: 1.34;
   }
 
   .launcher-grid {
