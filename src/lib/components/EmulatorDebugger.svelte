@@ -32,6 +32,9 @@
   let memoryByteDrafts = {};
   let memorySearchMode = "changed";
   let memorySearchExactValue = "";
+  let activeTooltip = null;
+  let activeTooltipTarget = null;
+  let debuggerPanelElement;
 
   function buildMemoryRows(bytes, startAddress, changedAddresses = null, filterChangedRows = false) {
     const rows = [];
@@ -192,6 +195,61 @@
     }
   }
 
+  function canShowDesktopTooltip() {
+    return typeof window !== "undefined"
+      && window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 981px)").matches;
+  }
+
+  function showTooltipForTarget(target) {
+    const text = target?.getAttribute("data-tooltip");
+    const width = Number.parseInt(target?.getAttribute("data-tooltip-width") ?? "220", 10);
+
+    if (!text || !canShowDesktopTooltip()) {
+      activeTooltip = null;
+      activeTooltipTarget = null;
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const maxWidth = Math.min(width, Math.max(160, window.innerWidth - 32));
+    const left = Math.min(
+      Math.max(16, rect.left),
+      Math.max(16, window.innerWidth - maxWidth - 16)
+    );
+
+    activeTooltipTarget = target;
+    activeTooltip = {
+      left,
+      maxWidth,
+      text,
+      top: rect.bottom + 14,
+    };
+  }
+
+  function handleTooltipPointerMove(event) {
+    if (!canShowDesktopTooltip()) {
+      hideTooltip();
+      return;
+    }
+
+    const target = event.target?.closest?.("[data-tooltip]");
+    if (!target || !debuggerPanelElement?.contains(target)) {
+      hideTooltip();
+      return;
+    }
+
+    if (target === activeTooltipTarget) {
+      return;
+    }
+
+    showTooltipForTarget(target);
+  }
+
+  function hideTooltip() {
+    activeTooltip = null;
+    activeTooltipTarget = null;
+  }
+
   $: state = $debuggerController;
   $: memorySearch = state.memorySearch;
   $: snapshot = state.snapshot;
@@ -241,7 +299,14 @@
   {/if}
 
   {#if state.open}
-    <section class="debugger-panel" id="emulator-debugger-panel" aria-label="Emulator debugger">
+    <section
+      class="debugger-panel"
+      id="emulator-debugger-panel"
+      aria-label="Emulator debugger"
+      bind:this={debuggerPanelElement}
+      on:mousemove={handleTooltipPointerMove}
+      on:mouseleave={hideTooltip}
+    >
       <div class="debugger-header">
         {#if state.hasRom}
           <div class="debugger-toolbar">
@@ -249,7 +314,8 @@
               type="button"
               class="debugger-action"
               aria-label={state.paused ? "Play" : "Pause"}
-              title={state.paused ? "Play" : "Pause"}
+              data-tooltip={state.paused ? "Play resumes the game from the current state." : "Pause freezes the game so you can inspect it safely."}
+              data-tooltip-width="220"
               on:click={() => debuggerController.toggleRunning()}
             >
               {#if state.paused}
@@ -263,7 +329,8 @@
               class="debugger-action"
               disabled={!state.paused}
               aria-label="Step"
-              title="Step"
+              data-tooltip="Step runs exactly one CPU instruction while the game is paused."
+              data-tooltip-width="220"
               on:click={() => debuggerController.stepInstruction()}
             >
               <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
@@ -297,24 +364,28 @@
             <span
               class="debugger-meta-item"
               data-tooltip={debuggerMetaTooltip("running")}
+              data-tooltip-width="220"
             >
               {state.paused ? "Paused" : "Running"}
             </span>
             <span
               class="debugger-meta-item"
               data-tooltip={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
+              data-tooltip-width="220"
             >
               Scanline {snapshot.ppu.scanline}
             </span>
             <span
               class="debugger-meta-item"
               data-tooltip={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
+              data-tooltip-width="220"
             >
               Cycle {snapshot.ppu.cycle}
             </span>
             <span
               class="debugger-meta-item"
               data-tooltip={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
+              data-tooltip-width="220"
             >
               Stall {snapshot.cpu.stallCycles}
             </span>
@@ -331,6 +402,7 @@
                 <div
                   class="register-card debugger-tooltip-target"
                   data-tooltip={registerTooltip(field, snapshot.cpu[field.key])}
+                  data-tooltip-width="200"
                 >
                   <span class="register-label">{field.label}</span>
                   <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
@@ -343,6 +415,7 @@
                 <span
                   class={`flag-chip debugger-tooltip-target ${flag.enabled ? "active" : ""}`.trim()}
                   data-tooltip={flagTooltip(flag)}
+                  data-tooltip-width="200"
                 >
                   {flag.label}
                 </span>
@@ -459,6 +532,15 @@
         </div>
       {/if}
     </section>
+  {/if}
+
+  {#if activeTooltip}
+    <div
+      class="debugger-floating-tooltip"
+      style={`left: ${activeTooltip.left}px; top: ${activeTooltip.top}px; max-width: ${activeTooltip.maxWidth}px;`}
+    >
+      {activeTooltip.text}
+    </div>
   {/if}
 </div>
 
@@ -714,6 +796,22 @@
     cursor: help;
   }
 
+  .debugger-floating-tooltip {
+    position: fixed;
+    z-index: 10;
+    padding: 8px 10px;
+    color: #f8fbeb;
+    background: rgba(15, 23, 12, 0.98);
+    border: 1px solid rgba(215, 255, 118, 0.2);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+    font-size: 11px;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    pointer-events: none;
+  }
+
   .debugger-section {
     padding-top: 12px;
     border-top: 1px solid rgba(212, 255, 118, 0.16);
@@ -959,70 +1057,6 @@
     background: #d5ff76;
     box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
     text-shadow: none;
-  }
-
-  @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
-    .debugger-tooltip-target::before,
-    .debugger-tooltip-target::after {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(6px);
-      transition: opacity 140ms ease, transform 140ms ease;
-    }
-
-    .debugger-tooltip-target::before {
-      content: "";
-      left: 18px;
-      top: calc(100% + 8px);
-      border-width: 0 7px 7px;
-      border-style: solid;
-      border-color: transparent transparent rgba(215, 255, 118, 0.2);
-      z-index: 2;
-    }
-
-    .debugger-tooltip-target::after {
-      content: attr(data-tooltip);
-      left: 0;
-      top: calc(100% + 15px);
-      width: min(220px, 28vw);
-      padding: 8px 10px;
-      color: #f8fbeb;
-      background: rgba(15, 23, 12, 0.98);
-      border: 1px solid rgba(215, 255, 118, 0.2);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
-      font-size: 11px;
-      line-height: 1.35;
-      text-transform: none;
-      letter-spacing: 0;
-      white-space: normal;
-      z-index: 3;
-    }
-
-    .register-card.debugger-tooltip-target::after {
-      width: min(200px, 22vw);
-    }
-
-    .flag-chip.debugger-tooltip-target::after {
-      width: max-content;
-      max-width: min(200px, 22vw);
-    }
-
-    .debugger-meta-item:nth-last-child(-n + 2)::before {
-      left: auto;
-      right: 18px;
-    }
-
-    .debugger-meta-item:nth-last-child(-n + 2)::after {
-      left: auto;
-      right: 0;
-    }
-
-    .debugger-tooltip-target:hover::before,
-    .debugger-tooltip-target:hover::after {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   @media (max-width: 720px) {

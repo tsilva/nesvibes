@@ -12,7 +12,6 @@
     Maximize2,
     Minimize2,
   } from "lucide-svelte";
-  import "@fontsource/silkscreen/latin.css";
   import "../app.css";
 
   export let data;
