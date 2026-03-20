@@ -427,7 +427,7 @@
     setOverlay(
       "Emulation halted",
       error instanceof Error ? error.message : String(error)
-      );
+    );
   }
 
   function showUnsupportedEntry(entry) {
@@ -524,11 +524,7 @@
       if (entry.supported) {
         await loadBundledRom(entry);
       } else {
-        setStageMode("empty");
-        setOverlay(
-          "ROM unavailable",
-          `${entry.title} needs mapper ${entry.mapper}, which is not supported in this build.`
-        );
+        showUnsupportedEntry(entry);
       }
 
       return;
