@@ -874,6 +874,8 @@ canvas:focus-visible {
 
 .launcher-item.launcher-item-local strong {
   letter-spacing: 0.05em;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
 
 .launcher-item.launcher-item-local:hover {
