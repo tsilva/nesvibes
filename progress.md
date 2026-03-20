@@ -58,3 +58,9 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - ROM load race guard: bundled ROM fetches now carry a request token, and manual file loads/unsupported selections invalidate older bundled requests. That prevents a stale fetch from an earlier click from overwriting the most recent selection after a slower response finishes.
 
 - Verification: `npm run check` passed after the ROM-switch patch. The required develop-web-game Playwright client still crashed its Chromium target on launch, the Playwright MCP browser could not attach because Chrome reported an existing session, AppleScript browser automation was denied by macOS permissions, and headless Chrome did not reliably hydrate the emulator route. Final confidence for this pass comes from the code-path fix plus static checks rather than a successful scripted browser replay.
+
+- Route slug cleanup: switched playable ROM URLs from catalog ids to title-derived slugs, using a shared helper so the client, server route lookup, and sitemap all agree on the same canonical path shape.
+
+- Compatibility note: server-side ROM lookup still accepts the old id-based slug as a fallback, so existing links continue to resolve while all newly generated links now use the cleaner title slug.
+
+- Verification: `npm run check` passed after the slug update. A catalog probe confirmed examples like `Air Hockey - NES Black Box -> air-hockey-nes-black-box` and `CMC'80s -> cmc-80s`.

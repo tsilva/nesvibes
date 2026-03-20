@@ -1,6 +1,7 @@
 <script>
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
+  import { getLibraryEntrySlug } from "$lib/rom-slug.js";
   import {
     ArrowDown,
     ArrowLeft,
@@ -301,7 +302,7 @@
   }
 
   function getEntryPath(entry) {
-    return `/play/${encodeURIComponent(entry.id)}`;
+    return `/play/${encodeURIComponent(getLibraryEntrySlug(entry))}`;
   }
 
   function getLicenseLabel(entry) {

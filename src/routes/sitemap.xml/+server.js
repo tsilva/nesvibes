@@ -1,4 +1,5 @@
 import { getLibraryData } from "$lib/server/library.js";
+import { getLibraryEntrySlug } from "$lib/rom-slug.js";
 import { site } from "$lib/site.js";
 
 export const prerender = true;
@@ -28,7 +29,7 @@ export async function GET() {
   const urls = [
     createSitemapUrl("/", { priority: "1.0" }),
     ...libraryEntries.map((entry) =>
-      createSitemapUrl(`/play/${encodeURIComponent(entry.id)}`, {
+      createSitemapUrl(`/play/${encodeURIComponent(getLibraryEntrySlug(entry))}`, {
         lastmod: entry.releaseDate ?? undefined
       }))
   ];

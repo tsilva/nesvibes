@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { getLibraryEntrySlug } from "$lib/rom-slug.js";
 
 const EMULATOR_FILE_PATH = resolve(process.cwd(), "src/lib/emu/nes-emulator.js");
 const PUBLIC_DOMAIN_CATALOG_FILE_PATH = resolve(process.cwd(), "static/roms/pdroms/nes/catalog.json");
@@ -47,7 +48,11 @@ async function readCatalog(filePath, failureMessage, sourceKind) {
     }
 
     return {
-      entries: entries.map((entry) => ({ ...entry, sourceKind })),
+      entries: entries.map((entry) => ({
+        ...entry,
+        slug: getLibraryEntrySlug(entry),
+        sourceKind,
+      })),
       message: entries.length === 0 ? failureMessage.empty : ""
     };
   } catch (error) {
@@ -104,12 +109,12 @@ export async function getLibraryData() {
 
 export async function getLibraryEntryBySlug(slug) {
   const { libraryEntries } = await getLibraryData();
-  return libraryEntries.find((entry) => entry.id === slug) ?? null;
+  return libraryEntries.find((entry) => entry.slug === slug || entry.id === slug) ?? null;
 }
 
 export async function getLibraryRouteEntries() {
   const { libraryEntries } = await getLibraryData();
-  return libraryEntries.map((entry) => ({ slug: entry.id }));
+  return libraryEntries.map((entry) => ({ slug: entry.slug }));
 }
 
 export async function loadNesVibesPageData(selectedGameId = null) {
