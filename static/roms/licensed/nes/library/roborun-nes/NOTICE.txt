@@ -1,0 +1,17 @@
+NESVibes bundles this ROM unmodified.
+
+Title: RoboRun-NES
+Original release page: https://github.com/haseeb-heaven/roborun-nes/releases/tag/1.1
+Source repository: https://github.com/haseeb-heaven/roborun-nes
+Bundled file: roborun-nes-v1.1.nes
+Original filename in release: RoboRun-NES_1.1.nes
+
+Upstream licensing:
+- GPL-3.0-only, as published in the upstream repository LICENSE file bundled here as LICENSE.txt
+
+Upstream credits:
+- Developer: haseeb-heaven
+
+Redistribution notes:
+- This copy is redistributed from the upstream GitHub release, with upstream links preserved.
+- Redistribution and modification are permitted under the bundled GPL-3.0 terms.

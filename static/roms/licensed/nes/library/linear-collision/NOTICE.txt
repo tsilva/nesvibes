@@ -1,0 +1,17 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Linear Collision
+Original page: https://github.com/ComprosoftCEO/LinearCollision
+Source repository: https://github.com/ComprosoftCEO/LinearCollision
+Bundled file: linear-collision.nes
+Original filename in repository: Main.nes
+
+Upstream licensing:
+- GPL-3.0-only, as published in the upstream repository LICENSE file bundled here as LICENSE.txt
+
+Upstream credits:
+- Developer: ComprosoftCEO
+
+Redistribution notes:
+- This copy is redistributed from the upstream repository's checked-in ROM and GPL license files.
+- Redistribution and modification are permitted under the bundled GPL-3.0 terms.

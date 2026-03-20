@@ -85,6 +85,31 @@
     ]
   },
   {
+    "id": "linear-collision",
+    "title": "Linear Collision",
+    "file": "roms/licensed/nes/library/linear-collision/linear-collision.nes",
+    "sizeBytes": 40976,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 2,
+    "chrBanks": 1,
+    "description": "Maze-action NES game where you collect four colored orbs, dodge enemy photons, and escape before the timer runs out.",
+    "author": "ComprosoftCEO",
+    "originalPageUrl": "https://github.com/ComprosoftCEO/LinearCollision",
+    "sourceUrl": "https://github.com/ComprosoftCEO/LinearCollision",
+    "licenseName": "GPL-3.0-only",
+    "licenseUrl": "https://github.com/ComprosoftCEO/LinearCollision/blob/master/LICENSE",
+    "noticeFile": "roms/licensed/nes/library/linear-collision/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/linear-collision/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "ComprosoftCEO",
+        "url": "https://github.com/ComprosoftCEO"
+      }
+    ]
+  },
+  {
     "id": "sliding-blaster",
     "title": "Sliding Blaster",
     "file": "roms/licensed/nes/library/sliding-blaster/blaster.nes",
@@ -134,6 +159,32 @@
         "role": "Developer",
         "name": "zorchenhimer",
         "url": "https://github.com/zorchenhimer"
+      }
+    ]
+  },
+  {
+    "id": "roborun-nes",
+    "title": "RoboRun-NES",
+    "file": "roms/licensed/nes/library/roborun-nes/roborun-nes-v1.1.nes",
+    "sizeBytes": 40976,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 2,
+    "chrBanks": 1,
+    "description": "Open-source 2D NES platformer built with cc65, featuring multiple levels, enemies, invincibility power-ups, and countdown-driven health pressure.",
+    "author": "haseeb-heaven",
+    "releaseDate": "2021-04-06",
+    "originalPageUrl": "https://github.com/haseeb-heaven/roborun-nes/releases/tag/1.1",
+    "sourceUrl": "https://github.com/haseeb-heaven/roborun-nes",
+    "licenseName": "GPL-3.0-only",
+    "licenseUrl": "https://github.com/haseeb-heaven/roborun-nes/blob/main/LICENSE",
+    "noticeFile": "roms/licensed/nes/library/roborun-nes/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/roborun-nes/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "haseeb-heaven",
+        "url": "https://github.com/haseeb-heaven"
       }
     ]
   },

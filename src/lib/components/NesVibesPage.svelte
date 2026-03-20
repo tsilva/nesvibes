@@ -1116,15 +1116,6 @@
       <article class="launcher-shell" aria-label="Bundled ROM library">
         <div class="launcher-header">
           <h2>ROM Library</h2>
-          {#if isBundledPermalinkActive}
-            <button
-              type="button"
-              class="launcher-reset-button"
-              on:click={() => void navigateHomeForLocalRomSelection()}
-            >
-              Load your own ROM
-            </button>
-          {/if}
         </div>
         <div class="launcher-scroll">
           {#if libraryStatusMessages.length > 0}
@@ -1174,6 +1165,17 @@
 
           {#if libraryEntries.length > 0}
             <ul class="launcher-grid" aria-label="Bundled ROM list">
+              {#if isBundledPermalinkActive}
+                <li class="launcher-list-item">
+                  <button
+                    type="button"
+                    class="launcher-item launcher-item-local"
+                    on:click={() => void navigateHomeForLocalRomSelection()}
+                  >
+                    <strong>Load your own ROM</strong>
+                  </button>
+                </li>
+              {/if}
               {#each libraryEntries as entry (entry.id)}
                 <li class="launcher-list-item">
                   <a
