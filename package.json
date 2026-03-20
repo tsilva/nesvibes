@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fontsource/silkscreen": "^5.2.8",
+    "@sentry/sveltekit": "^10.45.0",
     "lucide-svelte": "^0.577.0",
     "svelte": "5.54.0"
   },

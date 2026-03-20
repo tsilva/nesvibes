@@ -70,6 +70,12 @@ Enable Google Analytics 4 with a public measurement ID:
 PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX npm run dev
 ```
 
+Enable Sentry error reporting with a public DSN:
+
+```bash
+PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0 npm run dev
+```
+
 Run the project checks:
 
 ```bash
@@ -151,6 +157,7 @@ static/roms/pdroms/nes/
 - The bundled ROM library is served from `static/roms/pdroms/nes` and contains only public-domain titles.
 - 36 ROMs are cataloged; 35 are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
 - The emulator runs entirely client-side. Google Analytics is only loaded when `PUBLIC_GOOGLE_ANALYTICS_ID` is set, and it is deferred until after mount so it stays out of the render path.
+- Sentry is enabled when `PUBLIC_SENTRY_DSN` is set.
 
 ## ⭐ Support
 

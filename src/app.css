@@ -920,6 +920,7 @@ canvas:focus-visible {
   width: 100%;
   padding: 6px 8px;
   text-align: left;
+  text-decoration: none;
   border: 2px solid rgba(255, 255, 255, 0.12);
   background:
     linear-gradient(135deg, rgba(59, 111, 216, 0.12), rgba(255, 255, 255, 0.03)),
@@ -948,7 +949,7 @@ canvas:focus-visible {
     rgba(18, 18, 18, 0.9);
 }
 
-.launcher-item:disabled {
+.launcher-item[aria-disabled="true"] {
   opacity: 0.72;
 }
 

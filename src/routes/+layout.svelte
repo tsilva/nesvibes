@@ -1,6 +1,7 @@
 <script>
   import { browser } from "$app/environment";
   import { afterNavigate } from "$app/navigation";
+  import { page } from "$app/stores";
   import { initGoogleAnalytics, trackPageView } from "$lib/google-analytics.js";
   import { site } from "$lib/site.js";
   import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
@@ -38,6 +39,10 @@
   let analyticsReady = false;
   let lastTrackedUrl = null;
   let pendingUrl = null;
+
+  $: pageTitle = $page.data.pageTitle ?? site.title;
+  $: pageDescription = $page.data.pageDescription ?? site.description;
+  $: canonicalUrl = new URL($page.url.pathname, site.url).href;
 
   function queuePageView(url) {
     pendingUrl = new URL(url.href);
@@ -91,8 +96,8 @@
 </script>
 
 <svelte:head>
-  <title>{site.title}</title>
-  <meta name="description" content={site.description} />
+  <title>{pageTitle}</title>
+  <meta name="description" content={pageDescription} />
   <meta name="keywords" content={site.keywords.join(", ")} />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="theme-color" content={site.themeColor} />
@@ -102,7 +107,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
 
-  <link rel="canonical" href={site.url} />
+  <link rel="canonical" href={canonicalUrl} />
   <link rel="preload" href={silkscreenFontUrl} as="font" type="font/woff2" crossorigin="anonymous" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/x-icon" href={site.icons.faviconIco} />
@@ -113,17 +118,17 @@
   <meta property="og:site_name" content={site.name} />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content={site.locale} />
-  <meta property="og:title" content={site.title} />
-  <meta property="og:description" content={site.description} />
-  <meta property="og:url" content={site.url} />
+  <meta property="og:title" content={pageTitle} />
+  <meta property="og:description" content={pageDescription} />
+  <meta property="og:url" content={canonicalUrl} />
   <meta property="og:image" content={`${site.url}${site.ogImage.path}`} />
   <meta property="og:image:width" content={String(site.ogImage.width)} />
   <meta property="og:image:height" content={String(site.ogImage.height)} />
   <meta property="og:image:alt" content={site.ogImage.alt} />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={site.title} />
-  <meta name="twitter:description" content={site.description} />
+  <meta name="twitter:title" content={pageTitle} />
+  <meta name="twitter:description" content={pageDescription} />
   <meta name="twitter:image" content={`${site.url}${site.ogImage.path}`} />
   <meta name="twitter:image:alt" content={site.ogImage.alt} />
 

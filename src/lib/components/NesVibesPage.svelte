@@ -1,4 +1,5 @@
 <script>
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import {
     ArrowDown,
@@ -12,7 +13,7 @@
     Maximize2,
     Minimize2,
   } from "lucide-svelte";
-  import "../app.css";
+  import "../../app.css";
 
   export let data;
 
@@ -79,7 +80,7 @@
   let filePicker;
   let romCatalog = data.publicDomainCatalog ?? [];
   let licensedCatalog = data.licensedCatalog ?? [];
-  let activeLibraryId = "";
+  let activeLibraryId = data.selectedGameId ?? "";
   let catalogMessage = data.publicDomainCatalogMessage ?? "";
   let licensedCatalogMessage = data.licensedCatalogMessage ?? "";
   let stageMode = "empty";
@@ -128,6 +129,10 @@
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
+  $: selectedGameEntry = data.selectedGame ?? null;
+  $: if (data.selectedGameId && data.selectedGameId !== activeLibraryId) {
+    activeLibraryId = data.selectedGameId;
+  }
 
   function refreshDebugger() {
     debuggerController?.refresh();
@@ -288,6 +293,10 @@
     return path.startsWith("/") ? path : `/${path}`;
   }
 
+  function getEntryPath(entry) {
+    return `/play/${encodeURIComponent(entry.id)}`;
+  }
+
   function getLicenseLabel(entry) {
     if (entry.assetLicenseName) {
       return `${entry.licenseName} code / ${entry.assetLicenseName} assets`;
@@ -314,18 +323,7 @@
   }
 
   function showsArchiveLink(entry) {
-    return Boolean(entry?.archiveDownloadUrl) && entry.sourceKind !== "public-domain";
-  }
-
-  function hasEntryLinks(entry) {
-    return Boolean(
-      entry?.originalPageUrl ||
-        showsArchiveLink(entry) ||
-        entry?.sourceUrl ||
-        entry?.licenseUrl ||
-        entry?.noticeFile ||
-        entry?.licenseFile
-    );
+    return Boolean(entry?.archiveDownloadUrl && entry?.sourceKind === "public-domain");
   }
 
   function normalizeRomMode(value) {
@@ -476,6 +474,33 @@
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async function navigateToEntry(entry) {
+    if (!entry) {
+      return;
+    }
+
+    if (selectedGameEntry?.id === entry.id) {
+      activeLibraryId = entry.id;
+
+      if (entry.supported) {
+        await loadBundledRom(entry);
+      } else {
+        setStageMode("empty");
+        setOverlay(
+          "ROM unavailable",
+          `${entry.title} needs mapper ${entry.mapper}, which is not supported in this build.`
+        );
+      }
+
+      return;
+    }
+
+    await goto(getEntryPath(entry), {
+      keepFocus: true,
+      noScroll: true
+    });
   }
 
   function updateQuicklaunchAvailability() {
@@ -818,9 +843,14 @@
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     const quicklaunchUnavailable = updateQuicklaunchAvailability();
-    const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
-    if (!quicklaunchUnavailable && modeEntry) {
-      void loadBundledRom(modeEntry);
+    const autoLaunchEntry = selectedGameEntry ?? getRomEntryForMode(romCatalog, requestedRomMode);
+    if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
+      void loadBundledRom(autoLaunchEntry);
+    } else if (selectedGameEntry && !selectedGameEntry.supported) {
+      setOverlay(
+        "ROM unavailable",
+        `${selectedGameEntry.title} needs mapper ${selectedGameEntry.mapper}, which is not supported in this build.`
+      );
     }
     syncFullscreenState();
     syncDebuggerMode();
@@ -1070,28 +1100,27 @@
                 </p>
               {/if}
 
-              {#if hasEntryLinks(selectedLibraryEntry)}
-                <div class="launcher-link-row">
-                  {#if selectedLibraryEntry.originalPageUrl}
-                    <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
-                  {/if}
-                  {#if showsArchiveLink(selectedLibraryEntry)}
-                    <a href={selectedLibraryEntry.archiveDownloadUrl} target="_blank" rel="noreferrer">Archive</a>
-                  {/if}
-                  {#if selectedLibraryEntry.sourceUrl}
-                    <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source</a>
-                  {/if}
-                  {#if selectedLibraryEntry.licenseUrl}
-                    <a href={selectedLibraryEntry.licenseUrl} target="_blank" rel="noreferrer">License</a>
-                  {/if}
-                  {#if selectedLibraryEntry.noticeFile}
-                    <a href={assetPath(selectedLibraryEntry.noticeFile)} target="_blank" rel="noreferrer">Notice</a>
-                  {/if}
-                  {#if selectedLibraryEntry.licenseFile}
-                    <a href={assetPath(selectedLibraryEntry.licenseFile)} target="_blank" rel="noreferrer">Bundled license</a>
-                  {/if}
-                </div>
-              {/if}
+              <div class="launcher-link-row">
+                <a href={getEntryPath(selectedLibraryEntry)}>Permalink</a>
+                {#if selectedLibraryEntry.originalPageUrl}
+                  <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
+                {/if}
+                {#if showsArchiveLink(selectedLibraryEntry)}
+                  <a href={selectedLibraryEntry.archiveDownloadUrl} target="_blank" rel="noreferrer">Archive</a>
+                {/if}
+                {#if selectedLibraryEntry.sourceUrl}
+                  <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source</a>
+                {/if}
+                {#if selectedLibraryEntry.licenseUrl}
+                  <a href={selectedLibraryEntry.licenseUrl} target="_blank" rel="noreferrer">License</a>
+                {/if}
+                {#if selectedLibraryEntry.noticeFile}
+                  <a href={assetPath(selectedLibraryEntry.noticeFile)} target="_blank" rel="noreferrer">Notice</a>
+                {/if}
+                {#if selectedLibraryEntry.licenseFile}
+                  <a href={assetPath(selectedLibraryEntry.licenseFile)} target="_blank" rel="noreferrer">Bundled license</a>
+                {/if}
+              </div>
             </div>
           {/if}
 
@@ -1101,17 +1130,18 @@
             <ul class="launcher-grid" aria-label="Bundled ROM list">
               {#each libraryEntries as entry (entry.id)}
                 <li class="launcher-list-item">
-                  <button
-                    type="button"
+                  <a
+                    href={getEntryPath(entry)}
                     class={`launcher-item ${entry.id === activeLibraryId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
-                    disabled={!entry.supported}
+                    aria-current={entry.id === activeLibraryId ? "page" : undefined}
+                    aria-disabled={!entry.supported}
                     title={entry.supported
                       ? `${entry.title} • Mapper ${entry.mapper} • ${getEntryLicenseSummary(entry)}`
                       : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
-                    on:click={() => void loadBundledRom(entry)}
+                    on:click|preventDefault={() => void navigateToEntry(entry)}
                   >
                     <strong>{entry.title}</strong>
-                  </button>
+                  </a>
                 </li>
               {/each}
             </ul>
