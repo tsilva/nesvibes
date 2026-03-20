@@ -96,6 +96,9 @@
   let joystickState = createJoystickState();
   let canToggleFullscreen = false;
   let requestedRomMode = null;
+  let hasMounted = false;
+  let bundledLoadRequestToken = 0;
+  let lastHandledSelectedGameId = data.selectedGameId ?? null;
   let canvasControlsMode = "controls";
   let playerVisible = false;
   let libraryVisible = false;
@@ -132,6 +135,10 @@
   $: selectedGameEntry = data.selectedGame ?? null;
   $: if (data.selectedGameId && data.selectedGameId !== activeLibraryId) {
     activeLibraryId = data.selectedGameId;
+  }
+  $: if (hasMounted && (data.selectedGameId ?? null) !== lastHandledSelectedGameId) {
+    lastHandledSelectedGameId = data.selectedGameId ?? null;
+    void syncSelectedGameEntry(selectedGameEntry);
   }
 
   function refreshDebugger() {
@@ -420,6 +427,16 @@
     setOverlay(
       "Emulation halted",
       error instanceof Error ? error.message : String(error)
+      );
+  }
+
+  function showUnsupportedEntry(entry) {
+    bundledLoadRequestToken += 1;
+    activeLibraryId = entry.id;
+    setStageMode("empty");
+    setOverlay(
+      "ROM unavailable",
+      `${entry.title} needs mapper ${entry.mapper}, which is not supported in this build.`
     );
   }
 
@@ -445,6 +462,7 @@
       return;
     }
 
+    bundledLoadRequestToken += 1;
     await enableAudio();
     activeLibraryId = "";
 
@@ -461,6 +479,8 @@
       return;
     }
 
+    const requestToken = ++bundledLoadRequestToken;
+
     try {
       await enableAudio();
       const response = await fetch(assetPath(entry.file), { cache: "no-store" });
@@ -469,11 +489,28 @@
       }
 
       const bytes = new Uint8Array(await response.arrayBuffer());
+      if (requestToken !== bundledLoadRequestToken) {
+        return;
+      }
+
       loadRomBytes(bytes, `${entry.title} launched from Quicklaunch`);
       activeLibraryId = entry.id;
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async function syncSelectedGameEntry(entry) {
+    if (!entry) {
+      return;
+    }
+
+    if (!entry.supported) {
+      showUnsupportedEntry(entry);
+      return;
+    }
+
+    await loadBundledRom(entry);
   }
 
   async function navigateToEntry(entry) {
@@ -847,16 +884,15 @@
     if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
       void loadBundledRom(autoLaunchEntry);
     } else if (selectedGameEntry && !selectedGameEntry.supported) {
-      setOverlay(
-        "ROM unavailable",
-        `${selectedGameEntry.title} needs mapper ${selectedGameEntry.mapper}, which is not supported in this build.`
-      );
+      showUnsupportedEntry(selectedGameEntry);
     }
     syncFullscreenState();
     syncDebuggerMode();
     debuggerQuery.addEventListener("change", syncDebuggerMode);
+    hasMounted = true;
 
     return () => {
+      hasMounted = false;
       window.removeEventListener("keydown", handleKeydown);
       window.removeEventListener("keyup", handleKeyup);
       window.removeEventListener("blur", handleBlur);

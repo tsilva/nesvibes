@@ -52,3 +52,9 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Font loading fix: changed the bundled `Silkscreen` face from `font-display: optional` to `font-display: swap` after reproducing the first-paint fallback behavior where the hero and loader headings only picked up the pixel font after a later window resize/reflow.
 
 - Verification: `npm run check` passed. Local production preview at `http://127.0.0.1:4173` reported `document.fonts.status === "loaded"` on first load, and computed styles for `.hero-title` and `.loader-kicker` resolved to `Silkscreen` without requiring a manual resize. The required develop-web-game helper client was retried and still crashed Chromium at launch with `SEGV_ACCERR`, so this pass again used the app browser tooling for verification.
+
+- ROM route-switch fix: added a mounted-only reactive sync in `NesVibesPage.svelte` so changing `/play/[slug]` on the live page now calls back into bundled ROM loading instead of only updating `data.selectedGameId` and the URL. This also centralizes the unsupported-ROM overlay path for both initial loads and later route changes.
+
+- ROM load race guard: bundled ROM fetches now carry a request token, and manual file loads/unsupported selections invalidate older bundled requests. That prevents a stale fetch from an earlier click from overwriting the most recent selection after a slower response finishes.
+
+- Verification: `npm run check` passed after the ROM-switch patch. The required develop-web-game Playwright client still crashed its Chromium target on launch, the Playwright MCP browser could not attach because Chrome reported an existing session, AppleScript browser automation was denied by macOS permissions, and headless Chrome did not reliably hydrate the emulator route. Final confidence for this pass comes from the code-path fix plus static checks rather than a successful scripted browser replay.
