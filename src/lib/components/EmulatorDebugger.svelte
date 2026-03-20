@@ -1,5 +1,5 @@
 <script>
-  import { Bug, Pause, Play, RefreshCw, StepForward, X } from "lucide-svelte";
+  import { Bug, Pause, Play, StepForward, X } from "lucide-svelte";
 
   export let debuggerController;
 
@@ -248,15 +248,6 @@
               on:click={() => debuggerController.stepInstruction()}
             >
               <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="debugger-action ghost"
-              aria-label="Refresh"
-              title="Refresh"
-              on:click={() => debuggerController.refresh()}
-            >
-              <RefreshCw size={15} strokeWidth={2.25} aria-hidden="true" />
             </button>
           </div>
         {:else}
