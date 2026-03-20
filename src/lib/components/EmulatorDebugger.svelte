@@ -173,6 +173,25 @@
     return `${description} flag (${flag.label}): ${flag.enabled ? "set" : "clear"}`;
   }
 
+  function debuggerMetaTooltip(type, value) {
+    switch (type) {
+      case "running":
+        return state.paused
+          ? "Paused means the game is frozen right now. Press Play to let it continue."
+          : "Running means the game is actively moving and the emulator is not paused.";
+      case "scanline":
+        return `Scanline is the current horizontal line the NES is working through while building a frame. ${value} is the current line.`;
+      case "cycle":
+        return `Cycle is the tiny step within the current scanline. ${value} means the graphics chip is at step ${value} of this line.`;
+      case "stall":
+        return value === 0
+          ? "Stall is CPU wait time. 0 means the CPU is not waiting right now."
+          : `Stall is CPU wait time. ${value} means the CPU still has ${value} wait cycle${value === 1 ? "" : "s"} before continuing normally.`;
+      default:
+        return "";
+    }
+  }
+
   $: state = $debuggerController;
   $: memorySearch = state.memorySearch;
   $: snapshot = state.snapshot;
@@ -275,10 +294,34 @@
       {:else}
         <div class="debugger-body debugger-body-loaded">
           <div class="debugger-meta">
-            <span title="Emulation run state">{state.paused ? "Paused" : "Running"}</span>
-            <span title={`Current PPU scanline: ${snapshot.ppu.scanline}`}>Scanline {snapshot.ppu.scanline}</span>
-            <span title={`Current PPU cycle within the scanline: ${snapshot.ppu.cycle}`}>Cycle {snapshot.ppu.cycle}</span>
-            <span title={`Remaining CPU stall cycles: ${snapshot.cpu.stallCycles}`}>Stall {snapshot.cpu.stallCycles}</span>
+            <span
+              class="debugger-meta-item"
+              title={debuggerMetaTooltip("running")}
+              data-tooltip={debuggerMetaTooltip("running")}
+            >
+              {state.paused ? "Paused" : "Running"}
+            </span>
+            <span
+              class="debugger-meta-item"
+              title={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
+              data-tooltip={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
+            >
+              Scanline {snapshot.ppu.scanline}
+            </span>
+            <span
+              class="debugger-meta-item"
+              title={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
+              data-tooltip={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
+            >
+              Cycle {snapshot.ppu.cycle}
+            </span>
+            <span
+              class="debugger-meta-item"
+              title={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
+              data-tooltip={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
+            >
+              Stall {snapshot.cpu.stallCycles}
+            </span>
           </div>
 
           <section class="debugger-section" aria-label="CPU registers">
@@ -658,6 +701,14 @@
     color: rgba(235, 243, 196, 0.75);
   }
 
+  .debugger-meta-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    cursor: help;
+  }
+
   .debugger-section {
     padding-top: 12px;
     border-top: 1px solid rgba(212, 255, 118, 0.16);
@@ -903,6 +954,50 @@
     background: #d5ff76;
     box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
     text-shadow: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
+    .debugger-meta-item::before,
+    .debugger-meta-item::after {
+      position: absolute;
+      left: 50%;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 6px);
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+
+    .debugger-meta-item::before {
+      content: "";
+      bottom: calc(100% + 8px);
+      border-width: 7px 7px 0;
+      border-style: solid;
+      border-color: rgba(215, 255, 118, 0.2) transparent transparent;
+      z-index: 2;
+    }
+
+    .debugger-meta-item::after {
+      content: attr(data-tooltip);
+      bottom: calc(100% + 15px);
+      width: min(220px, 28vw);
+      padding: 8px 10px;
+      color: #f8fbeb;
+      background: rgba(15, 23, 12, 0.98);
+      border: 1px solid rgba(215, 255, 118, 0.2);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+      font-size: 11px;
+      line-height: 1.35;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: normal;
+      z-index: 3;
+    }
+
+    .debugger-meta-item:hover::before,
+    .debugger-meta-item:hover::after {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
   }
 
   @media (max-width: 720px) {
