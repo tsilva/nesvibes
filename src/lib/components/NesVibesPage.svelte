@@ -1106,7 +1106,6 @@
               {/if}
 
               <div class="launcher-link-row">
-                <a href={getEntryPath(selectedLibraryEntry)}>Permalink</a>
                 {#if selectedLibraryEntry.originalPageUrl}
                   <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
                 {/if}
