@@ -328,7 +328,10 @@
 
               <div class="register-grid">
               {#each REGISTER_FIELDS as field (field.key)}
-                <div class="register-card" title={registerTooltip(field, snapshot.cpu[field.key])}>
+                <div
+                  class="register-card debugger-tooltip-target"
+                  data-tooltip={registerTooltip(field, snapshot.cpu[field.key])}
+                >
                   <span class="register-label">{field.label}</span>
                   <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
                 </div>
@@ -338,8 +341,8 @@
             <div class="flag-row" aria-label="CPU flags">
               {#each snapshot.cpu.flags as flag (flag.label)}
                 <span
-                  class={`flag-chip ${flag.enabled ? "active" : ""}`.trim()}
-                  title={flagTooltip(flag)}
+                  class={`flag-chip debugger-tooltip-target ${flag.enabled ? "active" : ""}`.trim()}
+                  data-tooltip={flagTooltip(flag)}
                 >
                   {flag.label}
                 </span>
@@ -706,6 +709,11 @@
     cursor: help;
   }
 
+  .debugger-tooltip-target {
+    position: relative;
+    cursor: help;
+  }
+
   .debugger-section {
     padding-top: 12px;
     border-top: 1px solid rgba(212, 255, 118, 0.16);
@@ -954,8 +962,8 @@
   }
 
   @media (hover: hover) and (pointer: fine) and (min-width: 981px) {
-    .debugger-meta-item::before,
-    .debugger-meta-item::after {
+    .debugger-tooltip-target::before,
+    .debugger-tooltip-target::after {
       position: absolute;
       opacity: 0;
       pointer-events: none;
@@ -963,7 +971,7 @@
       transition: opacity 140ms ease, transform 140ms ease;
     }
 
-    .debugger-meta-item::before {
+    .debugger-tooltip-target::before {
       content: "";
       left: 18px;
       top: calc(100% + 8px);
@@ -973,7 +981,7 @@
       z-index: 2;
     }
 
-    .debugger-meta-item::after {
+    .debugger-tooltip-target::after {
       content: attr(data-tooltip);
       left: 0;
       top: calc(100% + 15px);
@@ -991,6 +999,15 @@
       z-index: 3;
     }
 
+    .register-card.debugger-tooltip-target::after {
+      width: min(200px, 22vw);
+    }
+
+    .flag-chip.debugger-tooltip-target::after {
+      width: max-content;
+      max-width: min(200px, 22vw);
+    }
+
     .debugger-meta-item:nth-last-child(-n + 2)::before {
       left: auto;
       right: 18px;
@@ -1001,8 +1018,8 @@
       right: 0;
     }
 
-    .debugger-meta-item:hover::before,
-    .debugger-meta-item:hover::after {
+    .debugger-tooltip-target:hover::before,
+    .debugger-tooltip-target:hover::after {
       opacity: 1;
       transform: translateY(0);
     }
