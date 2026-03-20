@@ -36,6 +36,55 @@
     ]
   },
   {
+    "id": "concentration-room",
+    "title": "Concentration Room",
+    "file": "roms/licensed/nes/library/concentration-room/concentration-room.nes",
+    "sizeBytes": 24592,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 1,
+    "chrBanks": 1,
+    "description": "Card-matching game for NES with story, solitaire, versus, and CPU modes built around full 10-, 20-, 36-, 52-, and 72-card layouts.",
+    "author": "Damian Yerrick",
+    "originalPageUrl": "https://pineight.com/croom/README.html",
+    "sourceUrl": "https://pineight.com/croom/ConcentrationRoom-0.02.zip",
+    "licenseName": "GPL-3.0-or-later",
+    "noticeFile": "roms/licensed/nes/library/concentration-room/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/concentration-room/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Program, art, design",
+        "name": "Damian Yerrick",
+        "url": "https://pineight.com/"
+      }
+    ]
+  },
+  {
+    "id": "falling",
+    "title": "Falling",
+    "file": "roms/licensed/nes/library/falling/falling.nes",
+    "sizeBytes": 40976,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 2,
+    "chrBanks": 1,
+    "description": "Simple original NES action game written in 6502 assembly, released as a playable MIT-licensed ROM.",
+    "author": "Jesse Williams",
+    "releaseDate": "2019-11-24",
+    "originalPageUrl": "https://github.com/xram64/falling-nes",
+    "licenseName": "MIT",
+    "licenseUrl": "https://github.com/xram64/falling-nes/blob/master/LICENSE",
+    "noticeFile": "roms/licensed/nes/library/falling/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/falling/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "Jesse Williams",
+        "url": "https://github.com/xram64"
+      }
+    ]
+  },
+  {
     "id": "sliding-blaster",
     "title": "Sliding Blaster",
     "file": "roms/licensed/nes/library/sliding-blaster/blaster.nes",
@@ -63,6 +112,32 @@
     ]
   },
   {
+    "id": "nes-runner",
+    "title": "runner.nes",
+    "file": "roms/licensed/nes/library/nes-runner/runner.nes",
+    "sizeBytes": 81936,
+    "mapper": 1,
+    "supported": true,
+    "prgBanks": 4,
+    "chrBanks": 2,
+    "description": "MIT-licensed infinite runner for NES, distributed upstream as a downloadable mapper-1 ROM release.",
+    "author": "zorchenhimer",
+    "releaseDate": "2019-06-27",
+    "originalPageUrl": "https://github.com/zorchenhimer/nes-runner/releases/tag/v1",
+    "sourceUrl": "https://github.com/zorchenhimer/nes-runner",
+    "licenseName": "MIT",
+    "licenseUrl": "https://github.com/zorchenhimer/nes-runner/blob/master/LICENSE.md",
+    "noticeFile": "roms/licensed/nes/library/nes-runner/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/nes-runner/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Developer",
+        "name": "zorchenhimer",
+        "url": "https://github.com/zorchenhimer"
+      }
+    ]
+  },
+  {
     "id": "squirrel-domino",
     "title": "Squirrel Domino",
     "file": "roms/licensed/nes/library/squirrel-domino/squirrel_domino.nes",
@@ -85,6 +160,30 @@
         "role": "Developer",
         "name": "NovaSquirrel",
         "url": "https://novasquirrel.itch.io/"
+      }
+    ]
+  },
+  {
+    "id": "thwaite",
+    "title": "Thwaite",
+    "file": "roms/licensed/nes/library/thwaite/thwaite.nes",
+    "sizeBytes": 24592,
+    "mapper": 0,
+    "supported": true,
+    "prgBanks": 1,
+    "chrBanks": 1,
+    "description": "Arcade missile-defense game for NES where you shoot down incoming missiles with improvised fireworks in solo or co-op play.",
+    "author": "Damian Yerrick",
+    "originalPageUrl": "https://pineight.com/nes/",
+    "sourceUrl": "https://pineight.com/nes/thwaite-0.03.zip",
+    "licenseName": "GPL-3.0-or-later",
+    "noticeFile": "roms/licensed/nes/library/thwaite/NOTICE.txt",
+    "licenseFile": "roms/licensed/nes/library/thwaite/LICENSE.txt",
+    "credits": [
+      {
+        "role": "Program, graphics, music",
+        "name": "Damian Yerrick",
+        "url": "https://pineight.com/"
       }
     ]
   }

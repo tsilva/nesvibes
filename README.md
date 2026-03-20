@@ -18,7 +18,7 @@
 
 **The Pain:** Setting up NES emulators means downloading apps, hunting for ROMs, and fiddling with configs — just to play a quick round of a retro game.
 
-**The Solution:** nesvibes is a browser-native NES emulator built with SvelteKit. It ships with 35 playable public-domain ROMs, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
+**The Solution:** nesvibes is a browser-native NES emulator built with SvelteKit. It ships with 42 playable bundled ROMs spanning public-domain and redistributable homebrew releases, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
 
 **The Result:** Open a URL, pick a game, play. Zero setup, works on desktop and mobile.
 
@@ -26,7 +26,7 @@
 
 | Metric | Value |
 |--------|-------|
-| 🎮 Built-in ROMs | 35 public-domain titles |
+| 🎮 Built-in ROMs | 42 playable bundled titles |
 | 🗺️ Mappers | 5 (NROM, MMC1, UxROM, CNROM, MMC3) |
 | 🔧 Setup | Zero — just open the URL |
 
@@ -34,7 +34,7 @@
 
 ## ✨ Features
 
-- ⚡ **Instant play** — 35 bundled public-domain ROMs with quicklaunch sidebar
+- ⚡ **Instant play** — 42 bundled public-domain and licensed homebrew ROMs with quicklaunch sidebar
 - 📂 **Drag & drop** — load your own `.nes` files straight from disk
 - 🗺️ **5 mapper support** — NROM (0), MMC1 (1), UxROM (2), CNROM (3), MMC3 (4)
 - 🔊 **Authentic audio** — pulse, triangle, and noise channels via AudioWorklet
@@ -166,8 +166,9 @@ static/roms/pdroms/nes/
 
 ## 📝 Notes
 
-- The bundled ROM library is served from `static/roms/pdroms/nes` and contains only public-domain titles.
-- 36 ROMs are cataloged; 35 are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
+- The bundled ROM library is served from `static/roms/pdroms/nes` and `static/roms/licensed/nes`.
+- 43 ROMs are cataloged in total: 36 public-domain entries and 7 redistributable homebrew entries.
+- 42 bundled ROMs are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
 - The emulator runs entirely client-side. Google Analytics is only loaded when `PUBLIC_GOOGLE_ANALYTICS_ID` is set, and it is deferred until after mount so it stays out of the render path.
 - Sentry is enabled when `PUBLIC_SENTRY_DSN` is set.
 - Production deployments attach static security headers from `vercel.json`, including CSP, HSTS, COOP, and clickjacking/content-sniffing protections.

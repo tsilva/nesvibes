@@ -1,0 +1,18 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Concentration Room
+Original page: https://pineight.com/croom/README.html
+Source archive: https://pineight.com/croom/ConcentrationRoom-0.02.zip
+Bundled file: concentration-room.nes
+Original filename in archive: croom.nes
+
+Upstream licensing:
+- GPL-3.0-or-later, as published in the archive's bundled GPLv3.txt file and mirrored here as LICENSE.txt
+- The upstream README grants a special exception allowing exact-copy redistribution of the iNES or UNIF program without source code
+
+Upstream credits:
+- Program, art, design: Damian Yerrick
+
+Redistribution notes:
+- This copy is redistributed as the original game ROM, with upstream links preserved.
+- NESVibes relies on the upstream GPL grant and the README's explicit exception for exact-copy executable redistribution.

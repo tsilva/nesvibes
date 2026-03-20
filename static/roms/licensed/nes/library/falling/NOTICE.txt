@@ -1,0 +1,17 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Falling
+Original page: https://github.com/xram64/falling-nes
+Source repository: https://github.com/xram64/falling-nes
+Bundled file: falling.nes
+Original filename in repository: falling.nes
+
+Upstream licensing:
+- MIT, as published in the upstream repository LICENSE file bundled here as LICENSE.txt
+
+Upstream credits:
+- Developer: Jesse Williams
+
+Redistribution notes:
+- This copy is redistributed from the upstream repository's checked-in ROM and license files.
+- Keep the bundled MIT license notice with substantial copies of the software.

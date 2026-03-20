@@ -1,0 +1,19 @@
+NESVibes bundles this ROM unmodified.
+
+Title: Thwaite
+Original page: https://pineight.com/nes/
+Source archive: https://pineight.com/nes/thwaite-0.03.zip
+Bundled file: thwaite.nes
+Original filename in archive: thwaite.nes
+
+Upstream licensing:
+- GPL-3.0-or-later, as published in the archive's bundled gpl-3.0.txt file and mirrored here as LICENSE.txt
+
+Upstream credits:
+- Program, graphics, music: Damian Yerrick
+- Extra music: Ludwig van Beethoven
+- Testers: Jeroen, Shiru, NovaYoshi
+
+Redistribution notes:
+- This copy is redistributed as the original game ROM, with upstream links and credits preserved.
+- Redistribution and modification are permitted under the bundled GPL-3.0-or-later terms.

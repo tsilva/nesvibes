@@ -1,7 +1,9 @@
 <script>
-  import { goto } from "$app/navigation";
+  import { goto, replaceState } from "$app/navigation";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { getLibraryEntrySlug } from "$lib/rom-slug.js";
+  import { site } from "$lib/site.js";
   import {
     ArrowDown,
     ArrowLeft,
@@ -59,6 +61,7 @@
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click to load a ROM from your device.";
   const MOBILE_EMPTY_OVERLAY_COPY = "Tap to choose a ROM file from your device.";
   const DRAG_OVERLAY_COPY = "Drop ROM to load it.";
+  const HOME_PATH = "/";
   const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];
   const ROM_MODE_RANK_BY_ALIAS = new Map([
     ["most-valuable", 0],
@@ -100,6 +103,7 @@
   let hasMounted = false;
   let bundledLoadRequestToken = 0;
   let lastHandledSelectedGameId = data.selectedGameId ?? null;
+  let clearedRouteSelectedGameId = null;
   let canvasControlsMode = "controls";
   $: effectiveCanvasControlsMode =
     isMobileMode && !MOBILE_CANVAS_CONTROL_MODES.includes(canvasControlsMode)
@@ -130,13 +134,22 @@
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
-  $: selectedGameEntry = data.selectedGame ?? null;
+  $: routeSelectedGameId = data.selectedGameId ?? null;
+  $: routeSelectedGame = data.selectedGame ?? null;
+  $: isRouteSelectionSuppressed =
+    clearedRouteSelectedGameId !== null && routeSelectedGameId === clearedRouteSelectedGameId;
+  $: effectiveSelectedGameId = isRouteSelectionSuppressed ? null : routeSelectedGameId;
+  $: selectedGameEntry = isRouteSelectionSuppressed ? null : routeSelectedGame;
   $: selectedGameAssetHref = selectedGameEntry?.file ? assetPath(selectedGameEntry.file) : null;
-  $: if (data.selectedGameId && data.selectedGameId !== activeLibraryId) {
-    activeLibraryId = data.selectedGameId;
+  $: isBundledPermalinkActive = effectiveSelectedGameId !== null;
+  $: if (clearedRouteSelectedGameId !== null && routeSelectedGameId !== clearedRouteSelectedGameId) {
+    clearedRouteSelectedGameId = null;
   }
-  $: if (hasMounted && (data.selectedGameId ?? null) !== lastHandledSelectedGameId) {
-    lastHandledSelectedGameId = data.selectedGameId ?? null;
+  $: if (effectiveSelectedGameId && effectiveSelectedGameId !== activeLibraryId) {
+    activeLibraryId = effectiveSelectedGameId;
+  }
+  $: if (hasMounted && effectiveSelectedGameId !== lastHandledSelectedGameId) {
+    lastHandledSelectedGameId = effectiveSelectedGameId;
     void syncSelectedGameEntry(selectedGameEntry);
   }
 
@@ -463,6 +476,7 @@
 
     bundledLoadRequestToken += 1;
     activeLibraryId = "";
+    clearBundledSelectionInPlace();
 
     try {
       await ensureEmulator();
@@ -535,6 +549,23 @@
     }
 
     await goto(getEntryPath(entry), {
+      keepFocus: true,
+      noScroll: true
+    });
+  }
+
+  function clearBundledSelectionInPlace() {
+    if (!routeSelectedGameId) {
+      return false;
+    }
+
+    clearedRouteSelectedGameId = routeSelectedGameId;
+    replaceState(HOME_PATH, $page.state);
+    return true;
+  }
+
+  async function navigateHomeForLocalRomSelection() {
+    await goto(HOME_PATH, {
       keepFocus: true,
       noScroll: true
     });
@@ -893,6 +924,10 @@
 </script>
 
 <svelte:head>
+  {#if isRouteSelectionSuppressed}
+    <title>{site.title}</title>
+    <meta name="description" content={site.description} />
+  {/if}
   {#if selectedGameAssetHref}
     <link rel="preload" href={selectedGameAssetHref} as="fetch" />
   {/if}
@@ -1081,6 +1116,15 @@
       <article class="launcher-shell" aria-label="Bundled ROM library">
         <div class="launcher-header">
           <h2>ROM Library</h2>
+          {#if isBundledPermalinkActive}
+            <button
+              type="button"
+              class="launcher-reset-button"
+              on:click={() => void navigateHomeForLocalRomSelection()}
+            >
+              Load your own ROM
+            </button>
+          {/if}
         </div>
         <div class="launcher-scroll">
           {#if libraryStatusMessages.length > 0}

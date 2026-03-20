@@ -1,0 +1,17 @@
+NESVibes bundles this ROM unmodified.
+
+Title: runner.nes
+Original release page: https://github.com/zorchenhimer/nes-runner/releases/tag/v1
+Source repository: https://github.com/zorchenhimer/nes-runner
+Bundled file: runner.nes
+Original filename in release: runner.nes
+
+Upstream licensing:
+- MIT, as published in the upstream repository LICENSE.md file bundled here as LICENSE.txt
+
+Upstream credits:
+- Developer: zorchenhimer
+
+Redistribution notes:
+- This copy is redistributed from the upstream GitHub release, with upstream links preserved.
+- Keep the bundled MIT license notice with substantial copies of the software.
