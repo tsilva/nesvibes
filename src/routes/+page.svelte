@@ -16,8 +16,6 @@
 
   export let data;
 
-  const PUBLIC_DOMAIN_CATALOG_URL = "/roms/pdroms/nes/catalog.json";
-  const LICENSED_CATALOG_URL = "/roms/licensed/nes/catalog.json";
   const CANVAS_CONTROL_MODES = ["controls", "gamepad", "keys", "hidden"];
   const BUTTON_ORDER = ["up", "down", "left", "right", "select", "start", "b", "a"];
   const DIRECTIONAL_BUTTONS = ["up", "down", "left", "right"];
@@ -77,11 +75,11 @@
   let debuggerController = null;
   let debuggerEnabled = false;
   let filePicker;
-  let romCatalog = [];
-  let licensedCatalog = [];
+  let romCatalog = data.publicDomainCatalog ?? [];
+  let licensedCatalog = data.licensedCatalog ?? [];
   let activeLibraryId = "";
-  let catalogMessage = "Loading bundled ROMs...";
-  let licensedCatalogMessage = "Loading redistributable homebrew...";
+  let catalogMessage = data.publicDomainCatalogMessage ?? "";
+  let licensedCatalogMessage = data.licensedCatalogMessage ?? "";
   let stageMode = "empty";
   let isMobileMode = false;
   let isDragging = false;
@@ -115,10 +113,7 @@
   $: selectedLibraryAuthorCredit = selectedLibraryEntry
     ? getEntryAuthorCredit(selectedLibraryEntry)
     : null;
-  $: libraryStatusMessages = [
-    romCatalog.length === 0 && catalogMessage ? catalogMessage : "",
-    licensedCatalog.length === 0 && licensedCatalogMessage ? licensedCatalogMessage : ""
-  ].filter(Boolean);
+  $: libraryStatusMessages = [catalogMessage, licensedCatalogMessage].filter(Boolean);
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
@@ -436,6 +431,10 @@
   }
 
   async function loadBundledRom(entry) {
+    if (updateQuicklaunchAvailability()) {
+      return;
+    }
+
     try {
       await enableAudio();
       const response = await fetch(assetPath(entry.file), { cache: "no-store" });
@@ -451,50 +450,16 @@
     }
   }
 
-  async function loadBundledCatalog() {
-    if (location.protocol === "file:") {
-      catalogMessage = "Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.";
-      licensedCatalogMessage = "Licensed quicklaunch also needs HTTP(S). Drag-and-drop still works from disk.";
-      return;
+  function updateQuicklaunchAvailability() {
+    if (typeof window === "undefined" || window.location.protocol !== "file:") {
+      return false;
     }
 
-    try {
-      const response = await fetch(PUBLIC_DOMAIN_CATALOG_URL, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while loading ${PUBLIC_DOMAIN_CATALOG_URL}`);
-      }
-
-      romCatalog = await response.json();
-      catalogMessage = romCatalog.length === 0 ? "No bundled ROMs available." : "";
-      const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
-      if (modeEntry) {
-        await loadBundledRom(modeEntry);
-      }
-
-    } catch (error) {
-      console.error(error);
-      catalogMessage = "Bundled ROM catalog failed to load. Drag-and-drop remains available.";
-    }
-  }
-
-  async function loadLicensedCatalog() {
-    if (location.protocol === "file:") {
-      licensedCatalogMessage = "Licensed quicklaunch needs HTTP(S). Drag-and-drop still works from disk.";
-      return;
-    }
-
-    try {
-      const response = await fetch(LICENSED_CATALOG_URL, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while loading ${LICENSED_CATALOG_URL}`);
-      }
-
-      licensedCatalog = await response.json();
-      licensedCatalogMessage = licensedCatalog.length === 0 ? "No redistributable homebrew bundled." : "";
-    } catch (error) {
-      console.error(error);
-      licensedCatalogMessage = "Licensed homebrew catalog failed to load.";
-    }
+    catalogMessage =
+      "Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.";
+    licensedCatalogMessage =
+      "Licensed quicklaunch also needs HTTP(S). Drag-and-drop still works from disk.";
+    return true;
   }
 
   function isFileDrag(event) {
@@ -801,7 +766,11 @@
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
-    void Promise.all([loadBundledCatalog(), loadLicensedCatalog()]);
+    const quicklaunchUnavailable = updateQuicklaunchAvailability();
+    const modeEntry = getRomEntryForMode(romCatalog, requestedRomMode);
+    if (!quicklaunchUnavailable && modeEntry) {
+      void loadBundledRom(modeEntry);
+    }
     syncFullscreenState();
     syncDebuggerMode();
     debuggerQuery.addEventListener("change", syncDebuggerMode);
