@@ -7,7 +7,7 @@ const vercelConfigPath = resolve(rootDirectory, "vercel.json");
 const expectedHeaders = new Map([
   [
     "content-security-policy",
-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://*.ingest.sentry.io https://sentry.io; manifest-src 'self'; worker-src 'self'"
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://sentry.io; manifest-src 'self'; worker-src 'self'"
   ],
   ["strict-transport-security", "max-age=31536000; includeSubDomains; preload"],
   ["referrer-policy", "strict-origin-when-cross-origin"],
