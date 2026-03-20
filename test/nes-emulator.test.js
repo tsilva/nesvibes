@@ -79,6 +79,33 @@ function createUxRomFixture() {
   return new Uint8Array([...header, ...bank0, ...bank1]);
 }
 
+function createNromFixture(programBytes, {
+  reset = 0xc000,
+  nmi = reset,
+  irq = reset,
+  patches = [],
+} = {}) {
+  const header = Uint8Array.from([0x4e, 0x45, 0x53, 0x1a, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  const prg = new Uint8Array(0x4000);
+  prg.set(programBytes, reset - 0xc000);
+  for (const [address, value] of patches) {
+    prg[address - 0xc000] = value;
+  }
+  setVectors(prg, { nmi, reset, irq });
+  return new Uint8Array([...header, ...prg]);
+}
+
+function stepToPc(emulator, targetPc, maxSteps = 16) {
+  for (let step = 0; step < maxSteps; step += 1) {
+    if (emulator.getDebugSnapshot().cpu.pc === targetPc) {
+      return;
+    }
+    emulator.stepInstruction();
+  }
+
+  assert.fail(`did not reach PC ${targetPc.toString(16)} within ${maxSteps} steps`);
+}
+
 test("keyboard mapping and idle lifecycle stay stable", () => withRuntimeStubs(() => {
   const canvas = createCanvasStub();
   const emulator = createNesEmulator({ canvas });
@@ -102,6 +129,110 @@ test("invalid ROM errors are preserved", () => withRuntimeStubs(() => {
     () => emulator.loadRomBytes(Uint8Array.from([0x4e, 0x45, 0x53, 0x1a, 1, 0, 0x04, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     /Trainer ROMs are not supported/
   );
+  emulator.destroy();
+}));
+
+test("debug snapshot includes current instruction and PC-centered disassembly", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(Uint8Array.from([0xa9, 0x44, 0xea, 0xea])));
+
+  const snapshot = emulator.getDebugSnapshot({ startAddress: 0xc000, length: 0x10 });
+
+  assert.equal(snapshot.instruction.address, snapshot.cpu.pc);
+  assert.equal(snapshot.instruction.mnemonic, "LDA");
+  assert.equal(snapshot.instruction.operandText, "#$44");
+  assert.equal(snapshot.instruction.resolvedValue, 0x44);
+  assert.equal(Array.isArray(snapshot.disassembly.entries), true);
+  assert.equal(snapshot.disassembly.entries.filter((entry) => entry.isCurrent).length, 1);
+  assert.equal(snapshot.disassembly.entries.some((entry) => entry.address === snapshot.cpu.pc), true);
+  emulator.destroy();
+}));
+
+test("decoder resolves zero-page indexed and absolute indexed operands", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(
+    Uint8Array.from([0xa2, 0x05, 0xb5, 0x10, 0xa0, 0x01, 0xb9, 0xff, 0xc0]),
+    { patches: [[0xc100, 0x7b]] }
+  ));
+  assert.equal(emulator.setDebugByte(0x0015, 0x42), true);
+
+  stepToPc(emulator, 0xc002);
+  let snapshot = emulator.getDebugSnapshot();
+  assert.equal(snapshot.instruction.mnemonic, "LDA");
+  assert.equal(snapshot.instruction.operandText, "$10,X");
+  assert.equal(snapshot.instruction.effectiveAddress, 0x0015);
+  assert.equal(snapshot.instruction.resolvedValue, 0x42);
+
+  stepToPc(emulator, 0xc006);
+  snapshot = emulator.getDebugSnapshot();
+  assert.equal(snapshot.instruction.operandText, "$C0FF,Y");
+  assert.equal(snapshot.instruction.effectiveAddress, 0xc100);
+  assert.equal(snapshot.instruction.resolvedValue, 0x7b);
+  assert.equal(snapshot.instruction.pageCrossCyclePossible, true);
+  emulator.destroy();
+}));
+
+test("decoder resolves relative branches in both directions", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(Uint8Array.from([0xd0, 0x02, 0xd0, 0xfe, 0xea])));
+
+  const snapshot = emulator.getDebugSnapshot();
+  const backwardBranch = snapshot.disassembly.entries.find((entry) => entry.address === 0xc002);
+
+  assert.equal(snapshot.instruction.branchTarget, 0xc004);
+  assert.equal(backwardBranch?.branchTarget, 0xc002);
+  emulator.destroy();
+}));
+
+test("decoder resolves indexed-indirect and indirect-indexed targets", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(
+    Uint8Array.from([0xa2, 0x04, 0xa0, 0x03, 0xa1, 0x10, 0xb1, 0x20]),
+    { patches: [[0xc080, 0x5a], [0xc093, 0x6b]] }
+  ));
+  emulator.setDebugByte(0x0014, 0x80);
+  emulator.setDebugByte(0x0015, 0xc0);
+  emulator.setDebugByte(0x0020, 0x90);
+  emulator.setDebugByte(0x0021, 0xc0);
+
+  stepToPc(emulator, 0xc004);
+  let snapshot = emulator.getDebugSnapshot();
+  assert.equal(snapshot.instruction.operandText, "($10,X)");
+  assert.equal(snapshot.instruction.effectiveAddress, 0xc080);
+  assert.equal(snapshot.instruction.resolvedValue, 0x5a);
+
+  stepToPc(emulator, 0xc006);
+  snapshot = emulator.getDebugSnapshot();
+  assert.equal(snapshot.instruction.operandText, "($20),Y");
+  assert.equal(snapshot.instruction.effectiveAddress, 0xc093);
+  assert.equal(snapshot.instruction.resolvedValue, 0x6b);
+  emulator.destroy();
+}));
+
+test("decoder uses the 6502 indirect JMP page-wrap bug", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(
+    Uint8Array.from([0x6c, 0xff, 0xc2]),
+    { patches: [[0xc2ff, 0x34], [0xc200, 0x12]] }
+  ));
+
+  const snapshot = emulator.getDebugSnapshot();
+
+  assert.equal(snapshot.instruction.operandText, "($C2FF)");
+  assert.equal(snapshot.instruction.branchTarget, 0x1234);
+  emulator.destroy();
+}));
+
+test("decoder falls back to byte data for unsupported opcodes", () => withRuntimeStubs(() => {
+  const emulator = createNesEmulator({ canvas: createCanvasStub() });
+  emulator.loadRomBytes(createNromFixture(Uint8Array.from([0x02])));
+
+  const snapshot = emulator.getDebugSnapshot();
+
+  assert.equal(snapshot.instruction.mnemonic, ".db");
+  assert.equal(snapshot.instruction.operandText, "$02");
+  assert.equal(snapshot.instruction.length, 1);
+  assert.equal(snapshot.disassembly.entries.find((entry) => entry.isCurrent)?.address, snapshot.cpu.pc);
   emulator.destroy();
 }));
 

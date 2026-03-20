@@ -195,6 +195,36 @@
     }
   }
 
+  function formatInstructionBytes(bytes = []) {
+    return bytes.map((value) => formatHex(value, 2)).join(" ");
+  }
+
+  function formatInstructionText(entry) {
+    if (!entry) {
+      return "···";
+    }
+
+    return entry.operandText ? `${entry.mnemonic} ${entry.operandText}` : entry.mnemonic;
+  }
+
+  function formatInstructionAnnotation(entry) {
+    if (!entry) {
+      return "";
+    }
+
+    if (entry.branchTarget !== null && entry.branchTarget !== undefined) {
+      return `-> ${formatHex(entry.branchTarget, 4)}`;
+    }
+
+    if (entry.effectiveAddress !== null && entry.effectiveAddress !== undefined) {
+      return entry.resolvedValue === null || entry.resolvedValue === undefined
+        ? `[${formatHex(entry.effectiveAddress, 4)}]`
+        : `[${formatHex(entry.effectiveAddress, 4)}] = ${formatHex(entry.resolvedValue, 2)}`;
+    }
+
+    return "";
+  }
+
   function canShowDesktopTooltip() {
     return typeof window !== "undefined"
       && window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 981px)").matches;
@@ -253,6 +283,9 @@
   $: state = $debuggerController;
   $: memorySearch = state.memorySearch;
   $: snapshot = state.snapshot;
+  $: instruction = snapshot?.instruction ?? null;
+  $: disassembly = snapshot?.disassembly ?? null;
+  $: disassemblyEntries = disassembly?.entries ?? [];
   $: memorySearchResults = memorySearch?.results ?? [];
   $: changedAddresses = new Set(memorySearchResults.map((result) => result.address));
   $: memorySearchModeOptions = MEMORY_SEARCH_MODE_OPTIONS;
@@ -419,6 +452,35 @@
                 >
                   {flag.label}
                 </span>
+              {/each}
+            </div>
+          </section>
+
+          <section class="debugger-section debugger-disassembly-section" aria-label="CPU disassembly">
+            <div class="debugger-section-header">
+              <h2>Disassembly</h2>
+              <span class="debugger-chip">PC centered</span>
+            </div>
+
+            {#if instruction}
+              <div class="instruction-summary">
+                <span class="instruction-address">{formatHex(instruction.address, 4)}</span>
+                <span class="instruction-bytes">{formatInstructionBytes(instruction.bytes)}</span>
+                <strong class="instruction-text">{formatInstructionText(instruction)}</strong>
+                {#if formatInstructionAnnotation(instruction)}
+                  <span class="instruction-annotation">{formatInstructionAnnotation(instruction)}</span>
+                {/if}
+              </div>
+            {/if}
+
+            <div class="disassembly-list" role="table" aria-label="Decoded CPU instructions around the current PC">
+              {#each disassemblyEntries as entry (`instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`)}
+                <div class={`disassembly-row ${entry.isCurrent ? "current" : ""}`.trim()} role="row">
+                  <span class="disassembly-address" role="cell">{formatHex(entry.address, 4)}</span>
+                  <span class="disassembly-bytes" role="cell">{formatInstructionBytes(entry.bytes)}</span>
+                  <span class="disassembly-text" role="cell">{formatInstructionText(entry)}</span>
+                  <span class="disassembly-annotation" role="cell">{formatInstructionAnnotation(entry)}</span>
+                </div>
               {/each}
             </div>
           </section>
@@ -725,7 +787,7 @@
   }
 
   .debugger-body-loaded {
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
   }
 
   .debugger-action {
@@ -876,6 +938,93 @@
     color: #132500;
     background: #d5ff76;
     border-color: rgba(16, 27, 9, 0.75);
+  }
+
+  .debugger-disassembly-section {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .instruction-summary,
+  .disassembly-row {
+    display: grid;
+    grid-template-columns: 4ch minmax(9ch, 12ch) minmax(0, 1fr) minmax(0, 18ch);
+    gap: 10px;
+    align-items: baseline;
+    font-family: var(--font-body);
+    font-size: 11px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .instruction-summary {
+    padding: 10px;
+    color: #fffce8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(213, 255, 118, 0.14);
+  }
+
+  .instruction-address,
+  .disassembly-address {
+    color: #b9cf81;
+  }
+
+  .instruction-bytes,
+  .disassembly-bytes {
+    color: rgba(238, 240, 207, 0.76);
+    white-space: pre;
+  }
+
+  .instruction-text,
+  .disassembly-text {
+    min-width: 0;
+    color: #fffce8;
+    overflow-wrap: anywhere;
+  }
+
+  .instruction-text {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .instruction-annotation,
+  .disassembly-annotation {
+    min-width: 0;
+    color: rgba(213, 255, 118, 0.8);
+    overflow-wrap: anywhere;
+  }
+
+  .disassembly-list {
+    display: grid;
+    gap: 4px;
+    min-height: 0;
+    align-content: start;
+    grid-auto-rows: max-content;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(213, 255, 118, 0.12);
+    overflow: auto;
+  }
+
+  .disassembly-row {
+    padding: 5px 6px;
+    color: rgba(238, 240, 207, 0.9);
+    border-radius: 4px;
+  }
+
+  .disassembly-row.current {
+    color: #122100;
+    background: #d5ff76;
+    box-shadow: inset 0 0 0 1px rgba(16, 27, 9, 0.72);
+  }
+
+  .disassembly-row.current .disassembly-address,
+  .disassembly-row.current .disassembly-bytes,
+  .disassembly-row.current .disassembly-text,
+  .disassembly-row.current .disassembly-annotation {
+    color: inherit;
   }
 
   .debugger-memory-section {
@@ -1084,6 +1233,12 @@
     .debugger-meta,
     .register-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .instruction-summary,
+    .disassembly-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
     }
 
     .memory-row {

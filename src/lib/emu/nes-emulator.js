@@ -6,6 +6,9 @@ const CPU_FLAG_BREAK = 0x10,
   CPU_FLAG_UNUSED = 0x20,
   CPU_FLAG_OVERFLOW = 0x40,
   CPU_FLAG_NEGATIVE = 0x80;
+const DISASSEMBLY_BEFORE_COUNT = 8,
+  DISASSEMBLY_AFTER_COUNT = 12,
+  DISASSEMBLY_SCAN_BACK_BYTES = 0x40;
 const NES_PALETTE = [
   [124, 124, 124],
   [0, 0, 252],
@@ -1995,6 +1998,32 @@ function advanceNesCycles(nes, cpuCycles) {
 function stepNesInstruction(nes) {
   advanceNesCycles(nes, nes.cpu.step());
 }
+function getInstructionOperandLength(mode) {
+  switch (mode) {
+    case "absolute":
+    case "absoluteX":
+    case "absoluteY":
+    case "indirect":
+      return 2;
+    case "accumulator":
+    case "implied":
+      return 0;
+    case "immediate":
+    case "indexedIndirect":
+    case "indirectIndexed":
+    case "relative":
+    case "zeroPage":
+    case "zeroPageX":
+    case "zeroPageY":
+    default:
+      return 1;
+  }
+}
+function formatDecodeHex(value, width) {
+  return value === null || value === undefined
+    ? "?".repeat(width)
+    : value.toString(16).toUpperCase().padStart(width, "0");
+}
 class NES {
   constructor(cartridge, canvas, audioDriver) {
     this.bus = new Bus(cartridge, audioDriver);
@@ -2069,6 +2098,192 @@ export function createNesEmulator({
         : null;
     return nes.bus.cartridge.readPrg(normalizedAddress);
   }
+  function getDebugWordBug(nes, address) {
+    const normalizedAddress = normalizeAddress(address);
+    const low = getDebugByte(nes, normalizedAddress);
+    const high = getDebugByte(
+      nes,
+      (normalizedAddress & 0xff00) | ((normalizedAddress + 1) & 0x00ff),
+    );
+    return low === null || high === null ? null : low | (high << 8);
+  }
+  function getZeroPagePointer(nes, address) {
+    const pointer = address & 0xff;
+    const low = getDebugByte(nes, pointer);
+    const high = getDebugByte(nes, (pointer + 1) & 0xff);
+    return low === null || high === null ? null : low | (high << 8);
+  }
+  function decodeInstruction(nes, address, isCurrent = false) {
+    const cpu = nes.cpu;
+    const instructionAddress = normalizeAddress(address);
+    const opcode = getDebugByte(nes, instructionAddress);
+    const meta = opcode === null || opcode === undefined ? null : OPCODES[opcode];
+
+    if (!meta) {
+      return {
+        address: instructionAddress,
+        baseCycles: 0,
+        branchTarget: null,
+        bytes: [opcode],
+        effectiveAddress: null,
+        isCurrent,
+        length: 1,
+        mnemonic: opcode === null || opcode === undefined ? "???" : ".db",
+        mode: "unknown",
+        opcode,
+        operandText:
+          opcode === null || opcode === undefined
+            ? ""
+            : `$${formatDecodeHex(opcode, 2)}`,
+        pageCrossCyclePossible: false,
+        resolvedValue: null,
+      };
+    }
+
+    const operandLength = getInstructionOperandLength(meta.mode);
+    const length = operandLength + 1;
+    const bytes = new Array(length);
+    for (let index = 0; index < length; index += 1) {
+      bytes[index] = getDebugByte(nes, instructionAddress + index);
+    }
+
+    const operandLow = bytes[1] ?? null;
+    const operandHigh = bytes[2] ?? null;
+    const operandWord =
+      operandLow === null || operandHigh === null
+        ? null
+        : operandLow | (operandHigh << 8);
+    const readValueAt = (targetAddress) =>
+      targetAddress === null ? null : getDebugByte(nes, targetAddress);
+    let operandText = "";
+    let effectiveAddress = null;
+    let resolvedValue = null;
+    let branchTarget = null;
+
+    switch (meta.mode) {
+      case "immediate":
+        operandText = `#$${formatDecodeHex(operandLow, 2)}`;
+        resolvedValue = operandLow;
+        break;
+      case "zeroPage":
+        operandText = `$${formatDecodeHex(operandLow, 2)}`;
+        effectiveAddress = operandLow;
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      case "zeroPageX":
+        operandText = `$${formatDecodeHex(operandLow, 2)},X`;
+        effectiveAddress = operandLow === null ? null : (operandLow + cpu.x) & 0xff;
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      case "zeroPageY":
+        operandText = `$${formatDecodeHex(operandLow, 2)},Y`;
+        effectiveAddress = operandLow === null ? null : (operandLow + cpu.y) & 0xff;
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      case "absolute":
+        operandText = `$${formatDecodeHex(operandWord, 4)}`;
+        if (meta.name === "JMP" || meta.name === "JSR") {
+          branchTarget = operandWord;
+        } else {
+          effectiveAddress = operandWord;
+          resolvedValue = readValueAt(effectiveAddress);
+        }
+        break;
+      case "absoluteX":
+        operandText = `$${formatDecodeHex(operandWord, 4)},X`;
+        effectiveAddress =
+          operandWord === null ? null : normalizeAddress(operandWord + cpu.x);
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      case "absoluteY":
+        operandText = `$${formatDecodeHex(operandWord, 4)},Y`;
+        effectiveAddress =
+          operandWord === null ? null : normalizeAddress(operandWord + cpu.y);
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      case "indirect":
+        operandText = `($${formatDecodeHex(operandWord, 4)})`;
+        branchTarget = operandWord === null ? null : getDebugWordBug(nes, operandWord);
+        break;
+      case "indexedIndirect": {
+        operandText = `($${formatDecodeHex(operandLow, 2)},X)`;
+        const pointer = operandLow === null ? null : (operandLow + cpu.x) & 0xff;
+        effectiveAddress = pointer === null ? null : getZeroPagePointer(nes, pointer);
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      }
+      case "indirectIndexed": {
+        operandText = `($${formatDecodeHex(operandLow, 2)}),Y`;
+        const baseAddress =
+          operandLow === null ? null : getZeroPagePointer(nes, operandLow);
+        effectiveAddress =
+          baseAddress === null ? null : normalizeAddress(baseAddress + cpu.y);
+        resolvedValue = readValueAt(effectiveAddress);
+        break;
+      }
+      case "relative": {
+        const offset =
+          operandLow === null ? null : operandLow < 0x80 ? operandLow : operandLow - 0x100;
+        branchTarget =
+          offset === null ? null : normalizeAddress(instructionAddress + length + offset);
+        operandText = `$${formatDecodeHex(branchTarget, 4)}`;
+        break;
+      }
+      case "accumulator":
+        operandText = "A";
+        resolvedValue = cpu.a;
+        break;
+      case "implied":
+      default:
+        break;
+    }
+
+    return {
+      address: instructionAddress,
+      baseCycles: meta.cycles,
+      branchTarget,
+      bytes,
+      effectiveAddress,
+      isCurrent,
+      length,
+      mnemonic: meta.name,
+      mode: meta.mode,
+      opcode,
+      operandText,
+      pageCrossCyclePossible: meta.pageCycle,
+      resolvedValue,
+    };
+  }
+  function getDisassembly(nes) {
+    const currentAddress = normalizeAddress(nes.cpu.pc);
+    const scanStart = Math.max(0x0000, currentAddress - DISASSEMBLY_SCAN_BACK_BYTES);
+    const previousEntries = [];
+    let cursor = scanStart;
+    while (cursor < currentAddress) {
+      const entry = decodeInstruction(nes, cursor);
+      previousEntries.push(entry);
+      cursor += Math.max(1, entry.length);
+    }
+
+    const currentEntry = decodeInstruction(nes, currentAddress, true);
+    const nextEntries = [];
+    cursor = currentAddress + Math.max(1, currentEntry.length);
+
+    while (cursor <= 0xffff && nextEntries.length < DISASSEMBLY_AFTER_COUNT) {
+      const entry = decodeInstruction(nes, cursor);
+      nextEntries.push(entry);
+      cursor += Math.max(1, entry.length);
+    }
+
+    return {
+      currentAddress,
+      entries: [
+        ...previousEntries.slice(-DISASSEMBLY_BEFORE_COUNT),
+        currentEntry,
+        ...nextEntries,
+      ],
+    };
+  }
   function setDebugByte(address, value) {
     return withActiveNES((nes) => {
       const normalizedAddress = normalizeAddress(address);
@@ -2087,7 +2302,10 @@ export function createNesEmulator({
       const memory = new Array(safeLength);
       for (let index = 0; index < safeLength; index += 1)
         memory[index] = getDebugByte(nes, baseAddress + index);
+      const instruction = decodeInstruction(nes, nes.cpu.pc, true);
       return {
+        disassembly: getDisassembly(nes),
+        instruction,
         memory: {
           bytes: memory,
           length: safeLength,
