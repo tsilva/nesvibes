@@ -3,8 +3,8 @@ import { getSentryOptions } from "$lib/sentry.js";
 
 const sentryOptions = getSentryOptions();
 
-globalThis.__nesvibesRasterOverflow = (message = "Sentry smoke test") => {
-  const error = new Error(`${message} [${new Date().toISOString()}]`);
+globalThis.__sentryTest = () => {
+  const error = new Error(`Sentry smoke test [${new Date().toISOString()}]`);
 
   if (sentryOptions) {
     Sentry.captureException(error);
