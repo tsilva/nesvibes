@@ -82,6 +82,18 @@ Run the project checks:
 npm run check
 ```
 
+Verify the production security header policy:
+
+```bash
+npm run check:headers
+```
+
+You can also verify a deployed URL matches the checked-in policy:
+
+```bash
+npm run check:headers -- https://nesvibes.tsilva.eu
+```
+
 ## 🎮 Controls
 
 ### ⌨️ Keyboard
@@ -158,6 +170,7 @@ static/roms/pdroms/nes/
 - 36 ROMs are cataloged; 35 are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
 - The emulator runs entirely client-side. Google Analytics is only loaded when `PUBLIC_GOOGLE_ANALYTICS_ID` is set, and it is deferred until after mount so it stays out of the render path.
 - Sentry is enabled when `PUBLIC_SENTRY_DSN` is set.
+- Production deployments attach static security headers from `vercel.json`, including CSP, HSTS, COOP, and clickjacking/content-sniffing protections.
 
 ## ⭐ Support
 
