@@ -6,7 +6,6 @@ const CPU_FLAG_BREAK = 0x10;
 const CPU_FLAG_UNUSED = 0x20;
 const CPU_FLAG_OVERFLOW = 0x40;
 const CPU_FLAG_NEGATIVE = 0x80;
-
 const NES_PALETTE = [
   [124, 124, 124], [0, 0, 252], [0, 0, 188], [68, 40, 188],
   [148, 0, 132], [168, 0, 32], [168, 16, 0], [136, 20, 0],
@@ -25,7 +24,6 @@ const NES_PALETTE = [
   [248, 216, 120], [216, 248, 120], [184, 248, 184], [184, 248, 216],
   [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0],
 ];
-
 const NTSC_CPU_CLOCK = 1789773;
 const LENGTH_TABLE = [
   10, 254, 20, 2, 40, 4, 80, 6,
@@ -91,20 +89,18 @@ const APU_DEFAULTS = {
   lowPass14k: null,
 };
 const CARTRIDGE_TYPES = {};
-
 function wrapIndex(index, size) { return size <= 0 ? 0 : index % size; }
 function resetFields(target, defaults) { Object.assign(target, defaults); }
 function setLengthEnabled(channel, enabled) { channel.enabled = enabled; if (!enabled) channel.lengthCounter = 0; }
 function writeTimerLow(channel, value) { channel.timerPeriod = (channel.timerPeriod & 0x0700) | value; }
 function loadLengthCounter(channel, value) { if (channel.enabled) channel.lengthCounter = LENGTH_TABLE[(value >> 3) & 0x1f]; }
 function clockLengthCounter(channel, halted) { if (channel.lengthCounter > 0 && !halted) channel.lengthCounter -= 1; }
-
+function getBankOffset(addr, shift) { return addr & ((1 << shift) - 1); }
 class Cartridge {
   static fromINES(bytes) {
     if (bytes.length < 16) {
       throw new Error("ROM is too small to contain an iNES header");
     }
-
     if (
       bytes[0] !== 0x4e ||
       bytes[1] !== 0x45 ||
@@ -113,17 +109,14 @@ class Cartridge {
     ) {
       throw new Error("ROM does not contain a valid iNES header");
     }
-
     const prgBanks = bytes[4];
     const chrBanks = bytes[5];
     const flags6 = bytes[6];
     const flags7 = bytes[7];
     const mapper = (flags6 >> 4) | (flags7 & 0xf0);
-
     if (flags6 & 0x04) {
       throw new Error("Trainer ROMs are not supported");
     }
-
     const prgSize = prgBanks * 0x4000;
     const chrSize = chrBanks * 0x2000;
     const offset = 16;
@@ -138,17 +131,14 @@ class Cartridge {
       fourScreen: (flags6 & 0x08) !== 0,
       prgRamSize: (bytes[8] || 1) * 0x2000,
     };
-
     const CartridgeType = CARTRIDGE_TYPES[mapper];
     if (CartridgeType) {
       return new CartridgeType(common);
     }
-
     throw new Error(
       `Unsupported mapper ${mapper}. This build supports mappers 0, 1, 2, 3, and 4.`
     );
   }
-
   constructor({ prgRom, chrRom, hasChrRam, mirroring, fourScreen = false, prgRamSize = 0 }) {
     this.prgRom = prgRom;
     this.chrRom = chrRom;
@@ -159,156 +149,109 @@ class Cartridge {
     this.prgRamEnabled = this.prgRam.length > 0;
     this.prgRamWriteProtected = false;
   }
-
-  reset() {
-    this.prgRamEnabled = this.prgRam.length > 0;
-    this.prgRamWriteProtected = false;
+  reset() { this.prgRamEnabled = this.prgRam.length > 0; this.prgRamWriteProtected = false; }
+  getNametableRamSize() { return this.fourScreen ? 0x1000 : 0x0800; }
+  normalizePrgBank(bank, shift) { return wrapIndex(bank, Math.max(1, this.prgRom.length >> shift)); }
+  normalizeChrBank(bank, shift) { return wrapIndex(bank, Math.max(1, this.chrRom.length >> shift)); }
+  getPrgBankAddress(addr, bank, shift) {
+    return this.normalizePrgBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift);
   }
-
-  getNametableRamSize() {
-    return this.fourScreen ? 0x1000 : 0x0800;
+  getChrBankAddress(addr, bank, shift) {
+    return this.normalizeChrBank(bank, shift) * (1 << shift) + getBankOffset(addr, shift);
   }
-
-  normalizePrgBank(bank, shift) {
-    return wrapIndex(bank, Math.max(1, this.prgRom.length >> shift));
+  readBankedPrg(addr, bank, shift) {
+    return this.prgRom[this.getPrgBankAddress(addr, bank, shift)];
   }
-
-  normalizeChrBank(bank, shift) {
-    return wrapIndex(bank, Math.max(1, this.chrRom.length >> shift));
+  readBankedChr(addr, bank, shift) {
+    return this.chrRom[this.getChrBankAddress(addr, bank, shift)];
   }
-
-  readPrg() {
-    return 0;
+  writeBankedChr(addr, value, bank, shift) {
+    if (this.hasChrRam) this.chrRom[this.getChrBankAddress(addr, bank, shift)] = value & 0xff;
   }
-
+  readPrg() { return 0; }
   writePrg() {}
-
   readPrgRam(addr) {
     if (!this.prgRamEnabled || this.prgRam.length === 0) {
       return 0;
     }
-
     return this.prgRam[wrapIndex(addr - 0x6000, this.prgRam.length)];
   }
-
   writePrgRam(addr, value) {
     if (!this.prgRamEnabled || this.prgRamWriteProtected || this.prgRam.length === 0) {
       return;
     }
-
     this.prgRam[wrapIndex(addr - 0x6000, this.prgRam.length)] = value & 0xff;
   }
-
   readChr(addr) {
     return this.chrRom[wrapIndex(addr & 0x1fff, this.chrRom.length)];
   }
-
   writeChr(addr, value) {
     if (this.hasChrRam) {
       this.chrRom[wrapIndex(addr & 0x1fff, this.chrRom.length)] = value;
     }
   }
-
   mirrorNametableAddress(addr) {
     if (this.fourScreen) {
       return addr & 0x0fff;
     }
-
     const index = addr & 0x0fff;
     const table = index >> 10;
     const offset = index & 0x03ff;
-
     if (this.mirroring === "single-screen-lower") {
       return offset;
     }
-
     if (this.mirroring === "single-screen-upper") {
       return 0x0400 + offset;
     }
-
     if (this.mirroring === "vertical") {
       return (table & 0x01) * 0x0400 + offset;
     }
-
     return ((table >> 1) & 0x01) * 0x0400 + offset;
   }
-
   clockScanline() {}
-
-  hasIRQ() {
-    return false;
-  }
+  hasIRQ() { return false; }
 }
-
 class NROMCartridge extends Cartridge {
   readPrg(addr) {
-    let index = addr - 0x8000;
-    if (this.prgRom.length === 0x4000) {
-      index &= 0x3fff;
-    }
-    return this.prgRom[index];
+    return this.prgRom[this.prgRom.length === 0x4000 ? addr & 0x3fff : addr - 0x8000];
   }
 }
-
 class UxROMCartridge extends Cartridge {
   constructor(options) {
     super(options);
     this.prgBank = 0;
     this.reset();
   }
-
   reset() {
     super.reset();
     this.prgBank = 0;
   }
-
   readPrg(addr) {
-    const slot = (addr - 0x8000) >> 14;
-    const bank = slot === 0 ? this.prgBank : (this.prgRom.length >> 14) - 1;
-    const index = bank * 0x4000 + (addr & 0x3fff);
-    return this.prgRom[this.normalizePrgBank(bank, 14) * 0x4000 + (addr & 0x3fff)];
+    return this.readBankedPrg(addr, ((addr - 0x8000) >> 14) === 0 ? this.prgBank : (this.prgRom.length >> 14) - 1, 14);
   }
-
-  writePrg(addr, value) {
-    this.prgBank = value & 0xff;
-  }
+  writePrg(_, value) { this.prgBank = value & 0xff; }
 }
-
 class CNROMCartridge extends NROMCartridge {
   constructor(options) {
     super(options);
     this.chrBank = 0;
     this.reset();
   }
-
   reset() {
     super.reset();
     this.chrBank = 0;
   }
-
   readChr(addr) {
-    return this.chrRom[this.normalizeChrBank(this.chrBank, 13) * 0x2000 + (addr & 0x1fff)];
+    return this.readBankedChr(addr, this.chrBank, 13);
   }
-
-  writeChr(addr, value) {
-    if (!this.hasChrRam) {
-      return;
-    }
-
-    this.chrRom[this.normalizeChrBank(this.chrBank, 13) * 0x2000 + (addr & 0x1fff)] = value & 0xff;
-  }
-
-  writePrg(addr, value) {
-    this.chrBank = value & 0xff;
-  }
+  writeChr(addr, value) { this.writeBankedChr(addr, value, this.chrBank, 13); }
+  writePrg(_, value) { this.chrBank = value & 0xff; }
 }
-
 class MMC1Cartridge extends Cartridge {
   constructor(options) {
     super(options);
     this.reset();
   }
-
   reset() {
     super.reset();
     resetFields(this, {
@@ -322,7 +265,6 @@ class MMC1Cartridge extends Cartridge {
       this.mirroring = "horizontal";
     }
   }
-
   readPrg(addr) {
     const mode = (this.control >> 2) & 0x03;
     const slot = (addr - 0x8000) >> 14;
@@ -332,9 +274,8 @@ class MMC1Cartridge extends Cartridge {
       : mode === 2
         ? (slot === 0 ? 0 : this.prgBank)
         : (slot === 0 ? this.prgBank : lastBank);
-    return this.prgRom[this.normalizePrgBank(bank, 14) * 0x4000 + (addr & 0x3fff)];
+    return this.readBankedPrg(addr, bank, 14);
   }
-
   writePrg(addr, value) {
     if (value & 0x80) {
       this.shiftRegister = 0x10;
@@ -342,14 +283,11 @@ class MMC1Cartridge extends Cartridge {
       this.updateMirroring();
       return;
     }
-
     const commit = (this.shiftRegister & 0x01) !== 0;
     this.shiftRegister = (this.shiftRegister >> 1) | ((value & 0x01) << 4);
-
     if (!commit) {
       return;
     }
-
     const data = this.shiftRegister & 0x1f;
     if (addr < 0xa000) {
       this.control = data;
@@ -362,49 +300,31 @@ class MMC1Cartridge extends Cartridge {
       this.prgBank = data & 0x0f;
       this.prgRamEnabled = this.prgRam.length > 0 && (data & 0x10) === 0;
     }
-
     this.shiftRegister = 0x10;
   }
-
   readChr(addr) {
-    const bank = this.resolveChrBank(addr);
-    const index = bank * 0x1000 + (addr & 0x0fff);
-    return this.chrRom[index];
+    return this.readBankedChr(addr, this.resolveChrBank(addr), 12);
   }
-
-  writeChr(addr, value) {
-    if (!this.hasChrRam) {
-      return;
-    }
-
-    const bank = this.resolveChrBank(addr);
-    const index = bank * 0x1000 + (addr & 0x0fff);
-    this.chrRom[index] = value & 0xff;
-  }
-
+  writeChr(addr, value) { this.writeBankedChr(addr, value, this.resolveChrBank(addr), 12); }
   resolveChrBank(addr) {
     if (((this.control >> 4) & 0x01) === 0) {
       return this.normalizeChrBank((this.chrBank0 & 0x1e) + ((addr & 0x1000) >> 12), 12);
     }
-
     const bank = (addr & 0x1000) === 0 ? this.chrBank0 : this.chrBank1;
     return this.normalizeChrBank(bank, 12);
   }
-
   updateMirroring() {
     if (!this.fourScreen) {
       this.mirroring = MMC1_MIRRORING_MODES[this.control & 0x03];
     }
   }
 }
-
 class MMC3Cartridge extends Cartridge {
   constructor(options) {
     super(options);
     this.bankRegisters = new Uint8Array(8);
     this.reset();
   }
-
   reset() {
     super.reset();
     resetFields(this, {
@@ -421,7 +341,6 @@ class MMC3Cartridge extends Cartridge {
     this.bankRegisters[6] = 0;
     this.bankRegisters[7] = 1;
   }
-
   readPrg(addr) {
     const slot = (addr - 0x8000) >> 13;
     const lastBank = (this.prgRom.length >> 13) - 1;
@@ -432,12 +351,10 @@ class MMC3Cartridge extends Cartridge {
       this.prgMode ? this.bankRegisters[6] : secondLastBank,
       lastBank,
     ][slot];
-    return this.prgRom[this.normalizePrgBank(bank, 13) * 0x2000 + (addr & 0x1fff)];
+    return this.readBankedPrg(addr, bank, 13);
   }
-
   writePrg(addr, value) {
     const address = addr & 0xffff;
-
     if (address < 0xa000) {
       if ((address & 1) === 0) {
         this.bankSelect = value & 0x07;
@@ -448,7 +365,6 @@ class MMC3Cartridge extends Cartridge {
       }
       return;
     }
-
     if (address < 0xc000) {
       if ((address & 1) === 0) {
         if (!this.fourScreen) {
@@ -460,7 +376,6 @@ class MMC3Cartridge extends Cartridge {
       }
       return;
     }
-
     if (address < 0xe000) {
       if ((address & 1) === 0) {
         this.irqLatch = value & 0xff;
@@ -469,7 +384,6 @@ class MMC3Cartridge extends Cartridge {
       }
       return;
     }
-
     if ((address & 1) === 0) {
       this.irqEnabled = false;
       this.irqPending = false;
@@ -477,27 +391,22 @@ class MMC3Cartridge extends Cartridge {
       this.irqEnabled = true;
     }
   }
-
   writeBankData(value) {
     this.bankRegisters[this.bankSelect] = value & (this.bankSelect <= 1 ? 0xfe : 0xff);
   }
-
   getChrAddress(addr) {
     const slot = (addr & 0x1fff) >> 10;
     const [registerIndex, offset] = MMC3_CHR_BANK_SELECTORS[this.chrMode][slot];
     return this.normalizeChrBank(this.bankRegisters[registerIndex] + offset, 10) * 0x0400 + (addr & 0x03ff);
   }
-
   readChr(addr) {
     return this.chrRom[this.getChrAddress(addr)];
   }
-
   writeChr(addr, value) {
     if (this.hasChrRam) {
       this.chrRom[this.getChrAddress(addr)] = value & 0xff;
     }
   }
-
   clockScanline() {
     if (this.irqCounter === 0 || this.irqReload) {
       this.irqCounter = this.irqLatch;
@@ -505,17 +414,14 @@ class MMC3Cartridge extends Cartridge {
     } else {
       this.irqCounter = (this.irqCounter - 1) & 0xff;
     }
-
     if (this.irqCounter === 0 && this.irqEnabled) {
       this.irqPending = true;
     }
   }
-
   hasIRQ() {
     return this.irqPending;
   }
 }
-
 Object.assign(CARTRIDGE_TYPES, {
   0: NROMCartridge,
   1: MMC1Cartridge,
@@ -523,7 +429,6 @@ Object.assign(CARTRIDGE_TYPES, {
   3: CNROMCartridge,
   4: MMC3Cartridge,
 });
-
 class Controller {
   constructor() {
     resetFields(this, {
@@ -532,20 +437,17 @@ class Controller {
       strobe: 0,
     });
   }
-
   setButton(button, pressed) {
     const bit = CONTROLLER_BUTTON_BITS[button];
     if (bit === undefined) {
       return;
     }
-
     if (pressed) {
       this.state |= 1 << bit;
     } else {
       this.state &= ~(1 << bit);
     }
   }
-
   write(value) {
     const nextStrobe = value & 1;
     if (this.strobe === 1 && nextStrobe === 0) {
@@ -556,10 +458,8 @@ class Controller {
       this.shift = this.state;
     }
   }
-
   read() {
     let value;
-
     if (this.strobe) {
       value = this.state & 1;
       this.shift = this.state;
@@ -567,11 +467,9 @@ class Controller {
       value = this.shift & 1;
       this.shift = (this.shift >> 1) | 0x80;
     }
-
     return value | 0x40;
   }
 }
-
 class PPU {
   constructor(cartridge) {
     this.cartridge = cartridge;
@@ -581,28 +479,22 @@ class PPU {
     this.framebuffer = new Uint8ClampedArray(256 * 240 * 4);
     this.reset();
   }
-
   reset() {
     resetFields(this, PPU_DEFAULTS);
     this.lineSprites = [];
   }
-
   isRenderingEnabled() {
     return (this.mask & 0x18) !== 0;
   }
-
   backgroundEnabled() {
     return (this.mask & 0x08) !== 0;
   }
-
   spritesEnabled() {
     return (this.mask & 0x10) !== 0;
   }
-
   triggerNMI() {
     this.nmiPending = true;
   }
-
   pollNMI() {
     if (!this.nmiPending) {
       return false;
@@ -610,11 +502,9 @@ class PPU {
     this.nmiPending = false;
     return true;
   }
-
   readRegister(addr) {
     const reg = addr & 0x2007;
     let value = this.openBus;
-
     switch (reg) {
       case 0x2002:
         value = (this.status & 0xe0) | (this.openBus & 0x1f);
@@ -627,7 +517,6 @@ class PPU {
       case 0x2007: {
         const address = this.v & 0x3fff;
         const readValue = this.read(address);
-
         if (address >= 0x3f00) {
           value = readValue;
           this.readBuffer = this.read(address - 0x1000);
@@ -635,21 +524,17 @@ class PPU {
           value = this.readBuffer;
           this.readBuffer = readValue;
         }
-
         this.incrementVramAddress();
         break;
       }
       default:
         break;
     }
-
     this.openBus = value;
     return value;
   }
-
   writeRegister(addr, value) {
     this.openBus = value;
-
     switch (addr & 0x2007) {
       case 0x2000: {
         const wasNmiEnabled = (this.ctrl & 0x80) !== 0;
@@ -698,47 +583,36 @@ class PPU {
         break;
     }
   }
-
   writeOamDma(buffer) {
     for (let i = 0; i < 256; i += 1) {
       this.oam[(this.oamAddr + i) & 0xff] = buffer[i];
     }
   }
-
   incrementVramAddress() {
     this.v = (this.v + ((this.ctrl & 0x04) ? 32 : 1)) & 0x7fff;
   }
-
   read(addr) {
     const address = addr & 0x3fff;
-
     if (address < 0x2000) {
       return this.cartridge.readChr(address);
     }
-
     if (address < 0x3f00) {
       return this.nametableRam[this.cartridge.mirrorNametableAddress(address)];
     }
-
     return this.paletteRam[this.normalizePaletteAddress(address)];
   }
-
   write(addr, value) {
     const address = addr & 0x3fff;
-
     if (address < 0x2000) {
       this.cartridge.writeChr(address, value);
       return;
     }
-
     if (address < 0x3f00) {
       this.nametableRam[this.cartridge.mirrorNametableAddress(address)] = value;
       return;
     }
-
     this.paletteRam[this.normalizePaletteAddress(address)] = value & 0x3f;
   }
-
   normalizePaletteAddress(addr) {
     let index = addr & 0x1f;
     if (index === 0x10 || index === 0x14 || index === 0x18 || index === 0x1c) {
@@ -746,7 +620,6 @@ class PPU {
     }
     return index;
   }
-
   incrementX() {
     if ((this.v & 0x001f) === 31) {
       this.v &= ~0x001f;
@@ -755,16 +628,13 @@ class PPU {
       this.v += 1;
     }
   }
-
   incrementY() {
     if ((this.v & 0x7000) !== 0x7000) {
       this.v += 0x1000;
       return;
     }
-
     this.v &= ~0x7000;
     let y = (this.v & 0x03e0) >> 5;
-
     if (y === 29) {
       y = 0;
       this.v ^= 0x0800;
@@ -773,21 +643,16 @@ class PPU {
     } else {
       y += 1;
     }
-
     this.v = (this.v & ~0x03e0) | (y << 5);
   }
-
   copyHorizontalBits() {
     this.v = (this.v & ~0x041f) | (this.t & 0x041f);
   }
-
   copyVerticalBits() {
     this.v = (this.v & ~0x7be0) | (this.t & 0x7be0);
   }
-
   rewindHorizontalTiles(addr, count) {
     let value = addr;
-
     for (let i = 0; i < count; i += 1) {
       if ((value & 0x001f) === 0) {
         value = (value & ~0x001f) | 31;
@@ -796,25 +661,20 @@ class PPU {
         value -= 1;
       }
     }
-
     return value;
   }
-
   decodeBackgroundPixel(screenX) {
     if (!this.backgroundEnabled()) {
       return { pixel: 0, palette: 0 };
     }
-
     if (screenX < 8 && (this.mask & 0x02) === 0) {
       return { pixel: 0, palette: 0 };
     }
-
     const coarseXBase = this.lineBaseV & 0x001f;
     const coarseY = (this.lineBaseV >> 5) & 0x001f;
     const nametableXBase = (this.lineBaseV >> 10) & 0x01;
     const nametableY = (this.lineBaseV >> 11) & 0x01;
     const fineY = (this.lineBaseV >> 12) & 0x07;
-
     const pixelOffset = this.x + screenX;
     const tileX = (coarseXBase + (pixelOffset >> 3)) & 0x1f;
     const nametableX = nametableXBase ^ ((coarseXBase + (pixelOffset >> 3)) >> 5);
@@ -832,38 +692,29 @@ class PPU {
     const pixel = ((low >> bit) & 0x01) | (((high >> bit) & 0x01) << 1);
     return { pixel, palette };
   }
-
   getSpritePixel(screenX, screenY) {
     if (!this.spritesEnabled()) {
       return null;
     }
-
     if (screenX < 8 && (this.mask & 0x04) === 0) {
       return null;
     }
-
     const spriteHeight = (this.ctrl & 0x20) ? 16 : 8;
-
     for (const sprite of this.lineSprites) {
       if (screenX < sprite.x || screenX >= sprite.x + 8) {
         continue;
       }
-
       let row = screenY - (sprite.y + 1);
       let column = screenX - sprite.x;
-
       if (sprite.attributes & 0x80) {
         row = spriteHeight - 1 - row;
       }
-
       if (sprite.attributes & 0x40) {
         column = 7 - column;
       }
-
       let patternBase;
       let tileIndex;
       let fineY = row;
-
       if (spriteHeight === 16) {
         patternBase = (sprite.tileIndex & 0x01) * 0x1000;
         tileIndex = sprite.tileIndex & 0xfe;
@@ -875,17 +726,14 @@ class PPU {
         patternBase = (this.ctrl & 0x08) ? 0x1000 : 0x0000;
         tileIndex = sprite.tileIndex;
       }
-
       const patternAddress = patternBase + tileIndex * 16 + fineY;
       const low = this.read(patternAddress);
       const high = this.read(patternAddress + 8);
       const bit = 7 - column;
       const pixel = ((low >> bit) & 0x01) | (((high >> bit) & 0x01) << 1);
-
       if (pixel === 0) {
         continue;
       }
-
       return {
         pixel,
         palette: (sprite.attributes & 0x03) + 4,
@@ -893,24 +741,19 @@ class PPU {
         sprite0: sprite.index === 0,
       };
     }
-
     return null;
   }
-
   evaluateSpritesForScanline(scanline) {
     this.lineSprites = [];
     const spriteHeight = (this.ctrl & 0x20) ? 16 : 8;
     let visibleCount = 0;
-
     for (let i = 0; i < 64; i += 1) {
       const base = i * 4;
       const y = this.oam[base];
       const row = scanline - (y + 1);
-
       if (row < 0 || row >= spriteHeight) {
         continue;
       }
-
       visibleCount += 1;
       if (this.lineSprites.length < 8) {
         this.lineSprites.push({
@@ -922,51 +765,41 @@ class PPU {
         });
       }
     }
-
     if (visibleCount > 8) {
       this.status |= 0x20;
     }
   }
-
   readColor(paletteIndex, pixel) {
     const colorIndex = pixel === 0
       ? this.paletteRam[0] & 0x3f
       : this.paletteRam[this.normalizePaletteAddress(0x3f00 + paletteIndex * 4 + pixel)] & 0x3f;
     return NES_PALETTE[colorIndex];
   }
-
   renderPixel() {
     const screenX = this.cycle - 1;
     const screenY = this.scanline;
     const bg = this.decodeBackgroundPixel(screenX);
     const sprite = this.getSpritePixel(screenX, screenY);
-
     let color = this.readColor(0, 0);
-
     if (sprite && sprite.sprite0 && sprite.pixel !== 0 && bg.pixel !== 0 && screenX < 255) {
       this.status |= 0x40;
     }
-
     if (sprite && sprite.pixel !== 0 && (bg.pixel === 0 || !sprite.priorityBehindBackground)) {
       color = this.readColor(sprite.palette, sprite.pixel);
     } else if (bg.pixel !== 0) {
       color = this.readColor(bg.palette, bg.pixel);
     }
-
     const offset = (screenY * 256 + screenX) * 4;
     this.framebuffer[offset] = color[0];
     this.framebuffer[offset + 1] = color[1];
     this.framebuffer[offset + 2] = color[2];
     this.framebuffer[offset + 3] = 255;
   }
-
   step() {
     const rendering = this.isRenderingEnabled();
-
     if (this.scanline === 261 && this.cycle === 1) {
       this.status &= ~0xe0;
     }
-
     if (this.scanline === 241 && this.cycle === 1) {
       this.status |= 0x80;
       this.frameReady = true;
@@ -974,7 +807,6 @@ class PPU {
         this.triggerNMI();
       }
     }
-
     if (this.scanline >= 0 && this.scanline < 240 && this.cycle === 0) {
       // `v` has already advanced through the two background prefetch tiles
       // for the next scanline. This renderer samples pixels directly rather
@@ -982,36 +814,29 @@ class PPU {
       this.lineBaseV = this.rewindHorizontalTiles(this.v, 2);
       this.evaluateSpritesForScanline(this.scanline);
     }
-
     if (this.scanline >= 0 && this.scanline < 240 && this.cycle >= 1 && this.cycle <= 256) {
       this.renderPixel();
     }
-
     if (rendering) {
       const isVisibleCycle = (this.cycle >= 1 && this.cycle <= 256) || (this.cycle >= 321 && this.cycle <= 336);
       if ((this.scanline >= 0 && this.scanline < 240) || this.scanline === 261) {
         if (isVisibleCycle && (this.cycle & 0x07) === 0) {
           this.incrementX();
         }
-
         if (this.cycle === 256) {
           this.incrementY();
         }
-
         if (this.cycle === 257) {
           this.copyHorizontalBits();
         }
-
         if (this.scanline === 261 && this.cycle >= 280 && this.cycle <= 304) {
           this.copyVerticalBits();
         }
       }
     }
-
     if (rendering && this.scanline >= 0 && this.scanline < 240 && this.cycle === 260) {
       this.cartridge.clockScanline();
     }
-
     this.cycle += 1;
     if (this.cycle > 340) {
       this.cycle = 0;
@@ -1022,19 +847,16 @@ class PPU {
     }
   }
 }
-
 class CPU6502 {
   constructor(bus) {
     this.bus = bus;
     resetFields(this, CPU_DEFAULTS);
   }
-
   reset() {
     resetFields(this, CPU_DEFAULTS);
     this.stallCycles = 7;
     this.pc = this.read16(0xfffc);
   }
-
   setFlag(flag, enabled) {
     if (enabled) {
       this.p |= flag;
@@ -1042,39 +864,32 @@ class CPU6502 {
       this.p &= ~flag;
     }
   }
-
   getFlag(flag) {
     return (this.p & flag) !== 0;
   }
-
   setZN(value) {
     this.setFlag(CPU_FLAG_ZERO, (value & 0xff) === 0);
     this.setFlag(CPU_FLAG_NEGATIVE, (value & 0x80) !== 0);
   }
-
   read(addr) { return this.bus.read(addr); }
-
   write(addr, value) {
     const stall = this.bus.write(addr, value & 0xff);
     if (stall) {
       this.stallCycles += stall + ((this.bus.ppu.cycle & 1) ? 1 : 0);
     }
   }
-
   read16(addr) { return this.read(addr) | (this.read((addr + 1) & 0xffff) << 8); }
   read16Bug(addr) { return this.read(addr) | (this.read((addr & 0xff00) | ((addr + 1) & 0x00ff)) << 8); }
   push(value) { this.write(0x0100 | this.s, value); this.s = (this.s - 1) & 0xff; }
   pull() { this.s = (this.s + 1) & 0xff; return this.read(0x0100 | this.s); }
   push16(value) { this.push((value >> 8) & 0xff); this.push(value & 0xff); }
   pull16() { return this.pull() | (this.pull() << 8); }
-
   serviceInterrupt(vector, breakFlag) {
     this.push16(this.pc);
     this.push((this.p & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED | (breakFlag ? CPU_FLAG_BREAK : 0));
     this.setFlag(CPU_FLAG_INTERRUPT, true);
     this.pc = this.read16(vector);
   }
-
   pageCrossed(a, b) { return (a & 0xff00) !== (b & 0xff00); }
   immediate() { const addr = this.pc; this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
   zeroPage() { const addr = this.read(this.pc); this.pc = (this.pc + 1) & 0xffff; return { addr, pageCrossed: false }; }
@@ -1099,17 +914,14 @@ class CPU6502 {
   relative() { const offset = this.read(this.pc); this.pc = (this.pc + 1) & 0xffff; return { offset: offset < 0x80 ? offset : offset - 0x100 }; }
   accumulator() { return { addr: null, pageCrossed: false }; }
   implied() { return { addr: null, pageCrossed: false }; }
-
   branchIf(condition, offset) {
     if (!condition) {
       return 0;
     }
-
     const previous = this.pc;
     this.pc = (this.pc + offset) & 0xffff;
     return this.pageCrossed(previous, this.pc) ? 2 : 1;
   }
-
   adc(value) {
     const carry = this.getFlag(CPU_FLAG_CARRY) ? 1 : 0;
     const sum = this.a + value + carry;
@@ -1119,45 +931,36 @@ class CPU6502 {
     this.a = result;
     this.setZN(this.a);
   }
-
   compare(register, value) { const result = (register - value) & 0xff; this.setFlag(CPU_FLAG_CARRY, register >= value); this.setZN(result); }
-
   step() {
     if (this.stallCycles > 0) {
       this.stallCycles -= 1;
       return 1;
     }
-
     if (this.bus.pollNMI()) {
       this.serviceInterrupt(0xfffa, false);
       return 7;
     }
-
     if (!this.getFlag(CPU_FLAG_INTERRUPT) && this.bus.hasIRQ()) {
       this.serviceInterrupt(0xfffe, false);
       return 7;
     }
-
     const opcode = this.read(this.pc);
     this.pc = (this.pc + 1) & 0xffff;
     const meta = OPCODES[opcode];
-
     if (!meta) {
       throw new Error(
         `Unsupported opcode 0x${opcode.toString(16).padStart(2, "0")} at 0x${((this.pc - 1) & 0xffff).toString(16).padStart(4, "0")}`
       );
     }
-
     const operand = this[meta.mode]();
     const handler = CPU_INSTRUCTION_HANDLERS[meta.name];
     if (!handler) {
       throw new Error(`Opcode handler missing for ${meta.name}`);
     }
-
     return meta.cycles + handler(this, operand, meta) + (meta.pageCycle && operand.pageCrossed ? 1 : 0);
   }
 }
-
 function readOperand(cpu, operand) { return cpu.read(operand.addr); }
 function writeOperand(cpu, operand, value) { cpu.write(operand.addr, value); }
 function mutateAccumulator(cpu, operand, operation) {
@@ -1177,28 +980,23 @@ function branchOnFlag(flag, enabled) { return (cpu, operand) => cpu.branchIf(cpu
 function compareRegister(register) { return (cpu, operand) => (cpu.compare(cpu[register], readOperand(cpu, operand)), 0); }
 function loadRegister(register) { return (cpu, operand) => ((cpu[register] = readOperand(cpu, operand)), cpu.setZN(cpu[register]), 0); }
 function storeRegister(register) { return (cpu, operand) => (writeOperand(cpu, operand, cpu[register]), 0); }
-function transferRegister(target, source, setZN = true) {
-  return (cpu) => ((cpu[target] = cpu[source]), setZN && cpu.setZN(cpu[target]), 0);
-}
+function transferRegister(target, source, setZN = true) { return (cpu) => ((cpu[target] = cpu[source]), setZN && cpu.setZN(cpu[target]), 0); }
 function setFlagHandler(flag, enabled) { return (cpu) => (cpu.setFlag(flag, enabled), 0); }
-
+function adjustRegister(register, delta) { return (cpu) => ((cpu[register] = (cpu[register] + delta) & 0xff), cpu.setZN(cpu[register]), 0); }
+function jumpToOperand(pushReturn = false) { return (cpu, operand) => ((pushReturn && cpu.push16((cpu.pc - 1) & 0xffff)), (cpu.pc = operand.addr), 0); }
+function accumulatorOp(operation) { return (cpu, operand) => mutateAccumulator(cpu, operand, operation); }
+function adjustOperand(delta) { return (cpu, operand, meta) => readModifyWrite(cpu, operand, meta, (_, value) => value + delta); }
+function pushRegister(register) { return (cpu) => (cpu.push(cpu[register]), 0); }
+function pullRegister(register) { return (cpu) => ((cpu[register] = cpu.pull()), cpu.setZN(cpu[register]), 0); }
 const CPU_INSTRUCTION_HANDLERS = {
-  ADC(cpu, operand) {
-    cpu.adc(readOperand(cpu, operand));
-    return 0;
-  },
-  AND(cpu, operand) {
-    return mutateAccumulator(cpu, operand, (a, b) => a & b);
-  },
+  ADC: (cpu, operand) => (cpu.adc(readOperand(cpu, operand)), 0),
+  AND: accumulatorOp((a, b) => a & b),
   ASL(cpu, operand, meta) {
     return readModifyWrite(cpu, operand, meta, (instance, value) => {
       instance.setFlag(CPU_FLAG_CARRY, (value & 0x80) !== 0);
       return value << 1;
     });
   },
-  BCC: branchOnFlag(CPU_FLAG_CARRY, false),
-  BCS: branchOnFlag(CPU_FLAG_CARRY, true),
-  BEQ: branchOnFlag(CPU_FLAG_ZERO, true),
   BIT(cpu, operand) {
     const value = readOperand(cpu, operand);
     cpu.setFlag(CPU_FLAG_ZERO, (cpu.a & value) === 0);
@@ -1206,89 +1004,27 @@ const CPU_INSTRUCTION_HANDLERS = {
     cpu.setFlag(CPU_FLAG_OVERFLOW, (value & 0x40) !== 0);
     return 0;
   },
-  BMI: branchOnFlag(CPU_FLAG_NEGATIVE, true),
-  BNE: branchOnFlag(CPU_FLAG_ZERO, false),
-  BPL: branchOnFlag(CPU_FLAG_NEGATIVE, false),
   BRK(cpu) {
     cpu.pc = (cpu.pc + 1) & 0xffff;
     cpu.serviceInterrupt(0xfffe, true);
     return 0;
   },
-  BVC: branchOnFlag(CPU_FLAG_OVERFLOW, false),
-  BVS: branchOnFlag(CPU_FLAG_OVERFLOW, true),
-  CLC: setFlagHandler(CPU_FLAG_CARRY, false),
-  CLD: setFlagHandler(CPU_FLAG_DECIMAL, false),
-  CLI: setFlagHandler(CPU_FLAG_INTERRUPT, false),
-  CLV: setFlagHandler(CPU_FLAG_OVERFLOW, false),
-  CMP: compareRegister("a"),
-  CPX: compareRegister("x"),
-  CPY: compareRegister("y"),
-  DEC(cpu, operand, meta) {
-    return readModifyWrite(cpu, operand, meta, (_, value) => value - 1);
-  },
-  DEX(cpu) {
-    cpu.x = (cpu.x - 1) & 0xff;
-    cpu.setZN(cpu.x);
-    return 0;
-  },
-  DEY(cpu) {
-    cpu.y = (cpu.y - 1) & 0xff;
-    cpu.setZN(cpu.y);
-    return 0;
-  },
-  EOR(cpu, operand) {
-    return mutateAccumulator(cpu, operand, (a, b) => a ^ b);
-  },
-  INC(cpu, operand, meta) {
-    return readModifyWrite(cpu, operand, meta, (_, value) => value + 1);
-  },
-  INX(cpu) {
-    cpu.x = (cpu.x + 1) & 0xff;
-    cpu.setZN(cpu.x);
-    return 0;
-  },
-  INY(cpu) {
-    cpu.y = (cpu.y + 1) & 0xff;
-    cpu.setZN(cpu.y);
-    return 0;
-  },
-  JMP(cpu, operand) {
-    cpu.pc = operand.addr;
-    return 0;
-  },
-  JSR(cpu, operand) {
-    cpu.push16((cpu.pc - 1) & 0xffff);
-    cpu.pc = operand.addr;
-    return 0;
-  },
-  LDA: loadRegister("a"),
-  LDX: loadRegister("x"),
-  LDY: loadRegister("y"),
+  DEC: adjustOperand(-1),
+  EOR: accumulatorOp((a, b) => a ^ b),
+  INC: adjustOperand(1),
+  JMP: jumpToOperand(),
+  JSR: jumpToOperand(true),
   LSR(cpu, operand, meta) {
     return readModifyWrite(cpu, operand, meta, (instance, value) => {
       instance.setFlag(CPU_FLAG_CARRY, (value & 0x01) !== 0);
       return value >> 1;
     });
   },
-  NOP() {
-    return 0;
-  },
-  ORA(cpu, operand) {
-    return mutateAccumulator(cpu, operand, (a, b) => a | b);
-  },
-  PHA(cpu) {
-    cpu.push(cpu.a);
-    return 0;
-  },
-  PHP(cpu) {
-    cpu.push(cpu.p | CPU_FLAG_BREAK | CPU_FLAG_UNUSED);
-    return 0;
-  },
-  PLA(cpu) {
-    cpu.a = cpu.pull();
-    cpu.setZN(cpu.a);
-    return 0;
-  },
+  NOP: () => 0,
+  ORA: accumulatorOp((a, b) => a | b),
+  PHA: pushRegister("a"),
+  PHP: (cpu) => (cpu.push(cpu.p | CPU_FLAG_BREAK | CPU_FLAG_UNUSED), 0),
+  PLA: pullRegister("a"),
   PLP(cpu) {
     cpu.p = (cpu.pull() & ~CPU_FLAG_BREAK) | CPU_FLAG_UNUSED;
     return 0;
@@ -1312,28 +1048,27 @@ const CPU_INSTRUCTION_HANDLERS = {
     cpu.pc = cpu.pull16();
     return 0;
   },
-  RTS(cpu) {
-    cpu.pc = (cpu.pull16() + 1) & 0xffff;
-    return 0;
-  },
-  SBC(cpu, operand) {
-    cpu.adc(readOperand(cpu, operand) ^ 0xff);
-    return 0;
-  },
-  SEC: setFlagHandler(CPU_FLAG_CARRY, true),
-  SED: setFlagHandler(CPU_FLAG_DECIMAL, true),
-  SEI: setFlagHandler(CPU_FLAG_INTERRUPT, true),
-  STA: storeRegister("a"),
-  STX: storeRegister("x"),
-  STY: storeRegister("y"),
-  TAX: transferRegister("x", "a"),
-  TAY: transferRegister("y", "a"),
-  TSX: transferRegister("x", "s"),
-  TXA: transferRegister("a", "x"),
-  TXS: transferRegister("s", "x", false),
-  TYA: transferRegister("a", "y"),
+  RTS: (cpu) => ((cpu.pc = (cpu.pull16() + 1) & 0xffff), 0),
+  SBC: (cpu, operand) => (cpu.adc(readOperand(cpu, operand) ^ 0xff), 0),
 };
-
+Object.assign(CPU_INSTRUCTION_HANDLERS, Object.fromEntries([
+  ["BCC", [CPU_FLAG_CARRY, false]], ["BCS", [CPU_FLAG_CARRY, true]], ["BEQ", [CPU_FLAG_ZERO, true]],
+  ["BMI", [CPU_FLAG_NEGATIVE, true]], ["BNE", [CPU_FLAG_ZERO, false]], ["BPL", [CPU_FLAG_NEGATIVE, false]],
+  ["BVC", [CPU_FLAG_OVERFLOW, false]], ["BVS", [CPU_FLAG_OVERFLOW, true]],
+].map(([name, args]) => [name, branchOnFlag(...args)])));
+Object.assign(CPU_INSTRUCTION_HANDLERS, Object.fromEntries([
+  ["CLC", [CPU_FLAG_CARRY, false]], ["CLD", [CPU_FLAG_DECIMAL, false]], ["CLI", [CPU_FLAG_INTERRUPT, false]],
+  ["CLV", [CPU_FLAG_OVERFLOW, false]], ["SEC", [CPU_FLAG_CARRY, true]], ["SED", [CPU_FLAG_DECIMAL, true]], ["SEI", [CPU_FLAG_INTERRUPT, true]],
+].map(([name, args]) => [name, setFlagHandler(...args)])));
+Object.assign(CPU_INSTRUCTION_HANDLERS, Object.fromEntries([
+  ["CMP", "a"], ["CPX", "x"], ["CPY", "y"], ["LDA", "a"], ["LDX", "x"], ["LDY", "y"], ["STA", "a"], ["STX", "x"], ["STY", "y"],
+].map(([name, register]) => [name, ({ CMP: compareRegister, CPX: compareRegister, CPY: compareRegister, LDA: loadRegister, LDX: loadRegister, LDY: loadRegister, STA: storeRegister, STX: storeRegister, STY: storeRegister })[name](register)])));
+Object.assign(CPU_INSTRUCTION_HANDLERS, Object.fromEntries([
+  ["DEX", ["x", -1]], ["DEY", ["y", -1]], ["INX", ["x", 1]], ["INY", ["y", 1]],
+].map(([name, args]) => [name, adjustRegister(...args)])));
+Object.assign(CPU_INSTRUCTION_HANDLERS, Object.fromEntries([
+  ["TAX", ["x", "a"]], ["TAY", ["y", "a"]], ["TSX", ["x", "s"]], ["TXA", ["a", "x"]], ["TXS", ["s", "x", false]], ["TYA", ["a", "y"]],
+].map(([name, args]) => [name, transferRegister(...args)])));
 const OPCODES = new Array(256);
 const OPCODE_SPECS = {
   ADC: "69 immediate 2|65 zeroPage 3|75 zeroPageX 4|6d absolute 4|7d absoluteX 4 p|79 absoluteY 4 p|61 indexedIndirect 6|71 indirectIndexed 5 p",
@@ -1393,7 +1128,6 @@ const OPCODE_SPECS = {
   TXS: "9a implied 2",
   TYA: "98 implied 2",
 };
-
 for (const [name, spec] of Object.entries(OPCODE_SPECS)) {
   for (const entry of spec.split("|")) {
     const [opcode, mode, cycles, pageCycle] = entry.split(" ");
@@ -1405,7 +1139,6 @@ for (const [name, spec] of Object.entries(OPCODE_SPECS)) {
     };
   }
 }
-
 class HighPassFilter {
   constructor(sampleRate, cutoffHz) {
     const dt = 1 / sampleRate;
@@ -1414,7 +1147,6 @@ class HighPassFilter {
     this.prevInput = 0;
     this.prevOutput = 0;
   }
-
   step(input) {
     const output = this.alpha * (this.prevOutput + input - this.prevInput);
     this.prevInput = input;
@@ -1422,7 +1154,6 @@ class HighPassFilter {
     return output;
   }
 }
-
 class LowPassFilter {
   constructor(sampleRate, cutoffHz) {
     const dt = 1 / sampleRate;
@@ -1430,13 +1161,11 @@ class LowPassFilter {
     this.alpha = dt / (rc + dt);
     this.output = 0;
   }
-
   step(input) {
     this.output += this.alpha * (input - this.output);
     return this.output;
   }
 }
-
 class AudioDriver {
   constructor(onStatusChange = () => {}) {
     this.onStatusChange = onStatusChange;
@@ -1450,37 +1179,30 @@ class AudioDriver {
     this.writeIndex = 0;
     this.availableSamples = 0;
   }
-
   getSampleRate() {
     return this.context?.sampleRate || 0;
   }
-
   clear() {
     this.readIndex = 0;
     this.writeIndex = 0;
     this.availableSamples = 0;
     this.workletNode?.port.postMessage({ type: "reset" });
   }
-
   pushSample(sample) {
     if (!this.context) {
       return;
     }
-
     if (this.availableSamples >= this.buffer.length) {
       this.readIndex = (this.readIndex + 1) % this.buffer.length;
       this.availableSamples -= 1;
     }
-
     this.buffer[this.writeIndex] = Math.max(-1, Math.min(1, sample));
     this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
     this.availableSamples += 1;
-
     if (this.workletNode && this.availableSamples >= AUDIO_WORKLET_CHUNK_SIZE) {
       this.flushPendingSamples();
     }
   }
-
   consume(buffer) {
     for (let i = 0; i < buffer.length; i += 1) {
       if (this.availableSamples > 0) {
@@ -1492,21 +1214,17 @@ class AudioDriver {
       }
     }
   }
-
   drainSamples(target) {
     for (let i = 0; i < target.length; i += 1) {
       target[i] = this.buffer[this.readIndex];
       this.readIndex = (this.readIndex + 1) % this.buffer.length;
     }
-
     this.availableSamples -= target.length;
   }
-
   flushPendingSamples(force = false) {
     if (!this.workletNode) {
       return;
     }
-
     const minimumSamples = force ? 1 : AUDIO_WORKLET_CHUNK_SIZE;
     while (this.availableSamples >= minimumSamples) {
       const length = force
@@ -1520,7 +1238,6 @@ class AudioDriver {
       );
     }
   }
-
   createLegacyProcessor() {
     this.processor = this.context.createScriptProcessor(2048, 0, 1);
     this.processor.onaudioprocess = (event) => {
@@ -1528,19 +1245,16 @@ class AudioDriver {
     };
     this.processor.connect(this.gain);
   }
-
   async createContext() {
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) {
       this.onStatusChange("Web Audio is unavailable in this browser.", "error", "Audio Unsupported");
       return false;
     }
-
     this.context = new AudioContextCtor();
     this.gain = this.context.createGain();
     this.gain.gain.value = 0.18;
     this.gain.connect(this.context.destination);
-
     if (
       typeof AudioWorkletNode === "function" &&
       this.context.audioWorklet &&
@@ -1561,11 +1275,9 @@ class AudioDriver {
         console.warn("AudioWorklet initialization failed, falling back to ScriptProcessorNode.", error);
       }
     }
-
     this.createLegacyProcessor();
     return true;
   }
-
   async enable() {
     try {
       if (!this.context) {
@@ -1573,11 +1285,9 @@ class AudioDriver {
           this.initializing = null;
         });
       }
-
       if (this.initializing && !(await this.initializing)) {
         return false;
       }
-
       await this.context.resume();
       this.flushPendingSamples(true);
       this.onStatusChange("Audio live. Boot a ROM or keep playing to hear it.", "ready", "Audio On");
@@ -1591,7 +1301,6 @@ class AudioDriver {
       return false;
     }
   }
-
   destroy() {
     this.clear();
     this.workletNode?.port.postMessage({ type: "reset" });
@@ -1601,7 +1310,6 @@ class AudioDriver {
     this.processor = null;
     this.gain?.disconnect();
     this.gain = null;
-
     const context = this.context;
     this.context = null;
     this.initializing = null;
@@ -1610,7 +1318,6 @@ class AudioDriver {
     }
   }
 }
-
 const PULSE_CHANNEL_DEFAULTS = {
   enabled: false,
   duty: 0,
@@ -1662,31 +1369,11 @@ const APU_REGISTER_WRITES = {
   0x400e: ["noise", "writePeriod"],
   0x400f: ["noise", "writeLength"],
 };
-
 class EnvelopeGenerator {
-  constructor() {
-    this.reset();
-  }
-
-  reset() {
-    this.loop = false;
-    this.constantVolume = false;
-    this.period = 0;
-    this.start = false;
-    this.divider = 0;
-    this.decayLevel = 0;
-  }
-
-  writeControl(value) {
-    this.loop = (value & 0x20) !== 0;
-    this.constantVolume = (value & 0x10) !== 0;
-    this.period = value & 0x0f;
-  }
-
-  restart() {
-    this.start = true;
-  }
-
+  constructor() { this.reset(); }
+  reset() { this.loop = false; this.constantVolume = false; this.period = 0; this.start = false; this.divider = 0; this.decayLevel = 0; }
+  writeControl(value) { this.loop = (value & 0x20) !== 0; this.constantVolume = (value & 0x10) !== 0; this.period = value & 0x0f; }
+  restart() { this.start = true; }
   clock() {
     if (this.start) {
       this.start = false;
@@ -1694,7 +1381,6 @@ class EnvelopeGenerator {
       this.divider = this.period;
       return;
     }
-
     if (this.divider === 0) {
       this.divider = this.period;
       if (this.decayLevel > 0) {
@@ -1704,37 +1390,46 @@ class EnvelopeGenerator {
       }
       return;
     }
-
     this.divider -= 1;
   }
-
-  getVolume() {
-    return this.constantVolume ? this.period : this.decayLevel;
+  getVolume() { return this.constantVolume ? this.period : this.decayLevel; }
+}
+function clockTimer(channel, onTick) {
+  if (channel.timerValue === 0) {
+    channel.timerValue = channel.timerPeriod;
+    onTick();
+  } else {
+    channel.timerValue -= 1;
   }
 }
-
-class PulseChannel {
-  constructor(onesComplementSweep) {
-    this.onesComplementSweep = onesComplementSweep;
+class LengthChannel {
+  constructor(defaults) { this.defaults = defaults; }
+  reset() { resetFields(this, this.defaults); }
+  setEnabled(enabled) { setLengthEnabled(this, enabled); }
+  writeTimerLow(value) { writeTimerLow(this, value); }
+}
+class EnvelopeChannel extends LengthChannel {
+  constructor(defaults) {
+    super(defaults);
     this.envelope = new EnvelopeGenerator();
-    this.reset();
   }
-
   reset() {
-    resetFields(this, PULSE_CHANNEL_DEFAULTS);
+    super.reset();
     this.envelope.reset();
   }
-
-  setEnabled(enabled) {
-    setLengthEnabled(this, enabled);
+  clockQuarterFrame() { this.envelope.clock(); }
+}
+class PulseChannel extends EnvelopeChannel {
+  constructor(onesComplementSweep) {
+    super(PULSE_CHANNEL_DEFAULTS);
+    this.onesComplementSweep = onesComplementSweep;
+    this.reset();
   }
-
   writeControl(value) {
     this.duty = (value >> 6) & 0x03;
     this.lengthHalt = (value & 0x20) !== 0;
     this.envelope.writeControl(value);
   }
-
   writeSweep(value) {
     this.sweepEnabled = (value & 0x80) !== 0;
     this.sweepPeriod = (value >> 4) & 0x07;
@@ -1742,18 +1437,12 @@ class PulseChannel {
     this.sweepShift = value & 0x07;
     this.sweepReload = true;
   }
-
-  writeTimerLow(value) {
-    writeTimerLow(this, value);
-  }
-
   writeTimerHigh(value) {
     this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
     loadLengthCounter(this, value);
     this.sequenceIndex = 0;
     this.envelope.restart();
   }
-
   getSweepTarget() {
     const delta = this.timerPeriod >> this.sweepShift;
     if (this.sweepNegate) {
@@ -1761,23 +1450,9 @@ class PulseChannel {
     }
     return this.timerPeriod + delta;
   }
-
-  clockTimer() {
-    if (this.timerValue === 0) {
-      this.timerValue = this.timerPeriod;
-      this.sequenceIndex = (this.sequenceIndex + 1) & 0x07;
-    } else {
-      this.timerValue -= 1;
-    }
-  }
-
-  clockQuarterFrame() {
-    this.envelope.clock();
-  }
-
+  clockTimer() { clockTimer(this, () => { this.sequenceIndex = (this.sequenceIndex + 1) & 0x07; }); }
   clockHalfFrame() {
     clockLengthCounter(this, this.lengthHalt);
-
     const dividerZero = this.sweepDivider === 0;
     if (dividerZero && this.sweepEnabled && this.sweepShift > 0 && this.timerPeriod >= 8) {
       const target = this.getSweepTarget();
@@ -1785,7 +1460,6 @@ class PulseChannel {
         this.timerPeriod = target;
       }
     }
-
     if (dividerZero || this.sweepReload) {
       this.sweepDivider = this.sweepPeriod;
       this.sweepReload = false;
@@ -1793,150 +1467,97 @@ class PulseChannel {
       this.sweepDivider -= 1;
     }
   }
-
   output() {
     if (!this.enabled || this.lengthCounter === 0) {
       return 0;
     }
-
     if (this.timerPeriod < 8 || this.getSweepTarget() > 0x07ff) {
       return 0;
     }
-
     if (PULSE_DUTY_TABLE[this.duty][this.sequenceIndex] === 0) {
       return 0;
     }
-
     return this.envelope.getVolume();
   }
 }
-
-class TriangleChannel {
+class TriangleChannel extends LengthChannel {
   constructor() {
+    super(TRIANGLE_CHANNEL_DEFAULTS);
     this.reset();
   }
-
-  reset() {
-    resetFields(this, TRIANGLE_CHANNEL_DEFAULTS);
-  }
-
-  setEnabled(enabled) {
-    setLengthEnabled(this, enabled);
-  }
-
   writeControl(value) {
     this.controlFlag = (value & 0x80) !== 0;
     this.linearReloadValue = value & 0x7f;
   }
-
-  writeTimerLow(value) {
-    writeTimerLow(this, value);
-  }
-
   writeTimerHigh(value) {
     this.timerPeriod = (this.timerPeriod & 0x00ff) | ((value & 0x07) << 8);
     loadLengthCounter(this, value);
     this.linearReloadFlag = true;
   }
-
   clockTimer() {
-    if (this.timerValue === 0) {
-      this.timerValue = this.timerPeriod;
+    clockTimer(this, () => {
       if (this.lengthCounter > 0 && this.linearCounter > 0) {
         this.sequenceIndex = (this.sequenceIndex + 1) & 0x1f;
       }
-    } else {
-      this.timerValue -= 1;
-    }
+    });
   }
-
   clockQuarterFrame() {
     if (this.linearReloadFlag) {
       this.linearCounter = this.linearReloadValue;
     } else if (this.linearCounter > 0) {
       this.linearCounter -= 1;
     }
-
     if (!this.controlFlag) {
       this.linearReloadFlag = false;
     }
   }
-
   clockHalfFrame() {
     clockLengthCounter(this, this.controlFlag);
   }
-
   output() {
     if (!this.enabled) {
       return 0;
     }
-
     if (this.timerPeriod < 2) {
       return 7.5;
     }
-
     return TRIANGLE_SEQUENCE[this.sequenceIndex];
   }
 }
-
-class NoiseChannel {
+class NoiseChannel extends EnvelopeChannel {
   constructor() {
-    this.envelope = new EnvelopeGenerator();
+    super(NOISE_CHANNEL_DEFAULTS);
     this.reset();
   }
-
-  reset() {
-    resetFields(this, NOISE_CHANNEL_DEFAULTS);
-    this.envelope.reset();
-  }
-
-  setEnabled(enabled) {
-    setLengthEnabled(this, enabled);
-  }
-
   writeControl(value) {
     this.lengthHalt = (value & 0x20) !== 0;
     this.envelope.writeControl(value);
   }
-
   writePeriod(value) {
     this.mode = (value & 0x80) !== 0;
     this.timerPeriod = NOISE_PERIOD_TABLE[value & 0x0f];
   }
-
   writeLength(value) {
     loadLengthCounter(this, value);
     this.envelope.restart();
   }
-
   clockTimer() {
-    if (this.timerValue === 0) {
-      this.timerValue = this.timerPeriod;
+    clockTimer(this, () => {
       const tapBit = this.mode ? 6 : 1;
       const feedback = (this.shiftRegister & 0x01) ^ ((this.shiftRegister >> tapBit) & 0x01);
       this.shiftRegister = (this.shiftRegister >> 1) | (feedback << 14);
-    } else {
-      this.timerValue -= 1;
-    }
+    });
   }
-
-  clockQuarterFrame() {
-    this.envelope.clock();
-  }
-
   clockHalfFrame() {
     clockLengthCounter(this, this.lengthHalt);
   }
-
   output() {
     if (!this.enabled || this.lengthCounter === 0 || (this.shiftRegister & 0x01) !== 0) {
       return 0;
     }
-
     return this.envelope.getVolume();
   }
 }
-
 class APU {
   constructor(audioDriver) {
     this.audioDriver = audioDriver;
@@ -1947,30 +1568,18 @@ class APU {
     this.frameChannels = [this.pulse1, this.pulse2, this.triangle, this.noise];
     this.reset();
   }
-
-  reset() {
-    for (const channel of this.frameChannels) {
-      channel.reset();
-    }
-    resetFields(this, APU_DEFAULTS);
-  }
-
-  hasIRQ() {
-    return this.frameInterruptFlag;
-  }
-
+  reset() { for (const channel of this.frameChannels) channel.reset(); resetFields(this, APU_DEFAULTS); }
+  hasIRQ() { return this.frameInterruptFlag; }
   configureFilters(sampleRate) {
     if (sampleRate <= 0 || sampleRate === this.sampleRate) {
       return;
     }
-
     this.sampleRate = sampleRate;
     this.sampleClock = 0;
     this.highPass90 = new HighPassFilter(sampleRate, 90);
     this.highPass440 = new HighPassFilter(sampleRate, 440);
     this.lowPass14k = new LowPassFilter(sampleRate, 14000);
   }
-
   readStatus() {
     const status =
       (this.frameInterruptFlag ? 0x40 : 0) |
@@ -1981,25 +1590,21 @@ class APU {
     this.frameInterruptFlag = false;
     return status;
   }
-
   writeStatus(value) {
     for (const [index, channel] of this.frameChannels.entries()) {
       channel.setEnabled((value & (1 << index)) !== 0);
     }
     this.dmcEnabled = (value & 0x10) !== 0;
   }
-
   writeFrameCounter(value) {
     if (value & 0x40) {
       this.frameInterruptFlag = false;
     }
-
     this.pendingFrameCounterWrite = {
       value,
       delay: (this.cpuCycles & 0x01) === 0 ? 4 : 3,
     };
   }
-
   applyFrameCounterWrite(value) {
     this.frameMode = (value >> 7) & 0x01;
     this.frameInterruptInhibit = (value & 0x40) !== 0;
@@ -2012,7 +1617,6 @@ class APU {
       this.clockHalfFrame();
     }
   }
-
   writeRegister(address, value) {
     const registerWrite = APU_REGISTER_WRITES[address];
     if (registerWrite) {
@@ -2020,7 +1624,6 @@ class APU {
       this[channel][method](value);
       return;
     }
-
     if (address === 0x4011) {
       this.dmcOutput = value & 0x7f;
     } else if (address === 0x4015) {
@@ -2029,19 +1632,8 @@ class APU {
       this.writeFrameCounter(value);
     }
   }
-
-  clockQuarterFrame() {
-    for (const channel of this.frameChannels) {
-      channel.clockQuarterFrame();
-    }
-  }
-
-  clockHalfFrame() {
-    for (const channel of this.frameChannels) {
-      channel.clockHalfFrame();
-    }
-  }
-
+  clockQuarterFrame() { for (const channel of this.frameChannels) channel.clockQuarterFrame(); }
+  clockHalfFrame() { for (const channel of this.frameChannels) channel.clockHalfFrame(); }
   clockFrameCounter() {
     if (this.frameMode === 0) {
       if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
@@ -2059,7 +1651,6 @@ class APU {
       }
       return;
     }
-
     if (this.cpuCycles === 3729 || this.cpuCycles === 11186) {
       this.clockQuarterFrame();
     } else if (this.cpuCycles === 7457 || this.cpuCycles === 18641) {
@@ -2070,29 +1661,24 @@ class APU {
       }
     }
   }
-
   mixSample() {
     const pulse1 = this.pulse1.output();
     const pulse2 = this.pulse2.output();
     const triangle = this.triangle.output();
     const noise = this.noise.output();
     const dmc = this.dmcOutput;
-
     const pulseSum = pulse1 + pulse2;
     const pulseOut = pulseSum === 0 ? 0 : 95.88 / ((8128 / pulseSum) + 100);
     const tndDenominator = (triangle / 8227) + (noise / 12241) + (dmc / 22638);
     const tndOut = tndDenominator === 0 ? 0 : 159.79 / ((1 / tndDenominator) + 100);
-
     let sample = pulseOut + tndOut;
     if (this.highPass90 && this.highPass440 && this.lowPass14k) {
       sample = this.highPass90.step(sample);
       sample = this.highPass440.step(sample);
       sample = this.lowPass14k.step(sample);
     }
-
     return sample * 1.8;
   }
-
   stepCpuCycle() {
     if (this.pendingFrameCounterWrite) {
       this.pendingFrameCounterWrite.delay -= 1;
@@ -2102,18 +1688,14 @@ class APU {
         this.applyFrameCounterWrite(value);
       }
     }
-
     this.cpuCycles += 1;
     this.triangle.clockTimer();
-
     if ((this.cpuCycles & 0x01) === 0) {
       this.pulse1.clockTimer();
       this.pulse2.clockTimer();
       this.noise.clockTimer();
     }
-
     this.clockFrameCounter();
-
     const sampleRate = this.audioDriver.getSampleRate();
     if (sampleRate > 0) {
       this.configureFilters(sampleRate);
@@ -2125,7 +1707,6 @@ class APU {
     }
   }
 }
-
 class Bus {
   constructor(cartridge, audioDriver) {
     this.cartridge = cartridge;
@@ -2135,69 +1716,53 @@ class Bus {
     this.controller1 = new Controller();
     this.controller2 = new Controller();
   }
-
   reset() {
     this.cpuRam.fill(0);
     this.cartridge.reset();
     this.ppu.reset();
     this.apu.reset();
   }
-
   pollNMI() {
     return this.ppu.pollNMI();
   }
-
   hasIRQ() {
     return this.cartridge.hasIRQ() || this.apu.hasIRQ();
   }
-
   read(addr) {
     const address = addr & 0xffff;
-
     if (address < 0x2000) {
       return this.cpuRam[address & 0x07ff];
     }
-
     if (address < 0x4000) {
       return this.ppu.readRegister(0x2000 | (address & 0x0007));
     }
-
     if (address === 0x4016) {
       return this.controller1.read();
     }
-
     if (address === 0x4015) {
       return this.apu.readStatus();
     }
-
     if (address === 0x4017) {
       return this.controller2.read();
     }
-
     if (address >= 0x6000 && address < 0x8000) {
       return this.cartridge.readPrgRam(address);
     }
-
     if (address >= 0x8000) {
       return this.cartridge.readPrg(address);
     }
-
     return 0;
   }
-
   write(addr, value) {
     const address = addr & 0xffff;
-
     if (address < 0x2000) {
       this.cpuRam[address & 0x07ff] = value;
       return 0;
     }
-
     if (address < 0x4000) {
       this.ppu.writeRegister(0x2000 | (address & 0x0007), value);
       return 0;
     }
-
     if (address === 0x4014) {
       const page = value << 8;
       const buffer = new Uint8Array(256);
@@ -2207,38 +1772,31 @@ class Bus {
       this.ppu.writeOamDma(buffer);
       return 513;
     }
-
     if (address === 0x4016) {
       this.controller1.write(value);
       this.controller2.write(value);
       return 0;
     }
-
     if ((address >= 0x4000 && address <= 0x4013) || address === 0x4015 || address === 0x4017) {
       this.apu.writeRegister(address, value);
       return 0;
     }
-
     if (address >= 0x6000 && address < 0x8000) {
       this.cartridge.writePrgRam(address, value);
       return 0;
     }
-
     if (address >= 0x8000) {
       this.cartridge.writePrg(address, value);
       return 0;
     }
-
     return 0;
   }
 }
-
 function advanceNesCycles(nes, cpuCycles) {
   for (let i = 0; i < cpuCycles; i += 1) nes.bus.apu.stepCpuCycle();
   for (let i = 0; i < cpuCycles * 3; i += 1) nes.bus.ppu.step();
 }
 function stepNesInstruction(nes) { advanceNesCycles(nes, nes.cpu.step()); }
-
 class NES {
   constructor(cartridge, canvas, audioDriver) {
     this.bus = new Bus(cartridge, audioDriver);
@@ -2247,261 +1805,183 @@ class NES {
     this.context = canvas.getContext("2d");
     this.imageData = this.context.createImageData(256, 240);
     this.context.imageSmoothingEnabled = false;
-
     this.bus.reset();
     this.cpu.reset();
   }
-
   setButton(button, pressed) {
     this.bus.controller1.setButton(button, pressed);
   }
-
   releaseAllButtons() {
     for (const button of CONTROLLER_BUTTON_ORDER) {
       this.bus.controller1.setButton(button, false);
     }
   }
-
   runFrame() {
     this.bus.ppu.frameReady = false;
-
     while (!this.bus.ppu.frameReady) {
       stepNesInstruction(this);
     }
   }
-
   present() {
     this.imageData.data.set(this.bus.ppu.framebuffer);
     this.context.putImageData(this.imageData, 0, 0);
   }
 }
-
 const BUTTON_MAP = new Map([["KeyZ", "b"], ["KeyX", "a"], ["ShiftLeft", "select"], ["ShiftRight", "select"], ["Enter", "start"], ["ArrowUp", "up"], ["ArrowDown", "down"], ["ArrowLeft", "left"], ["ArrowRight", "right"]]);
 export function getButtonForKeyboardCode(code) { return BUTTON_MAP.get(code) ?? null; }
-
 export function createNesEmulator({
   canvas,
   onAudioStatus = () => {},
   onRuntimeError = () => {},
 }) {
-  if (!canvas) {
-    throw new Error("A canvas element is required to initialize the emulator.");
-  }
-
+  if (!canvas) throw new Error("A canvas element is required to initialize the emulator.");
   const context = canvas.getContext("2d");
   const audioDriver = new AudioDriver(onAudioStatus);
   let activeNES = null;
   let frameHandle = 0;
   let isPaused = false;
   let loopGeneration = 0;
-
-  function getDebugByte(nes, address) {
-    const normalizedAddress = address & 0xffff;
-
-    if (normalizedAddress < 0x2000) {
-      return nes.bus.cpuRam[normalizedAddress & 0x07ff];
-    }
-
-    if (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000) {
-      return nes.bus.cartridge.readPrgRam(normalizedAddress);
-    }
-
-    if (normalizedAddress >= 0x8000) {
-      return nes.bus.cartridge.readPrg(normalizedAddress);
-    }
-
-    return null;
-  }
-
-  function isDebugWritableAddress(address) {
-    const normalizedAddress = address & 0xffff;
+  const normalizeAddress = (address) => address & 0xffff;
+  const withActiveNES = (callback, fallback = false) => (activeNES ? callback(activeNES) : fallback);
+  const isDebugWritableAddress = (address) => {
+    const normalizedAddress = normalizeAddress(address);
     return normalizedAddress < 0x2000 || (normalizedAddress >= 0x6000 && normalizedAddress < 0x8000);
+  };
+  function getDebugByte(nes, address) {
+    const normalizedAddress = normalizeAddress(address);
+    if (normalizedAddress < 0x2000) return nes.bus.cpuRam[normalizedAddress & 0x07ff];
+    if (normalizedAddress < 0x8000) return normalizedAddress >= 0x6000 ? nes.bus.cartridge.readPrgRam(normalizedAddress) : null;
+    return nes.bus.cartridge.readPrg(normalizedAddress);
   }
-
   function setDebugByte(address, value) {
-    if (!activeNES || !isDebugWritableAddress(address)) {
-      return false;
-    }
-
-    const normalizedAddress = address & 0xffff;
-    const normalizedValue = value & 0xff;
-
-    if (normalizedAddress < 0x2000) {
-      activeNES.bus.cpuRam[normalizedAddress & 0x07ff] = normalizedValue;
+    return withActiveNES((nes) => {
+      const normalizedAddress = normalizeAddress(address);
+      if (!isDebugWritableAddress(normalizedAddress)) return false;
+      const normalizedValue = value & 0xff;
+      if (normalizedAddress < 0x2000) nes.bus.cpuRam[normalizedAddress & 0x07ff] = normalizedValue;
+      else nes.bus.cartridge.writePrgRam(normalizedAddress, normalizedValue);
       return true;
-    }
-
-    activeNES.bus.cartridge.writePrgRam(normalizedAddress, normalizedValue);
-    return true;
+    }, false);
   }
-
-  function getDebugSnapshot({
-    length = 0x80,
-    startAddress = 0x0000,
-  } = {}) {
-    if (!activeNES) {
-      return null;
-    }
-
-    const safeLength = Math.min(0x100, Math.max(0x10, length | 0));
-    const baseAddress = startAddress & 0xffff;
-    const memory = new Array(safeLength);
-
-    for (let index = 0; index < safeLength; index += 1) {
-      memory[index] = getDebugByte(activeNES, baseAddress + index);
-    }
-
-    return {
-      memory: {
-        bytes: memory,
-        length: safeLength,
-        startAddress: baseAddress,
-      },
-      paused: isPaused,
-      cpu: {
-        a: activeNES.cpu.a,
-        flags: DEBUG_CPU_FLAGS.map(([label, flag]) => ({
-          label,
-          enabled: activeNES.cpu.getFlag(flag),
-        })),
-        p: activeNES.cpu.p,
-        pc: activeNES.cpu.pc,
-        s: activeNES.cpu.s,
-        stallCycles: activeNES.cpu.stallCycles,
-        x: activeNES.cpu.x,
-        y: activeNES.cpu.y,
-      },
-      ppu: {
-        cycle: activeNES.bus.ppu.cycle,
-        frameReady: activeNES.bus.ppu.frameReady,
-        scanline: activeNES.bus.ppu.scanline,
-        status: activeNES.bus.ppu.status,
-      },
-    };
+  function getDebugSnapshot({ length = 0x80, startAddress = 0x0000 } = {}) {
+    return withActiveNES((nes) => {
+      const safeLength = Math.min(0x100, Math.max(0x10, length | 0));
+      const baseAddress = normalizeAddress(startAddress);
+      const memory = new Array(safeLength);
+      for (let index = 0; index < safeLength; index += 1) memory[index] = getDebugByte(nes, baseAddress + index);
+      return {
+        memory: { bytes: memory, length: safeLength, startAddress: baseAddress },
+        paused: isPaused,
+        cpu: {
+          a: nes.cpu.a,
+          flags: DEBUG_CPU_FLAGS.map(([label, flag]) => ({ label, enabled: nes.cpu.getFlag(flag) })),
+          p: nes.cpu.p,
+          pc: nes.cpu.pc,
+          s: nes.cpu.s,
+          stallCycles: nes.cpu.stallCycles,
+          x: nes.cpu.x,
+          y: nes.cpu.y,
+        },
+        ppu: {
+          cycle: nes.bus.ppu.cycle,
+          frameReady: nes.bus.ppu.frameReady,
+          scanline: nes.bus.ppu.scanline,
+          status: nes.bus.ppu.status,
+        },
+      };
+    }, null);
   }
-
   function drawPlaceholder() { context.fillStyle = "#000"; context.fillRect(0, 0, canvas.width, canvas.height); }
-
+  function releaseAllButtons() { activeNES?.releaseAllButtons(); }
+  function clearFrameHandle() { if (!frameHandle) return; cancelAnimationFrame(frameHandle); frameHandle = 0; }
+  function stopActiveLoop() {
+    loopGeneration += 1;
+    clearFrameHandle();
+    releaseAllButtons();
+    isPaused = false;
+    activeNES = null;
+    audioDriver.clear();
+  }
   function handleRuntimeFailure(error, notify = true) {
     const runtimeError = error instanceof Error ? error : new Error(String(error));
     console.error(runtimeError);
     stopActiveLoop();
     drawPlaceholder();
-    if (notify) {
-      onRuntimeError(runtimeError);
-    }
+    if (notify) onRuntimeError(runtimeError);
     return runtimeError;
   }
-
-  function stopActiveLoop() {
-    loopGeneration += 1;
-    if (frameHandle) {
-      cancelAnimationFrame(frameHandle);
-      frameHandle = 0;
-    }
-    if (activeNES) {
-      activeNES.releaseAllButtons();
-    }
-    isPaused = false;
-    activeNES = null;
-    audioDriver.clear();
-  }
-
   function bootNES(nes) {
     stopActiveLoop();
     activeNES = nes;
-    isPaused = false;
     activeNES.present();
-
+    const generation = loopGeneration;
+    const frameDuration = 1000 / 60;
     let previousFrameTime = performance.now();
     let lag = 0;
-    const frameDuration = 1000 / 60;
-    const generation = loopGeneration;
-
     const frame = (now) => {
-      if (generation !== loopGeneration || activeNES !== nes) {
-        return;
-      }
-
+      if (generation !== loopGeneration || activeNES !== nes) return;
       try {
         if (isPaused) {
           previousFrameTime = now;
           lag = 0;
-          nes.present();
-          frameHandle = requestAnimationFrame(frame);
-          return;
+        } else {
+          lag += Math.min(100, now - previousFrameTime);
+          previousFrameTime = now;
+          while (lag >= frameDuration) {
+            nes.runFrame();
+            lag -= frameDuration;
+          }
         }
-
-        lag += Math.min(100, now - previousFrameTime);
-        previousFrameTime = now;
-
-        while (lag >= frameDuration) {
-          nes.runFrame();
-          lag -= frameDuration;
-        }
-
         nes.present();
         frameHandle = requestAnimationFrame(frame);
       } catch (error) {
         handleRuntimeFailure(error);
       }
     };
-
     frameHandle = requestAnimationFrame(frame);
   }
-
   async function enableAudio() { return audioDriver.enable(); }
-
   function loadRomBytes(bytes) {
     try {
-      const cartridge = Cartridge.fromINES(bytes);
-      const nes = new NES(cartridge, canvas, audioDriver);
-      bootNES(nes);
+      bootNES(new NES(Cartridge.fromINES(bytes), canvas, audioDriver));
       canvas.focus({ preventScroll: true });
     } catch (error) {
       throw handleRuntimeFailure(error, false);
     }
   }
-
   function setButton(button, pressed) {
-    if (!activeNES) {
-      return false;
-    }
-
-    void enableAudio();
-    activeNES.setButton(button, pressed);
-    return true;
+    return withActiveNES((nes) => {
+      void enableAudio();
+      nes.setButton(button, pressed);
+      return true;
+    }, false);
   }
-
   function setButtonByCode(code, pressed) {
     const button = getButtonForKeyboardCode(code);
     return button ? setButton(button, pressed) : false;
   }
-  function releaseAllButtons() { activeNES?.releaseAllButtons(); }
-  function pause() { if (!activeNES) return false; isPaused = true; activeNES.releaseAllButtons(); return true; }
-  function resume() { if (!activeNES) return false; isPaused = false; return true; }
-
-  function stepInstruction() {
-    if (!activeNES) {
-      return null;
-    }
-
-    isPaused = true;
-
-    try {
-      stepNesInstruction(activeNES);
-      activeNES.present();
-      return getDebugSnapshot();
-    } catch (error) {
-      handleRuntimeFailure(error);
-      return null;
-    }
+  function setPaused(paused) {
+    return withActiveNES((nes) => {
+      isPaused = paused;
+      if (paused) nes.releaseAllButtons();
+      return true;
+    }, false);
   }
-
+  function stepInstruction() {
+    return withActiveNES((nes) => {
+      isPaused = true;
+      try {
+        stepNesInstruction(nes);
+        nes.present();
+        return getDebugSnapshot();
+      } catch (error) {
+        handleRuntimeFailure(error);
+        return null;
+      }
+    }, null);
+  }
   function destroy() { stopActiveLoop(); audioDriver.destroy(); }
-
   drawPlaceholder();
-
   return {
     destroy,
     drawPlaceholder,
@@ -2511,9 +1991,9 @@ export function createNesEmulator({
     isDebugWritableAddress,
     isPaused: () => isPaused,
     loadRomBytes,
-    pause,
+    pause: () => setPaused(true),
     releaseAllButtons,
-    resume,
+    resume: () => setPaused(false),
     setDebugByte,
     setButton,
     setButtonByCode,

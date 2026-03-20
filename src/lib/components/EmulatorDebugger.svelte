@@ -178,17 +178,14 @@
   $: snapshot = state.snapshot;
   $: memorySearchResults = memorySearch?.results ?? [];
   $: changedAddresses = new Set(memorySearchResults.map((result) => result.address));
-  $: memorySearchModeOptions = memorySearch?.baselineCaptured
-    ? MEMORY_SEARCH_MODE_OPTIONS
-    : MEMORY_SEARCH_MODE_OPTIONS.filter((option) => option.value === "exact");
-  $: if (!memorySearch?.baselineCaptured && memorySearchMode !== "exact") {
-    memorySearchMode = "exact";
-  }
+  $: memorySearchModeOptions = MEMORY_SEARCH_MODE_OPTIONS;
+  $: memorySearchHasBaseline = memorySearch?.baselineCaptured ?? false;
+  $: memorySearchShowFilters = memorySearchHasBaseline;
   $: memorySearchActive = (memorySearch?.comparisonCount ?? 0) > 0
     || ((memorySearch?.mode ?? "") === "exact" && (memorySearch?.candidateCount ?? 0) > 0);
   $: memorySearchNeedsValue = memorySearchMode === "exact";
   $: memorySearchHasValue = sanitizeSearchExactValue(memorySearchExactValue).length > 0;
-  $: memorySearchCanCapture = !memorySearch?.baselineCaptured || !memorySearchNeedsValue || memorySearchHasValue;
+  $: memorySearchCanCapture = !memorySearchShowFilters || !memorySearchNeedsValue || memorySearchHasValue;
   $: memorySearchAppliedMode = memorySearchActive ? (memorySearch?.mode ?? "changed") : memorySearchMode;
   $: memorySearchAppliedModeLabel = MEMORY_SEARCH_MODE_OPTIONS.find((option) => option.value === memorySearchAppliedMode)?.label ?? "Changed";
   $: memorySearchAppliedTargetValue = memorySearchActive ? memorySearch?.targetValue ?? null : null;
@@ -200,8 +197,8 @@
   $: if (!state.paused && Object.keys(memoryByteDrafts).length > 0) {
     memoryByteDrafts = {};
   }
-  $: memorySearchSummary = !memorySearch?.baselineCaptured
-    ? "Before the first capture, only exact-value search is meaningful. Capture a value like 03 for lives to seed candidates."
+  $: memorySearchSummary = !memorySearchHasBaseline
+    ? "Capture once to save a baseline snapshot. Compare filters unlock for the next capture."
     : memorySearch.comparisonCount === 0
       ? memorySearch.mode === "exact" && memorySearch.targetValue !== null
         ? `${memorySearch.candidateCount} address${memorySearch.candidateCount === 1 ? "" : "es"} currently equal ${formatHex(memorySearch.targetValue, 2)}. Reproduce the target event, then capture again with another rule.`
@@ -330,29 +327,31 @@
               </div>
 
               <div class="memory-search-actions">
-                <label class="memory-search-filter">
-                  <span>Compare</span>
-                  <select bind:value={memorySearchMode} aria-label="RAM search comparison mode">
-                    {#each memorySearchModeOptions as option (option.value)}
-                      <option value={option.value}>{option.label}</option>
-                    {/each}
-                  </select>
-                </label>
-                {#if memorySearchNeedsValue}
+                {#if memorySearchShowFilters}
                   <label class="memory-search-filter">
-                    <span>Hex</span>
-                    <input
-                      type="text"
-                      inputmode="text"
-                      maxlength="2"
-                      spellcheck="false"
-                      aria-label="Exact RAM search value in hex"
-                      bind:value={memorySearchExactValue}
-                      on:input={(event) => {
-                        memorySearchExactValue = sanitizeSearchExactValue(event.currentTarget.value);
-                      }}
-                    />
+                    <span>Compare</span>
+                    <select bind:value={memorySearchMode} aria-label="RAM search comparison mode">
+                      {#each memorySearchModeOptions as option (option.value)}
+                        <option value={option.value}>{option.label}</option>
+                      {/each}
+                    </select>
                   </label>
+                  {#if memorySearchNeedsValue}
+                    <label class="memory-search-filter">
+                      <span>Hex</span>
+                      <input
+                        type="text"
+                        inputmode="text"
+                        maxlength="2"
+                        spellcheck="false"
+                        aria-label="Exact RAM search value in hex"
+                        bind:value={memorySearchExactValue}
+                        on:input={(event) => {
+                          memorySearchExactValue = sanitizeSearchExactValue(event.currentTarget.value);
+                        }}
+                      />
+                    </label>
+                  {/if}
                 {/if}
                 <button
                   type="button"
