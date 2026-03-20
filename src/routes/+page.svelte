@@ -51,7 +51,7 @@
     { button: "a", label: "A", tone: "primary" },
   ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
-  const EMPTY_OVERLAY_TITLE = "Drop a `.nes` ROM";
+  const EMPTY_OVERLAY_TITLE = "";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
   const DESKTOP_EMPTY_OVERLAY_COPY = "Drop a ROM here, or click this prompt to choose one.";
   const MOBILE_EMPTY_OVERLAY_COPY = "Click this prompt to choose a ROM.";
@@ -107,7 +107,13 @@
       collectionLabel: "Licensed homebrew",
       sourceKind: "licensed"
     }))
-  ].sort((a, b) => a.title.localeCompare(b.title));
+  ].sort((a, b) => {
+    if (a.sourceKind !== b.sourceKind) {
+      return a.sourceKind === "licensed" ? -1 : 1;
+    }
+
+    return a.title.localeCompare(b.title);
+  });
   $: selectedLibraryEntry =
     libraryEntries.find((entry) => entry.id === activeLibraryId) ?? null;
   $: selectedLibraryAuthorCredit = selectedLibraryEntry
@@ -882,7 +888,7 @@
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
           <button class="overlay" type="button" on:click={openRomPicker}>
             <p class="loader-kicker">PLAYER ONE READY</p>
-            {#if !(isMobileMode && overlayVariant === "empty")}
+            {#if overlayTitle && !(isMobileMode && overlayVariant === "empty")}
               <strong>{overlayTitle}</strong>
             {/if}
             <p id="loader-copy">{overlayCopy}</p>
