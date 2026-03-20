@@ -66,7 +66,7 @@
     ["next-most-valuable-rom", 1],
     ["next-most-valuable-rom-mode", 1],
   ]);
-  const JOYSTICK_MAX_DISTANCE = 34;
+  const JOYSTICK_MAX_DISTANCE = 24;
   const JOYSTICK_DEAD_ZONE = 0.38;
 
   let canvas;
@@ -112,6 +112,9 @@
   ].sort((a, b) => a.title.localeCompare(b.title));
   $: selectedLibraryEntry =
     libraryEntries.find((entry) => entry.id === activeLibraryId) ?? null;
+  $: selectedLibraryAuthorCredit = selectedLibraryEntry
+    ? getEntryAuthorCredit(selectedLibraryEntry)
+    : null;
   $: libraryStatusMessages = [
     romCatalog.length === 0 && catalogMessage ? catalogMessage : "",
     licensedCatalog.length === 0 && licensedCatalogMessage ? licensedCatalogMessage : ""
@@ -273,10 +276,6 @@
     stageMode = mode;
   }
 
-  function formatRomSize(sizeBytes) {
-    return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
-  }
-
   function assetPath(path) {
     return path.startsWith("/") ? path : `/${path}`;
   }
@@ -291,6 +290,19 @@
 
   function getEntryLicenseSummary(entry) {
     return entry.licenseName ? getLicenseLabel(entry) : "Public domain";
+  }
+
+  function getEntryAuthorCredit(entry) {
+    const credits = Array.isArray(entry.credits) ? entry.credits : [];
+    const namedAuthor = entry.author?.trim();
+
+    if (namedAuthor) {
+      const matchingCredit = credits.find((credit) => credit.name?.trim() === namedAuthor && credit.url);
+      return { name: namedAuthor, url: matchingCredit?.url ?? "" };
+    }
+
+    const firstCredit = credits.find((credit) => credit.name?.trim());
+    return firstCredit ? { name: firstCredit.name.trim(), url: firstCredit.url ?? "" } : null;
   }
 
   function normalizeRomMode(value) {
@@ -997,9 +1009,6 @@
       <article class="launcher-shell" aria-label="Bundled ROM library">
         <div class="launcher-header">
           <h2>ROM Library</h2>
-          <p class="launcher-subcopy">
-            Public-domain ROMs plus redistributable homebrew with bundled notices, credits, and upstream links.
-          </p>
         </div>
         <div class="launcher-scroll">
           {#if libraryStatusMessages.length > 0}
@@ -1013,57 +1022,35 @@
           {#if selectedLibraryEntry}
             <div class="launcher-details" aria-live="polite">
               <p class="launcher-details-title">{selectedLibraryEntry.title}</p>
-              <p class="launcher-details-copy">{selectedLibraryEntry.description}</p>
-              <p class="launcher-details-meta">
-                <span>{selectedLibraryEntry.collectionLabel}</span>
-                {#if selectedLibraryEntry.author}
-                  <span>By {selectedLibraryEntry.author}</span>
-                {/if}
-                {#if selectedLibraryEntry.releaseDate}
-                  <span>{selectedLibraryEntry.releaseDate}</span>
-                {/if}
-                <span>{formatRomSize(selectedLibraryEntry.sizeBytes)}</span>
-              </p>
-              <p class="launcher-details-license">
-                <strong>License:</strong> {getEntryLicenseSummary(selectedLibraryEntry)}
-              </p>
-
-              {#if selectedLibraryEntry.sourceKind === "licensed"}
-                <p class="launcher-note">
-                  Redistributed unmodified. Keep upstream notices with the ROMs and follow each bundled notice before reusing code or assets separately.
+              {#if selectedLibraryAuthorCredit}
+                <p class="launcher-details-credit">
+                  <span>By</span>
+                  {#if selectedLibraryAuthorCredit.url}
+                    <a href={selectedLibraryAuthorCredit.url} target="_blank" rel="noreferrer">{selectedLibraryAuthorCredit.name}</a>
+                  {:else}
+                    <span>{selectedLibraryAuthorCredit.name}</span>
+                  {/if}
                 </p>
               {/if}
 
-              {#if selectedLibraryEntry.originalPageUrl || selectedLibraryEntry.sourceUrl || selectedLibraryEntry.noticeFile || selectedLibraryEntry.licenseFile}
+              {#if selectedLibraryEntry.originalPageUrl || selectedLibraryEntry.sourceUrl || selectedLibraryEntry.licenseUrl || selectedLibraryEntry.noticeFile || selectedLibraryEntry.licenseFile}
                 <div class="launcher-link-row">
                   {#if selectedLibraryEntry.originalPageUrl}
-                    <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Original page</a>
+                    <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
                   {/if}
                   {#if selectedLibraryEntry.sourceUrl}
-                    <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source repo</a>
+                    <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source</a>
+                  {/if}
+                  {#if selectedLibraryEntry.licenseUrl}
+                    <a href={selectedLibraryEntry.licenseUrl} target="_blank" rel="noreferrer">License</a>
                   {/if}
                   {#if selectedLibraryEntry.noticeFile}
-                    <a href={assetPath(selectedLibraryEntry.noticeFile)} target="_blank" rel="noreferrer">Bundled notice</a>
+                    <a href={assetPath(selectedLibraryEntry.noticeFile)} target="_blank" rel="noreferrer">Notice</a>
                   {/if}
                   {#if selectedLibraryEntry.licenseFile}
                     <a href={assetPath(selectedLibraryEntry.licenseFile)} target="_blank" rel="noreferrer">Bundled license</a>
                   {/if}
                 </div>
-              {/if}
-
-              {#if selectedLibraryEntry.credits?.length}
-                <ul class="launcher-credits" aria-label="Game credits">
-                  {#each selectedLibraryEntry.credits as credit, index (`${selectedLibraryEntry.id}-${index}`)}
-                    <li>
-                      <span>{credit.role}:</span>
-                      {#if credit.url}
-                        <a href={credit.url} target="_blank" rel="noreferrer">{credit.name}</a>
-                      {:else}
-                        <span>{credit.name}</span>
-                      {/if}
-                    </li>
-                  {/each}
-                </ul>
               {/if}
             </div>
           {/if}
@@ -1077,13 +1064,12 @@
                     class={`launcher-item ${entry.id === activeLibraryId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
                     disabled={!entry.supported}
                     title={entry.supported
-                      ? `${entry.title} • Mapper ${entry.mapper} • ${formatRomSize(entry.sizeBytes)} • ${getEntryLicenseSummary(entry)}`
+                      ? `${entry.title} • Mapper ${entry.mapper} • ${getEntryLicenseSummary(entry)}`
                       : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
                     on:click={() => void loadBundledRom(entry)}
                   >
                     <span class="launcher-item-eyebrow">{entry.collectionLabel}</span>
                     <strong>{entry.title}</strong>
-                    <span class="launcher-item-meta">{formatRomSize(entry.sizeBytes)}</span>
                   </button>
                 </li>
               {/each}

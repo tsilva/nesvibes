@@ -30,3 +30,5 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Verification: `npm run check` passed. The required `develop-web-game` client was retried; the helper script resolved with an absolute path but `page.goto` still aborted against the local Vite server, so verification used a one-off Playwright phone-viewport run instead. That run passed, confirming the toolbar can switch into the new mode and the joystick thumb moves and recenters correctly.
 
 - Mobile follow-up: the mobile viewport now forces the touch overlay into analog joystick mode and hides the controls-mode toggle button. Desktop keeps the existing overlay cycling behavior.
+
+- Joystick tuning: reduced the analog stick clamp radius from 34px to 24px so directional engagement happens with a shorter throw, which should make quick left/right movement in platformers like Super Mario feel easier.
