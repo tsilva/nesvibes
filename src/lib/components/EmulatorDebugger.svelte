@@ -1,5 +1,6 @@
 <script>
   import { Bug, Pause, Play, StepForward, X } from "lucide-svelte";
+  import { formatInstructionTooltip } from "$lib/debugger/instruction-tooltip.js";
 
   export let debuggerController;
 
@@ -233,6 +234,7 @@
       isCurrent: Boolean(entry.isCurrent),
       key: `instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`,
       text: formatInstructionText(entry),
+      tooltip: formatInstructionTooltip(entry),
     };
   }
 
@@ -605,7 +607,11 @@
             </div>
 
             {#if instructionSummary}
-              <div class="instruction-summary">
+              <div
+                class="instruction-summary"
+                data-tooltip={instructionSummary.tooltip}
+                data-tooltip-width="320"
+              >
                 <span class="instruction-address">{instructionSummary.address}</span>
                 <span class="instruction-bytes">{instructionSummary.bytes}</span>
                 <strong class="instruction-text">{instructionSummary.text}</strong>
@@ -617,7 +623,12 @@
 
             <div class="disassembly-list" role="table" aria-label="Decoded CPU instructions around the current PC">
               {#each disassemblyRows as row (row.key)}
-                <div class={`disassembly-row ${row.isCurrent ? "current" : ""}`.trim()} role="row">
+                <div
+                  class={`disassembly-row ${row.isCurrent ? "current" : ""}`.trim()}
+                  role="row"
+                  data-tooltip={row.tooltip}
+                  data-tooltip-width="320"
+                >
                   <span class="disassembly-address" role="cell">{row.address}</span>
                   <span class="disassembly-bytes" role="cell">{row.bytes}</span>
                   <span class="disassembly-text" role="cell">{row.text}</span>
