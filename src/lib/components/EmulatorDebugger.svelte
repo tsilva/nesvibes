@@ -225,6 +225,17 @@
     return "";
   }
 
+  function createInstructionRow(entry) {
+    return {
+      address: formatHex(entry.address, 4),
+      annotation: formatInstructionAnnotation(entry),
+      bytes: formatInstructionBytes(entry.bytes),
+      isCurrent: Boolean(entry.isCurrent),
+      key: `instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`,
+      text: formatInstructionText(entry),
+    };
+  }
+
   function canShowDesktopTooltip() {
     return typeof window !== "undefined"
       && window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 981px)").matches;
@@ -296,14 +307,69 @@
   $: memorySearchNeedsValue = memorySearchMode === "exact";
   $: memorySearchHasValue = sanitizeSearchExactValue(memorySearchExactValue).length > 0;
   $: memorySearchCanCapture = !memorySearchShowFilters || !memorySearchNeedsValue || memorySearchHasValue;
-  $: memorySearchAppliedMode = memorySearchActive ? (memorySearch?.mode ?? "changed") : memorySearchMode;
-  $: memorySearchAppliedModeLabel = MEMORY_SEARCH_MODE_OPTIONS.find((option) => option.value === memorySearchAppliedMode)?.label ?? "Changed";
-  $: memorySearchAppliedTargetValue = memorySearchActive ? memorySearch?.targetValue ?? null : null;
   $: memoryRows = memorySearchActive && memorySearch?.viewBytes
     ? buildMemoryRows(memorySearch.viewBytes, 0, changedAddresses, true)
     : snapshot
       ? buildMemoryRows(snapshot.memory.bytes, snapshot.memory.startAddress, changedAddresses)
       : [];
+  $: debuggerActions = state.hasRom
+    ? [
+        {
+          ariaLabel: state.paused ? "Play" : "Pause",
+          disabled: false,
+          icon: state.paused ? Play : Pause,
+          key: "toggle-running",
+          tooltip: state.paused
+            ? "Play resumes the game from the current state."
+            : "Pause freezes the game so you can inspect it safely.",
+          variant: "",
+          onClick: () => debuggerController.toggleRunning(),
+        },
+        {
+          ariaLabel: "Step",
+          disabled: !state.paused,
+          icon: StepForward,
+          key: "step",
+          tooltip: "Step runs exactly one CPU instruction while the game is paused.",
+          variant: "",
+          onClick: () => debuggerController.stepInstruction(),
+        },
+      ]
+    : [];
+  $: debuggerMetaItems = snapshot
+    ? [
+        {
+          key: "running",
+          text: state.paused ? "Paused" : "Running",
+          tooltip: debuggerMetaTooltip("running"),
+        },
+        {
+          key: "scanline",
+          text: `Scanline ${snapshot.ppu.scanline}`,
+          tooltip: debuggerMetaTooltip("scanline", snapshot.ppu.scanline),
+        },
+        {
+          key: "cycle",
+          text: `Cycle ${snapshot.ppu.cycle}`,
+          tooltip: debuggerMetaTooltip("cycle", snapshot.ppu.cycle),
+        },
+        {
+          key: "stall",
+          text: `Stall ${snapshot.cpu.stallCycles}`,
+          tooltip: debuggerMetaTooltip("stall", snapshot.cpu.stallCycles),
+        },
+      ]
+    : [];
+  $: registerCards = snapshot
+    ? REGISTER_FIELDS.map((field) => ({
+        key: field.key,
+        label: field.label,
+        tooltip: registerTooltip(field, snapshot.cpu[field.key]),
+        value: formatHex(snapshot.cpu[field.key], field.width),
+      }))
+    : [];
+  $: instructionSummary = instruction ? createInstructionRow(instruction) : null;
+  $: disassemblyRows = disassemblyEntries.map((entry) => createInstructionRow(entry));
   $: if (!state.paused && Object.keys(memoryByteDrafts).length > 0) {
     memoryByteDrafts = {};
   }
@@ -343,31 +409,19 @@
       <div class="debugger-header">
         {#if state.hasRom}
           <div class="debugger-toolbar">
-            <button
-              type="button"
-              class="debugger-action"
-              aria-label={state.paused ? "Play" : "Pause"}
-              data-tooltip={state.paused ? "Play resumes the game from the current state." : "Pause freezes the game so you can inspect it safely."}
-              data-tooltip-width="220"
-              on:click={() => debuggerController.toggleRunning()}
-            >
-              {#if state.paused}
-                <Play size={15} strokeWidth={2.25} aria-hidden="true" />
-              {:else}
-                <Pause size={15} strokeWidth={2.25} aria-hidden="true" />
-              {/if}
-            </button>
-            <button
-              type="button"
-              class="debugger-action"
-              disabled={!state.paused}
-              aria-label="Step"
-              data-tooltip="Step runs exactly one CPU instruction while the game is paused."
-              data-tooltip-width="220"
-              on:click={() => debuggerController.stepInstruction()}
-            >
-              <StepForward size={15} strokeWidth={2.25} aria-hidden="true" />
-            </button>
+            {#each debuggerActions as action (action.key)}
+              <button
+                type="button"
+                class={`debugger-action ${action.variant}`.trim()}
+                aria-label={action.ariaLabel}
+                disabled={action.disabled}
+                data-tooltip={action.tooltip}
+                data-tooltip-width="220"
+                on:click={action.onClick}
+              >
+                <svelte:component this={action.icon} size={15} strokeWidth={2.25} aria-hidden="true" />
+              </button>
+            {/each}
           </div>
         {:else}
           <p class="debugger-title">Debugger</p>
@@ -394,34 +448,15 @@
       {:else}
         <div class="debugger-body debugger-body-loaded">
           <div class="debugger-meta">
-            <span
-              class="debugger-meta-item"
-              data-tooltip={debuggerMetaTooltip("running")}
-              data-tooltip-width="220"
-            >
-              {state.paused ? "Paused" : "Running"}
-            </span>
-            <span
-              class="debugger-meta-item"
-              data-tooltip={debuggerMetaTooltip("scanline", snapshot.ppu.scanline)}
-              data-tooltip-width="220"
-            >
-              Scanline {snapshot.ppu.scanline}
-            </span>
-            <span
-              class="debugger-meta-item"
-              data-tooltip={debuggerMetaTooltip("cycle", snapshot.ppu.cycle)}
-              data-tooltip-width="220"
-            >
-              Cycle {snapshot.ppu.cycle}
-            </span>
-            <span
-              class="debugger-meta-item"
-              data-tooltip={debuggerMetaTooltip("stall", snapshot.cpu.stallCycles)}
-              data-tooltip-width="220"
-            >
-              Stall {snapshot.cpu.stallCycles}
-            </span>
+            {#each debuggerMetaItems as item (item.key)}
+              <span
+                class="debugger-meta-item"
+                data-tooltip={item.tooltip}
+                data-tooltip-width="220"
+              >
+                {item.text}
+              </span>
+            {/each}
           </div>
 
           <section class="debugger-section" aria-label="CPU registers">
@@ -430,15 +465,15 @@
               <span class="debugger-chip">6502</span>
             </div>
 
-              <div class="register-grid">
-              {#each REGISTER_FIELDS as field (field.key)}
+            <div class="register-grid">
+              {#each registerCards as card (card.key)}
                 <div
                   class="register-card debugger-tooltip-target"
-                  data-tooltip={registerTooltip(field, snapshot.cpu[field.key])}
+                  data-tooltip={card.tooltip}
                   data-tooltip-width="200"
                 >
-                  <span class="register-label">{field.label}</span>
-                  <strong>{formatHex(snapshot.cpu[field.key], field.width)}</strong>
+                  <span class="register-label">{card.label}</span>
+                  <strong>{card.value}</strong>
                 </div>
               {/each}
             </div>
@@ -569,24 +604,24 @@
               <span class="debugger-chip">PC centered</span>
             </div>
 
-            {#if instruction}
+            {#if instructionSummary}
               <div class="instruction-summary">
-                <span class="instruction-address">{formatHex(instruction.address, 4)}</span>
-                <span class="instruction-bytes">{formatInstructionBytes(instruction.bytes)}</span>
-                <strong class="instruction-text">{formatInstructionText(instruction)}</strong>
-                {#if formatInstructionAnnotation(instruction)}
-                  <span class="instruction-annotation">{formatInstructionAnnotation(instruction)}</span>
+                <span class="instruction-address">{instructionSummary.address}</span>
+                <span class="instruction-bytes">{instructionSummary.bytes}</span>
+                <strong class="instruction-text">{instructionSummary.text}</strong>
+                {#if instructionSummary.annotation}
+                  <span class="instruction-annotation">{instructionSummary.annotation}</span>
                 {/if}
               </div>
             {/if}
 
             <div class="disassembly-list" role="table" aria-label="Decoded CPU instructions around the current PC">
-              {#each disassemblyEntries as entry (`instruction-${entry.address}-${entry.isCurrent ? "current" : "nearby"}`)}
-                <div class={`disassembly-row ${entry.isCurrent ? "current" : ""}`.trim()} role="row">
-                  <span class="disassembly-address" role="cell">{formatHex(entry.address, 4)}</span>
-                  <span class="disassembly-bytes" role="cell">{formatInstructionBytes(entry.bytes)}</span>
-                  <span class="disassembly-text" role="cell">{formatInstructionText(entry)}</span>
-                  <span class="disassembly-annotation" role="cell">{formatInstructionAnnotation(entry)}</span>
+              {#each disassemblyRows as row (row.key)}
+                <div class={`disassembly-row ${row.isCurrent ? "current" : ""}`.trim()} role="row">
+                  <span class="disassembly-address" role="cell">{row.address}</span>
+                  <span class="disassembly-bytes" role="cell">{row.bytes}</span>
+                  <span class="disassembly-text" role="cell">{row.text}</span>
+                  <span class="disassembly-annotation" role="cell">{row.annotation}</span>
                 </div>
               {/each}
             </div>

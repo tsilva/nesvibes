@@ -88,6 +88,12 @@ Verify the production security header policy:
 npm run check:headers
 ```
 
+Verify the bundled ROM tree only contains catalog-referenced runtime assets:
+
+```bash
+npm run check:rom-assets
+```
+
 You can also verify a deployed URL matches the checked-in policy:
 
 ```bash

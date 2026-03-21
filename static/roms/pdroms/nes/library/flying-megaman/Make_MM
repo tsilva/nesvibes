@@ -1,2 +1,0 @@
-DAsm megaman.asm -f3
-Join Header_V a.out a.out MegaMan.CHR AS MegaManJet.NES

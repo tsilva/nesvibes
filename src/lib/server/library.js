@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { getLibraryEntrySlug } from "$lib/rom-slug.js";
+import { getLibraryEntrySlug } from "../rom-slug.js";
 
 const EMULATOR_FILE_PATH = resolve(process.cwd(), "src/lib/emu/nes-emulator.js");
 const PUBLIC_DOMAIN_CATALOG_FILE_PATH = resolve(process.cwd(), "static/roms/pdroms/nes/catalog.json");
@@ -38,6 +38,100 @@ function compareLibraryEntries(a, b) {
   return a.title.localeCompare(b.title);
 }
 
+function assetPath(path) {
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+function getLicenseLabel(entry) {
+  if (entry.assetLicenseName) {
+    return `${entry.licenseName} code / ${entry.assetLicenseName} assets`;
+  }
+
+  return entry.licenseName;
+}
+
+function getEntryLicenseSummary(entry) {
+  return entry.licenseName ? getLicenseLabel(entry) : "Public domain";
+}
+
+function getEntryAuthorCredit(entry) {
+  const credits = Array.isArray(entry.credits) ? entry.credits : [];
+  const namedAuthor = entry.author?.trim();
+
+  if (namedAuthor) {
+    const matchingCredit = credits.find((credit) => credit.name?.trim() === namedAuthor && credit.url);
+    return { name: namedAuthor, url: matchingCredit?.url ?? "" };
+  }
+
+  const firstCredit = credits.find((credit) => credit.name?.trim());
+  return firstCredit ? { name: firstCredit.name.trim(), url: firstCredit.url ?? "" } : null;
+}
+
+function buildEntryDetailLinks(entry) {
+  const links = [];
+
+  if (entry.originalPageUrl) {
+    links.push({
+      external: true,
+      href: entry.originalPageUrl,
+      label: "Page",
+    });
+  }
+
+  if (entry.archiveDownloadUrl && entry.sourceKind === "public-domain") {
+    links.push({
+      external: true,
+      href: entry.archiveDownloadUrl,
+      label: "Archive",
+    });
+  }
+
+  if (entry.sourceUrl) {
+    links.push({
+      external: true,
+      href: entry.sourceUrl,
+      label: "Source",
+    });
+  }
+
+  if (entry.licenseUrl) {
+    links.push({
+      external: true,
+      href: entry.licenseUrl,
+      label: "License",
+    });
+  }
+
+  if (entry.noticeFile) {
+    links.push({
+      external: false,
+      href: assetPath(entry.noticeFile),
+      label: "Notice",
+    });
+  }
+
+  if (entry.licenseFile) {
+    links.push({
+      external: false,
+      href: assetPath(entry.licenseFile),
+      label: "Bundled license",
+    });
+  }
+
+  return links;
+}
+
+function buildLibraryEntryViewModel(entry) {
+  return {
+    ...entry,
+    assetHref: assetPath(entry.file),
+    authorCredit: getEntryAuthorCredit(entry),
+    detailLinks: buildEntryDetailLinks(entry),
+    licenseSummary: getEntryLicenseSummary(entry),
+    playPath: `/play/${encodeURIComponent(entry.slug)}`,
+  };
+}
+
 async function readCatalog(filePath, failureMessage, sourceKind) {
   try {
     const source = await readFile(filePath, "utf8");
@@ -48,7 +142,7 @@ async function readCatalog(filePath, failureMessage, sourceKind) {
     }
 
     return {
-      entries: entries.map((entry) => ({
+      entries: entries.map((entry) => buildLibraryEntryViewModel({
         ...entry,
         slug: getLibraryEntrySlug(entry),
         sourceKind,
@@ -79,7 +173,7 @@ function buildPageDescription(selectedGame) {
 }
 
 export async function getLibraryData() {
-  const [publicDomainCatalog, licensedCatalog] = await Promise.all([
+  const [publicDomainEntries, licensedEntries] = await Promise.all([
     readCatalog(
       PUBLIC_DOMAIN_CATALOG_FILE_PATH,
       {
@@ -98,12 +192,18 @@ export async function getLibraryData() {
     )
   ]);
 
+  const libraryEntries = [...publicDomainEntries.entries, ...licensedEntries.entries].sort(compareLibraryEntries);
+  const libraryStatusMessages = [publicDomainEntries.message, licensedEntries.message].filter(Boolean);
+
   return {
-    publicDomainCatalog: publicDomainCatalog.entries,
-    publicDomainCatalogMessage: publicDomainCatalog.message,
-    licensedCatalog: licensedCatalog.entries,
-    licensedCatalogMessage: licensedCatalog.message,
-    libraryEntries: [...publicDomainCatalog.entries, ...licensedCatalog.entries].sort(compareLibraryEntries)
+    publicDomainCatalog: publicDomainEntries.entries,
+    publicDomainCatalogMessage: publicDomainEntries.message,
+    publicDomainEntries: publicDomainEntries.entries,
+    licensedCatalog: licensedEntries.entries,
+    licensedCatalogMessage: licensedEntries.message,
+    licensedEntries: licensedEntries.entries,
+    libraryEntries,
+    libraryStatusMessages,
   };
 }
 
@@ -132,10 +232,10 @@ export async function loadNesVibesPageData(selectedGameId = null) {
   return {
     emulatorLocLabel,
     emulatorSourceUrl: EMULATOR_SOURCE_URL,
-    publicDomainCatalog: libraryData.publicDomainCatalog,
-    publicDomainCatalogMessage: libraryData.publicDomainCatalogMessage,
-    licensedCatalog: libraryData.licensedCatalog,
-    licensedCatalogMessage: libraryData.licensedCatalogMessage,
+    publicDomainEntries: libraryData.publicDomainEntries,
+    licensedEntries: libraryData.licensedEntries,
+    libraryEntries: libraryData.libraryEntries,
+    libraryStatusMessages: libraryData.libraryStatusMessages,
     selectedGame,
     selectedGameId: selectedGame?.id ?? null,
     pageTitle: buildPageTitle(selectedGame),

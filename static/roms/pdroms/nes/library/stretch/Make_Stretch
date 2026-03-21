@@ -1,2 +1,0 @@
-DAsm Stretch.asm -f3
-Join Header a.out a.out StretchCMC.CHR StretchText.CHR as Stretch.NES

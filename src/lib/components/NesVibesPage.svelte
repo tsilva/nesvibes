@@ -2,7 +2,8 @@
   import { goto, replaceState } from "$app/navigation";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
-  import { getLibraryEntrySlug } from "$lib/rom-slug.js";
+  import LibraryPanel from "$lib/components/LibraryPanel.svelte";
+  import TouchControlButton from "$lib/components/TouchControlButton.svelte";
   import { site } from "$lib/site.js";
   import {
     ArrowDown,
@@ -82,11 +83,7 @@
   let debuggerController = null;
   let debuggerEnabled = false;
   let filePicker;
-  let romCatalog = data.publicDomainCatalog ?? [];
-  let licensedCatalog = data.licensedCatalog ?? [];
   let activeLibraryId = data.selectedGameId ?? "";
-  let catalogMessage = data.publicDomainCatalogMessage ?? "";
-  let licensedCatalogMessage = data.licensedCatalogMessage ?? "";
   let stageMode = "empty";
   let isMobileMode = false;
   let isDragging = false;
@@ -105,42 +102,31 @@
   let lastHandledSelectedGameId = data.selectedGameId ?? null;
   let clearedRouteSelectedGameId = null;
   let canvasControlsMode = "controls";
+  let publicDomainEntries = [];
+  let runtimeLibraryStatusMessages = [];
+  let libraryEntries = [];
+  let libraryStatusMessages = [];
   $: effectiveCanvasControlsMode =
     isMobileMode && !MOBILE_CANVAS_CONTROL_MODES.includes(canvasControlsMode)
       ? "gamepad"
       : canvasControlsMode;
-  $: libraryEntries = [
-    ...romCatalog.map((entry) => ({
-      ...entry,
-      sourceKind: "public-domain"
-    })),
-    ...licensedCatalog.map((entry) => ({
-      ...entry,
-      sourceKind: "licensed"
-    }))
-  ].sort((a, b) => {
-    if (a.sourceKind !== b.sourceKind) {
-      return a.sourceKind === "licensed" ? -1 : 1;
-    }
-
-    return a.title.localeCompare(b.title);
-  });
+  $: publicDomainEntries = data.publicDomainEntries ?? [];
+  $: libraryEntries = data.libraryEntries ?? [];
+  $: libraryStatusMessages = [...(data.libraryStatusMessages ?? []), ...runtimeLibraryStatusMessages];
   $: selectedLibraryEntry =
     libraryEntries.find((entry) => entry.id === activeLibraryId) ?? null;
-  $: selectedLibraryAuthorCredit = selectedLibraryEntry
-    ? getEntryAuthorCredit(selectedLibraryEntry)
-    : null;
-  $: libraryStatusMessages = [catalogMessage, licensedCatalogMessage].filter(Boolean);
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
   $: routeSelectedGameId = data.selectedGameId ?? null;
-  $: routeSelectedGame = data.selectedGame ?? null;
+  $: routeSelectedGameEntry = routeSelectedGameId
+    ? libraryEntries.find((entry) => entry.id === routeSelectedGameId) ?? null
+    : null;
   $: isRouteSelectionSuppressed =
     clearedRouteSelectedGameId !== null && routeSelectedGameId === clearedRouteSelectedGameId;
   $: effectiveSelectedGameId = isRouteSelectionSuppressed ? null : routeSelectedGameId;
-  $: selectedGameEntry = isRouteSelectionSuppressed ? null : routeSelectedGame;
-  $: selectedGameAssetHref = selectedGameEntry?.file ? assetPath(selectedGameEntry.file) : null;
+  $: selectedGameEntry = isRouteSelectionSuppressed ? null : routeSelectedGameEntry;
+  $: selectedGameAssetHref = selectedGameEntry?.assetHref ?? null;
   $: isBundledPermalinkActive = effectiveSelectedGameId !== null;
   $: if (clearedRouteSelectedGameId !== null && routeSelectedGameId !== clearedRouteSelectedGameId) {
     clearedRouteSelectedGameId = null;
@@ -308,43 +294,6 @@
     stageMode = mode;
   }
 
-  function assetPath(path) {
-    return path.startsWith("/") ? path : `/${path}`;
-  }
-
-  function getEntryPath(entry) {
-    return `/play/${encodeURIComponent(getLibraryEntrySlug(entry))}`;
-  }
-
-  function getLicenseLabel(entry) {
-    if (entry.assetLicenseName) {
-      return `${entry.licenseName} code / ${entry.assetLicenseName} assets`;
-    }
-
-    return entry.licenseName;
-  }
-
-  function getEntryLicenseSummary(entry) {
-    return entry.licenseName ? getLicenseLabel(entry) : "Public domain";
-  }
-
-  function getEntryAuthorCredit(entry) {
-    const credits = Array.isArray(entry.credits) ? entry.credits : [];
-    const namedAuthor = entry.author?.trim();
-
-    if (namedAuthor) {
-      const matchingCredit = credits.find((credit) => credit.name?.trim() === namedAuthor && credit.url);
-      return { name: namedAuthor, url: matchingCredit?.url ?? "" };
-    }
-
-    const firstCredit = credits.find((credit) => credit.name?.trim());
-    return firstCredit ? { name: firstCredit.name.trim(), url: firstCredit.url ?? "" } : null;
-  }
-
-  function showsArchiveLink(entry) {
-    return Boolean(entry?.archiveDownloadUrl && entry?.sourceKind === "public-domain");
-  }
-
   function normalizeRomMode(value) {
     return value
       .trim()
@@ -496,7 +445,7 @@
     }
 
     const requestToken = ++bundledLoadRequestToken;
-    const romRequest = fetch(assetPath(entry.file), { cache: "force-cache" });
+    const romRequest = fetch(entry.assetHref, { cache: "force-cache" });
 
     try {
       await ensureEmulator();
@@ -548,7 +497,7 @@
       return;
     }
 
-    await goto(getEntryPath(entry), {
+    await goto(entry.playPath, {
       keepFocus: true,
       noScroll: true
     });
@@ -573,13 +522,14 @@
 
   function updateQuicklaunchAvailability() {
     if (typeof window === "undefined" || window.location.protocol !== "file:") {
+      runtimeLibraryStatusMessages = [];
       return false;
     }
 
-    catalogMessage =
-      "Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.";
-    licensedCatalogMessage =
-      "Licensed quicklaunch also needs HTTP(S). Drag-and-drop still works from disk.";
+    runtimeLibraryStatusMessages = [
+      "Quicklaunch needs HTTP(S). Open the deployed site or run a local static server, or keep using drag-and-drop from disk.",
+      "Licensed quicklaunch also needs HTTP(S). Drag-and-drop still works from disk."
+    ];
     return true;
   }
 
@@ -891,7 +841,7 @@
     void ensureEmulator().catch((error) => {
       console.error(error);
     });
-    const autoLaunchEntry = selectedGameEntry ?? getRomEntryForMode(romCatalog, requestedRomMode);
+    const autoLaunchEntry = selectedGameEntry ?? getRomEntryForMode(publicDomainEntries, requestedRomMode);
     if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
       void loadBundledRom(autoLaunchEntry);
     } else if (selectedGameEntry && !selectedGameEntry.supported) {
@@ -1032,18 +982,17 @@
             <div class={`touch-controls active ${effectiveCanvasControlsMode === "keys" ? "keys-mode" : ""} ${showJoystickOverlay ? "gamepad-mode" : ""}`.trim()}>
               <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
                 {#each SYSTEM_BUTTONS as control (control.button)}
-                  <button
-                    type="button"
-                    class={`touch-button system ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                    aria-label={control.label}
-                    aria-pressed={pressedButtons[control.button]}
-                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+                  <TouchControlButton
+                    ariaLabel={control.label}
+                    button={control.button}
+                    className="touch-button system"
+                    pressed={pressedButtons[control.button]}
+                    onPress={handleControllerPress}
+                    onRelease={handleControllerRelease}
+                    onLostCapture={() => setPressedButton(control.button, false)}
                   >
                     <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
-                  </button>
+                  </TouchControlButton>
                 {/each}
               </div>
 
@@ -1072,38 +1021,36 @@
               {:else}
                 <div class="touch-cluster touch-dpad" role="group" aria-label="Directional pad">
                   {#each TOUCH_DIRECTION_BUTTONS as control (control.button)}
-                    <button
-                      type="button"
-                      class={`touch-button directional ${control.position} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                      aria-label={control.label}
-                      aria-pressed={pressedButtons[control.button]}
-                      on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                      on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                      on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                      on:lostpointercapture={() => setPressedButton(control.button, false)}
+                    <TouchControlButton
+                      ariaLabel={control.label}
+                      button={control.button}
+                      className={`touch-button directional ${control.position}`.trim()}
+                      pressed={pressedButtons[control.button]}
+                      onPress={handleControllerPress}
+                      onRelease={handleControllerRelease}
+                      onLostCapture={() => setPressedButton(control.button, false)}
                     >
                       <span class="touch-button-label touch-button-icon" aria-hidden="true">
                         <svelte:component this={control.icon} size={18} strokeWidth={2.75} />
                       </span>
-                    </button>
+                    </TouchControlButton>
                   {/each}
                 </div>
               {/if}
 
               <div class="touch-cluster touch-actions" role="group" aria-label="Action buttons">
                 {#each ACTION_BUTTONS as control (control.button)}
-                  <button
-                    type="button"
-                    class={`touch-button action ${control.button} ${pressedButtons[control.button] ? "pressed" : ""}`.trim()}
-                    aria-label={control.label}
-                    aria-pressed={pressedButtons[control.button]}
-                    on:pointerdown={(event) => handleControllerPress(control.button, event)}
-                    on:pointerup={(event) => handleControllerRelease(control.button, event)}
-                    on:pointercancel={(event) => handleControllerRelease(control.button, event)}
-                    on:lostpointercapture={() => setPressedButton(control.button, false)}
+                  <TouchControlButton
+                    ariaLabel={control.label}
+                    button={control.button}
+                    className={`touch-button action ${control.button}`.trim()}
+                    pressed={pressedButtons[control.button]}
+                    onPress={handleControllerPress}
+                    onRelease={handleControllerRelease}
+                    onLostCapture={() => setPressedButton(control.button, false)}
                   >
                     <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
-                  </button>
+                  </TouchControlButton>
                 {/each}
               </div>
             </div>
@@ -1112,93 +1059,14 @@
       </div>
     </section>
 
-    <aside class="side-rail" aria-label="Setup notes">
-      <article class="launcher-shell" aria-label="Bundled ROM library">
-        <div class="launcher-header">
-          <h2>ROM Library</h2>
-        </div>
-        <div class="launcher-scroll">
-          {#if libraryStatusMessages.length > 0}
-            <div class="launcher-status-stack" aria-live="polite">
-              {#each libraryStatusMessages as message (`status-${message}`)}
-                <p class="launcher-empty">{message}</p>
-              {/each}
-            </div>
-          {/if}
-
-          {#if selectedLibraryEntry}
-            <div class="launcher-details" aria-live="polite">
-              <p class="launcher-details-title">{selectedLibraryEntry.title}</p>
-              {#if selectedLibraryAuthorCredit}
-                <p class="launcher-details-credit">
-                  <span>By</span>
-                  {#if selectedLibraryAuthorCredit.url}
-                    <a href={selectedLibraryAuthorCredit.url} target="_blank" rel="noreferrer">{selectedLibraryAuthorCredit.name}</a>
-                  {:else}
-                    <span>{selectedLibraryAuthorCredit.name}</span>
-                  {/if}
-                </p>
-              {/if}
-
-              <div class="launcher-link-row">
-                {#if selectedLibraryEntry.originalPageUrl}
-                  <a href={selectedLibraryEntry.originalPageUrl} target="_blank" rel="noreferrer">Page</a>
-                {/if}
-                {#if showsArchiveLink(selectedLibraryEntry)}
-                  <a href={selectedLibraryEntry.archiveDownloadUrl} target="_blank" rel="noreferrer">Archive</a>
-                {/if}
-                {#if selectedLibraryEntry.sourceUrl}
-                  <a href={selectedLibraryEntry.sourceUrl} target="_blank" rel="noreferrer">Source</a>
-                {/if}
-                {#if selectedLibraryEntry.licenseUrl}
-                  <a href={selectedLibraryEntry.licenseUrl} target="_blank" rel="noreferrer">License</a>
-                {/if}
-                {#if selectedLibraryEntry.noticeFile}
-                  <a href={assetPath(selectedLibraryEntry.noticeFile)} target="_blank" rel="noreferrer">Notice</a>
-                {/if}
-                {#if selectedLibraryEntry.licenseFile}
-                  <a href={assetPath(selectedLibraryEntry.licenseFile)} target="_blank" rel="noreferrer">Bundled license</a>
-                {/if}
-              </div>
-            </div>
-          {/if}
-
-          {#if libraryEntries.length > 0}
-            <ul class="launcher-grid" aria-label="Bundled ROM list">
-              {#if isBundledPermalinkActive}
-                <li class="launcher-list-item">
-                  <button
-                    type="button"
-                    class="launcher-item launcher-item-local"
-                    on:click={() => void navigateHomeForLocalRomSelection()}
-                  >
-                    <strong>Load your own ROM</strong>
-                  </button>
-                </li>
-              {/if}
-              {#each libraryEntries as entry (entry.id)}
-                <li class="launcher-list-item">
-                  <a
-                    href={getEntryPath(entry)}
-                    class={`launcher-item ${entry.id === activeLibraryId ? "active" : ""} ${entry.supported ? "" : "unsupported"}`.trim()}
-                    aria-current={entry.id === activeLibraryId ? "page" : undefined}
-                    aria-disabled={!entry.supported}
-                    title={entry.supported
-                      ? `${entry.title} • Mapper ${entry.mapper} • ${getEntryLicenseSummary(entry)}`
-                      : `${entry.title} is unavailable in this build (mapper ${entry.mapper})`}
-                    data-sveltekit-preload-data="tap"
-                    on:click|preventDefault={() => void navigateToEntry(entry)}
-                  >
-                    <strong>{entry.title}</strong>
-                  </a>
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <p class="launcher-empty">No bundled ROMs available.</p>
-          {/if}
-        </div>
-      </article>
-    </aside>
+    <LibraryPanel
+      {activeLibraryId}
+      {isBundledPermalinkActive}
+      {libraryEntries}
+      {libraryStatusMessages}
+      {selectedLibraryEntry}
+      onLoadLocalRom={navigateHomeForLocalRomSelection}
+      onNavigateToEntry={navigateToEntry}
+    />
   </main>
 </div>

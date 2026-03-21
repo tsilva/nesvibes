@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
     "check:headers": "node scripts/check-security-headers.mjs",
+    "check:rom-assets": "node scripts/rom-assets.mjs",
+    "prune:rom-assets": "node scripts/rom-assets.mjs --prune",
     "test:emu": "node --test"
   },
   "dependencies": {
