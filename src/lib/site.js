@@ -18,7 +18,8 @@ export const site = {
     "mobile NES emulator"
   ],
   locale: "en_US",
-  themeColor: "#252525",
+  themeColor: "#e4000f",
+  backgroundColor: "#252525",
   githubUrl: "https://github.com/tsilva/nesvibes",
   ogImage: {
     path: "/og-image.png",

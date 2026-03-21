@@ -88,6 +88,7 @@
   <meta name="keywords" content={site.keywords.join(", ")} />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="theme-color" content={site.themeColor} />
+  <meta name="color-scheme" content="dark" />
   <meta name="application-name" content={site.name} />
   <meta name="apple-mobile-web-app-title" content={site.name} />
   <meta name="apple-mobile-web-app-capable" content="yes" />
