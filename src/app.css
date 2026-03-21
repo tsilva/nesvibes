@@ -1286,23 +1286,34 @@ canvas:focus-visible {
   }
 
   .hero-banner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 12px;
     gap: 8px;
-    padding: 12px 58px 12px 14px;
+    padding: 12px 14px;
+  }
+
+  .hero-controls {
+    position: static;
+    top: auto;
+    right: auto;
+    align-self: start;
   }
 
   .hero-copy {
     gap: 6px;
-    max-width: calc(100% - 54px);
+    min-width: 0;
+    max-width: none;
   }
 
   .hero-meta {
-    max-width: calc(100% - 2px);
+    max-width: none;
     font-size: 14px;
     line-height: 1.28;
   }
 
   .hero-meta-link {
-    text-wrap: balance;
+    text-wrap: wrap;
   }
 
   .overlay {
@@ -1466,14 +1477,6 @@ canvas:focus-visible {
   .hero-lede {
     font-size: 16px;
     line-height: 1.05;
-  }
-
-  .hero-banner {
-    padding-right: 52px;
-  }
-
-  .hero-copy {
-    max-width: calc(100% - 58px);
   }
 
   .hero-meta {

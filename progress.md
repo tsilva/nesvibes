@@ -64,3 +64,7 @@ Original prompt: Add fullscreen mod support, clicking it shows the emulator canv
 - Compatibility note: server-side ROM lookup still accepts the old id-based slug as a fallback, so existing links continue to resolve while all newly generated links now use the cleaner title slug.
 
 - Verification: `npm run check` passed after the slug update. A catalog probe confirmed examples like `Air Hockey - NES Black Box -> air-hockey-nes-black-box` and `CMC'80s -> cmc-80s`.
+
+- Mobile hero layout follow-up: converted the narrow-screen hero header from an absolute-positioned GitHub button layout into a two-column grid so the metadata copy gets the full text column width. Also removed the balanced wrapping on the emulator source link so the “Single javascript file …” line uses the available space instead of breaking into artificially short lines.
+
+- Verification: `npm run check` passed after the mobile hero layout update.
