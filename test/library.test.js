@@ -14,6 +14,21 @@ test("library data is pre-shaped for the page and keeps licensed entries first",
   assert.equal(Array.isArray(data.libraryEntries[0].detailLinks), true);
 });
 
+test("page payload compacts the library catalog while keeping quicklaunch data", async () => {
+  const pageData = await loadNesVibesPageData();
+
+  assert.equal(typeof pageData.libraryEntries[0].playPath, "string");
+  assert.equal(typeof pageData.libraryEntries[0].licenseSummary, "string");
+  assert.equal("detailLinks" in pageData.libraryEntries[0], false);
+  assert.equal("assetHref" in pageData.libraryEntries[0], false);
+  assert.equal("sourceKind" in pageData.libraryEntries[0], false);
+
+  assert.equal(typeof pageData.autoLaunchEntriesByMode["most-valuable"].assetHref, "string");
+  assert.equal(typeof pageData.autoLaunchEntriesByMode["most-valuable"].sizeBytes, "number");
+  assert.equal("description" in pageData.autoLaunchEntriesByMode["most-valuable"], false);
+  assert.equal(typeof pageData.autoLaunchEntriesByMode["next-most-valuable"].assetHref, "string");
+});
+
 test("selected game page data preserves bundled legal links for public-domain exceptions", async () => {
   const snowPage = await loadNesVibesPageData("snow-snow");
   const tetraminoPage = await loadNesVibesPageData("tetramino-t");

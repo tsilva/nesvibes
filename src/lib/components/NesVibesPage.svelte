@@ -63,13 +63,13 @@
   const DRAG_OVERLAY_COPY = "Drop ROM to load it.";
   const HOME_PATH = "/";
   const ROM_MODE_PARAM_NAMES = ["romMode", "rom-mode", "mode"];
-  const ROM_MODE_RANK_BY_ALIAS = new Map([
-    ["most-valuable", 0],
-    ["most-valuable-rom", 0],
-    ["most-valuable-rom-mode", 0],
-    ["next-most-valuable", 1],
-    ["next-most-valuable-rom", 1],
-    ["next-most-valuable-rom-mode", 1],
+  const AUTO_LAUNCH_MODE_BY_ALIAS = new Map([
+    ["most-valuable", "most-valuable"],
+    ["most-valuable-rom", "most-valuable"],
+    ["most-valuable-rom-mode", "most-valuable"],
+    ["next-most-valuable", "next-most-valuable"],
+    ["next-most-valuable-rom", "next-most-valuable"],
+    ["next-most-valuable-rom-mode", "next-most-valuable"],
   ]);
   const JOYSTICK_MAX_DISTANCE = 20;
   const JOYSTICK_DEAD_ZONE = 0.38;
@@ -101,19 +101,23 @@
   let lastHandledSelectedGameId = data.selectedGameId ?? null;
   let clearedRouteSelectedGameId = null;
   let canvasControlsMode = "controls";
-  let publicDomainEntries = [];
+  let autoLaunchEntriesByMode = {};
   let runtimeLibraryStatusMessages = [];
   let libraryEntries = [];
   let libraryStatusMessages = [];
+  let selectedGameDetails = null;
   $: effectiveCanvasControlsMode =
     isMobileMode && !MOBILE_CANVAS_CONTROL_MODES.includes(canvasControlsMode)
       ? "gamepad"
       : canvasControlsMode;
-  $: publicDomainEntries = data.publicDomainEntries ?? [];
+  $: autoLaunchEntriesByMode = data.autoLaunchEntriesByMode ?? {};
   $: libraryEntries = data.libraryEntries ?? [];
+  $: selectedGameDetails = data.selectedGame ?? null;
   $: libraryStatusMessages = [...(data.libraryStatusMessages ?? []), ...runtimeLibraryStatusMessages];
   $: selectedLibraryEntry =
-    libraryEntries.find((entry) => entry.id === activeLibraryId) ?? null;
+    (selectedGameDetails?.id === activeLibraryId
+      ? selectedGameDetails
+      : libraryEntries.find((entry) => entry.id === activeLibraryId)) ?? null;
   $: canToggleFullscreen = fullscreenSupported && stageMode === "loaded";
   $: showCanvasControls = stageMode === "loaded" && effectiveCanvasControlsMode !== "hidden";
   $: showJoystickOverlay = effectiveCanvasControlsMode === "gamepad";
@@ -123,8 +127,10 @@
     : null;
   $: isRouteSelectionSuppressed =
     clearedRouteSelectedGameId !== null && routeSelectedGameId === clearedRouteSelectedGameId;
-  $: effectiveSelectedGameId = isRouteSelectionSuppressed ? null : routeSelectedGameId;
-  $: selectedGameEntry = isRouteSelectionSuppressed ? null : routeSelectedGameEntry;
+  $: effectiveSelectedGameId = isRouteSelectionSuppressed ? null : (selectedGameDetails?.id ?? routeSelectedGameId);
+  $: selectedGameEntry = isRouteSelectionSuppressed
+    ? null
+    : (selectedGameDetails?.id === routeSelectedGameId ? selectedGameDetails : routeSelectedGameEntry);
   $: selectedGameAssetHref = selectedGameEntry?.assetHref ?? null;
   $: isBundledPermalinkActive = effectiveSelectedGameId !== null;
   $: if (clearedRouteSelectedGameId !== null && routeSelectedGameId !== clearedRouteSelectedGameId) {
@@ -312,7 +318,7 @@
       }
 
       const normalizedValue = normalizeRomMode(value);
-      if (ROM_MODE_RANK_BY_ALIAS.has(normalizedValue)) {
+      if (AUTO_LAUNCH_MODE_BY_ALIAS.has(normalizedValue)) {
         return normalizedValue;
       }
     }
@@ -320,29 +326,17 @@
     return null;
   }
 
-  // Larger supported ROMs tend to exercise more of the emulator and expose more content,
-  // so size is the primary ranking signal for the auto-launch "value" modes.
-  function compareRomValue(a, b) {
-    return (
-      b.sizeBytes - a.sizeBytes ||
-      b.prgBanks - a.prgBanks ||
-      b.chrBanks - a.chrBanks ||
-      a.title.localeCompare(b.title)
-    );
-  }
-
-  function getRomEntryForMode(catalog, mode) {
+  function getAutoLaunchEntry(mode) {
     if (!mode) {
       return null;
     }
 
-    const requestedRank = ROM_MODE_RANK_BY_ALIAS.get(mode);
-    if (requestedRank === undefined) {
+    const normalizedMode = AUTO_LAUNCH_MODE_BY_ALIAS.get(mode);
+    if (!normalizedMode) {
       return null;
     }
 
-    const supportedEntries = catalog.filter((entry) => entry.supported).sort(compareRomValue);
-    return supportedEntries[requestedRank] ?? null;
+    return autoLaunchEntriesByMode[normalizedMode] ?? null;
   }
 
   async function ensureEmulator() {
@@ -444,7 +438,10 @@
     }
 
     const requestToken = ++bundledLoadRequestToken;
-    const romRequest = fetch(entry.assetHref, { cache: "force-cache" });
+    const romRequest = fetch(entry.assetHref, {
+      cache: "force-cache",
+      credentials: "same-origin",
+    });
 
     try {
       await ensureEmulator();
@@ -840,7 +837,7 @@
     void ensureEmulator().catch((error) => {
       console.error(error);
     });
-    const autoLaunchEntry = selectedGameEntry ?? getRomEntryForMode(publicDomainEntries, requestedRomMode);
+    const autoLaunchEntry = selectedGameEntry ?? getAutoLaunchEntry(requestedRomMode);
     if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
       void loadBundledRom(autoLaunchEntry);
     } else if (selectedGameEntry && !selectedGameEntry.supported) {
@@ -874,7 +871,7 @@
 
 <svelte:head>
   {#if selectedGameAssetHref}
-    <link rel="preload" href={selectedGameAssetHref} as="fetch" />
+    <link rel="preload" href={selectedGameAssetHref} as="fetch" crossorigin="anonymous" />
   {/if}
 </svelte:head>
 
@@ -968,7 +965,16 @@
             {#if !isDragging && overlayTitle && !(isMobileMode && overlayVariant === "empty")}
               <strong>{overlayTitle}</strong>
             {/if}
-            <p id="loader-copy">{isDragging ? DRAG_OVERLAY_COPY : overlayCopy}</p>
+            <p id="loader-copy">
+              {#if isDragging}
+                {DRAG_OVERLAY_COPY}
+              {:else if overlayVariant === "empty"}
+                <span class="overlay-copy-mobile">{MOBILE_EMPTY_OVERLAY_COPY}</span>
+                <span class="overlay-copy-desktop">{DESKTOP_EMPTY_OVERLAY_COPY}</span>
+              {:else}
+                {overlayCopy}
+              {/if}
+            </p>
             {#if !isDragging && overlayVariant === "empty"}
               <p class="overlay-note">Try the Super Mario Bros ROM if you have it :)</p>
             {/if}

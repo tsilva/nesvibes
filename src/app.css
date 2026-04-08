@@ -551,6 +551,15 @@ canvas:focus-visible {
   color: #d44a4a;
 }
 
+.overlay-copy-mobile,
+.overlay-copy-desktop {
+  display: inline;
+}
+
+.overlay-copy-mobile {
+  display: none;
+}
+
 .overlay-note {
   font-size: clamp(10px, 1vw, 12px) !important;
   line-height: 1.2;
@@ -1155,6 +1164,14 @@ canvas:focus-visible {
 }
 
 @media (max-width: 980px) {
+  .overlay-copy-mobile {
+    display: inline;
+  }
+
+  .overlay-copy-desktop {
+    display: none;
+  }
+
   body {
     overflow-y: auto;
   }
@@ -1239,6 +1256,7 @@ canvas:focus-visible {
       0 0 0 3px rgba(12, 12, 12, 0.96),
       0 12px 24px rgba(0, 0, 0, 0.32);
     backdrop-filter: none;
+    min-height: 120px;
   }
 
   .side-rail {

@@ -12,6 +12,7 @@ const MAX_TITLE_LENGTH = 60;
 const MAX_DESCRIPTION_LENGTH = 155;
 const MAX_DESCRIPTION_HOOK_LENGTH = 125;
 const DESCRIPTION_CTA = " Play instantly in your browser.";
+const AUTO_LAUNCH_MODE_KEYS = ["most-valuable", "next-most-valuable"];
 
 function countLines(source) {
   if (source.length === 0) {
@@ -163,6 +164,49 @@ function buildLibraryEntryViewModel(entry) {
   };
 }
 
+function buildQuicklaunchEntry(entry) {
+  return {
+    id: entry.id,
+    title: entry.title,
+    file: entry.file,
+    supported: entry.supported,
+    sizeBytes: entry.sizeBytes,
+    prgBanks: entry.prgBanks,
+    chrBanks: entry.chrBanks,
+    assetHref: assetPath(entry.file),
+  };
+}
+
+function buildLibraryListEntry(entry) {
+  return {
+    id: entry.id,
+    title: entry.title,
+    mapper: entry.mapper,
+    supported: entry.supported,
+    licenseSummary: getEntryLicenseSummary(entry),
+    playPath: `/play/${encodeURIComponent(entry.slug)}`,
+  };
+}
+
+function compareRomValue(a, b) {
+  return (
+    b.sizeBytes - a.sizeBytes ||
+    b.prgBanks - a.prgBanks ||
+    b.chrBanks - a.chrBanks ||
+    a.title.localeCompare(b.title)
+  );
+}
+
+function buildAutoLaunchEntries(entries) {
+  const rankedEntries = entries.filter((entry) => entry.supported).sort(compareRomValue);
+
+  return Object.fromEntries(
+    AUTO_LAUNCH_MODE_KEYS
+      .map((mode, index) => [mode, rankedEntries[index] ? buildQuicklaunchEntry(rankedEntries[index]) : null])
+      .filter(([, entry]) => entry !== null)
+  );
+}
+
 async function readCatalog(filePath, failureMessage, sourceKind) {
   try {
     const source = await readFile(filePath, "utf8");
@@ -276,9 +320,8 @@ export async function loadNesVibesPageData(selectedGameId = null) {
   return {
     emulatorLocLabel,
     emulatorSourceUrl: EMULATOR_SOURCE_URL,
-    publicDomainEntries: libraryData.publicDomainEntries,
-    licensedEntries: libraryData.licensedEntries,
-    libraryEntries: libraryData.libraryEntries,
+    autoLaunchEntriesByMode: buildAutoLaunchEntries(libraryData.publicDomainEntries),
+    libraryEntries: libraryData.libraryEntries.map(buildLibraryListEntry),
     libraryStatusMessages: libraryData.libraryStatusMessages,
     selectedGame,
     selectedGameId: selectedGame?.id ?? null,
