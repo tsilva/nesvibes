@@ -1,10 +1,10 @@
 export const site = {
   name: "NESVibes",
   url: "https://nesvibes.tsilva.eu",
-  title: "Play NES Games Online Instantly | NESVibes",
+  title: "Play NES Games Online in Your Browser | NESVibes",
   description:
-    "Play NES games online instantly in your browser. Public-domain and licensed homebrew ROMs, touch controls, fullscreen, and a built-in debugger.",
-  shortDescription: "Play NES games online instantly in your browser.",
+    "Play Nintendo Entertainment System (NES) games online instantly in your browser with bundled homebrew and public-domain ROMs, touch controls, fullscreen play, and drag-and-drop support for your own .nes files.",
+  shortDescription: "Play NES games online in your browser.",
   locale: "en_US",
   themeColor: "#e4000f",
   backgroundColor: "#252525",
@@ -14,7 +14,7 @@ export const site = {
     type: "image/png",
     width: 1200,
     height: 630,
-    alt: "NESVibes social card showing a pixel-art console chip over a retro circuit-board background."
+    alt: "NESVibes social card showing a pixel-art console chip and red D-pad over a retro circuit-board background."
   },
   icons: {
     favicon16: "/favicon-16x16.png",
@@ -96,7 +96,7 @@ function createSelectedGameSchema({ canonicalUrl, description, ogImageUrl, selec
   const mainEntity = {
     "@type": "CreativeWork",
     name: selectedGame.title,
-    description: normalizeMetaText(selectedGame.description || description),
+    description: normalizeMetaText(description),
     url: canonicalUrl,
     image: ogImageUrl,
     isAccessibleForFree: true
@@ -139,9 +139,7 @@ export function createPageMetadata({
 } = {}) {
   const canonicalUrl = absoluteUrl(pathname);
   const ogImageUrl = absoluteUrl(site.ogImage.path);
-  const ogImageAlt = selectedGame?.title
-    ? `${selectedGame.title} on NESVibes, playable online in the browser.`
-    : site.ogImage.alt;
+  const ogImageAlt = site.ogImage.alt;
   const jsonLd = selectedGame
     ? createSelectedGameSchema({
         canonicalUrl,

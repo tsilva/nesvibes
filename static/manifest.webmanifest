@@ -1,7 +1,7 @@
 {
   "name": "NESVibes",
   "short_name": "NESVibes",
-  "description": "Play NES games online instantly in your browser.",
+  "description": "Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

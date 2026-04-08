@@ -10,9 +10,18 @@ const EMULATOR_SOURCE_URL =
   "https://github.com/tsilva/nesvibes/blob/main/src/lib/emu/nes-emulator.js";
 const MAX_TITLE_LENGTH = 60;
 const MAX_DESCRIPTION_LENGTH = 155;
-const MAX_DESCRIPTION_HOOK_LENGTH = 125;
-const DESCRIPTION_CTA = " Play instantly in your browser.";
+const DETAIL_PAGE_FALLBACK_CTA = "No download required, with fullscreen play and touch controls.";
 const AUTO_LAUNCH_MODE_KEYS = ["most-valuable", "next-most-valuable"];
+const META_SENTENCE_REJECT_PATTERNS = [
+  /^Although\b/i,
+  /^Unfortunately\b/i,
+  /^It's supposed to\b/i,
+  /^It'?s supposed to\b/i,
+  /^Source included\b/i,
+  /All Rights Reserved/i,
+  /emulator authors/i,
+  /copyright/i
+];
 
 function countLines(source) {
   if (source.length === 0) {
@@ -66,12 +75,39 @@ function trimTextAtWordBoundary(text, maxLength) {
   return `${trimmedSlice.trimEnd()}…`;
 }
 
-function getDescriptionHook(description) {
-  const normalizedDescription = normalizeMetaText(description);
-  const firstSentenceMatch = normalizedDescription.match(/^.*?[.!?](?=\s|$)/);
-  const firstSentence = firstSentenceMatch?.[0] ?? normalizedDescription;
+function toSentenceList(description) {
+  return normalizeMetaText(description)
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
 
-  return trimTextAtWordBoundary(firstSentence, MAX_DESCRIPTION_HOOK_LENGTH);
+function stripLowValuePrefixes(sentence) {
+  const rewritten = sentence
+    .replace(/^This is\s+/i, "")
+    .replace(/^This ROM is\s+/i, "")
+    .replace(/^This game is\s+/i, "")
+    .replace(/^This demo is\s+/i, "");
+
+  return rewritten.length > 0
+    ? `${rewritten.charAt(0).toUpperCase()}${rewritten.slice(1)}`
+    : "";
+}
+
+function getGameContextClause(description) {
+  const sentences = toSentenceList(description);
+
+  for (const sentence of sentences) {
+    const rewrittenSentence = stripLowValuePrefixes(sentence);
+
+    if (!rewrittenSentence || META_SENTENCE_REJECT_PATTERNS.some((pattern) => pattern.test(rewrittenSentence))) {
+      continue;
+    }
+
+    return rewrittenSentence;
+  }
+
+  return "";
 }
 
 function getLicenseLabel(entry) {
@@ -239,10 +275,17 @@ function buildPageTitle(selectedGame) {
     return site.title;
   }
 
-  const onlineTitle = `Play ${selectedGame.title} Online | ${site.name}`;
-  return onlineTitle.length <= MAX_TITLE_LENGTH
-    ? onlineTitle
-    : `Play ${selectedGame.title} | ${site.name}`;
+  const preferredTitle = `Play ${selectedGame.title} NES Game Online in Your Browser | ${site.name}`;
+  if (preferredTitle.length <= MAX_TITLE_LENGTH) {
+    return preferredTitle;
+  }
+
+  const shortFallbackTitle = `Play ${selectedGame.title} NES Game Online | ${site.name}`;
+  if (shortFallbackTitle.length <= MAX_TITLE_LENGTH) {
+    return shortFallbackTitle;
+  }
+
+  return trimTextAtWordBoundary(`Play ${selectedGame.title} NES Online | ${site.name}`, MAX_TITLE_LENGTH);
 }
 
 function buildPageDescription(selectedGame) {
@@ -250,14 +293,23 @@ function buildPageDescription(selectedGame) {
     return site.description;
   }
 
-  const hook = getDescriptionHook(selectedGame.description);
-  const withCta = `${hook}${DESCRIPTION_CTA}`;
+  const intro = `Play ${selectedGame.title}, a Nintendo Entertainment System (NES) game, online instantly in your browser.`;
+  const contextClause = getGameContextClause(selectedGame.description);
 
-  if (withCta.length <= MAX_DESCRIPTION_LENGTH) {
-    return withCta;
+  if (contextClause) {
+    const withContext = `${intro} ${contextClause}`;
+
+    if (withContext.length <= MAX_DESCRIPTION_LENGTH) {
+      return withContext;
+    }
   }
 
-  return trimTextAtWordBoundary(hook, MAX_DESCRIPTION_LENGTH);
+  const withFallbackCta = `${intro} ${DETAIL_PAGE_FALLBACK_CTA}`;
+  if (withFallbackCta.length <= MAX_DESCRIPTION_LENGTH) {
+    return withFallbackCta;
+  }
+
+  return trimTextAtWordBoundary(intro, MAX_DESCRIPTION_LENGTH);
 }
 
 export async function getLibraryData() {

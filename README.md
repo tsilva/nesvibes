@@ -5,7 +5,7 @@
   [![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://nesvibes.tsilva.eu)
   [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-  **Vibecoded with GPT-5.4. Play public-domain and homebrew NES games right in your browser.**
+  **Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
 
   [Live Demo](https://nesvibes.tsilva.eu) · [GitHub](https://github.com/tsilva/nesvibes)
 </div>
@@ -14,13 +14,13 @@
 
 ## 🕹️ Overview
 
-**The Punchline:** nesvibes is vibecoded with GPT-5.4, and that is the point.
+**The Punchline:** nesvibes lets you play Nintendo Entertainment System (NES) games online in your browser with zero downloads.
 
 **The Pain:** Setting up NES emulators means downloading apps, hunting for ROMs, and fiddling with configs — just to play a quick round of a retro game.
 
-**The Solution:** nesvibes is a browser-native NES emulator built with SvelteKit. It ships with 44 playable bundled ROMs spanning public-domain and redistributable homebrew releases, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
+**The Solution:** nesvibes is a browser-native NES player built with SvelteKit. It ships with 44 playable bundled ROMs spanning public-domain and redistributable homebrew releases, supports drag-and-drop for your own `.nes` files, and runs entirely client-side.
 
-**The Result:** Open a URL, pick a game, play. Zero setup, works on desktop and mobile.
+**The Result:** Open a URL, pick a game, play. Zero setup, works on desktop and mobile. The GPT-5.4 build story stays as a secondary detail, not the reason to click.
 
 <div align="center">
 
