@@ -202,7 +202,7 @@ async function main() {
   }
 
   const cwd = process.cwd();
-  const fileEnv = loadEnvFile(path.join(cwd, ".env.sentry-mcp"));
+  const fileEnv = loadEnvFile(path.join(cwd, ".env"));
   const authToken = process.env.SENTRY_AUTH_TOKEN || fileEnv.SENTRY_AUTH_TOKEN || "";
   const org = process.env.SENTRY_ORG || fileEnv.SENTRY_ORG || SENTRY_ORG;
   const project = process.env.SENTRY_PROJECT || fileEnv.SENTRY_PROJECT || SENTRY_PROJECT;
@@ -210,7 +210,7 @@ async function main() {
 
   if (!authToken) {
     throw new Error(
-      "Missing SENTRY_AUTH_TOKEN. Set it in the environment or in .env.sentry-mcp.",
+      "Missing SENTRY_AUTH_TOKEN. Set it in the environment or in .env.",
     );
   }
 

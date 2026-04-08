@@ -19,7 +19,7 @@ function parseBoolean(value) {
   return null;
 }
 
-export function getSentryDsn() {
+export function getDefaultSentryDsn() {
   const dsn = env.PUBLIC_SENTRY_DSN?.trim();
   return dsn ? dsn : DEFAULT_SENTRY_DSN;
 }
@@ -34,18 +34,20 @@ export function isSentryEnabled() {
   return import.meta.env.PROD;
 }
 
-export function getSentryOptions() {
-  const dsn = getSentryDsn();
-
+export function createSentryOptions(dsn, enabled = isSentryEnabled()) {
   if (!dsn) {
     return null;
   }
 
   return {
     dsn,
-    enabled: isSentryEnabled(),
+    enabled,
     tracesSampleRate: 0.1,
     enableLogs: true,
     sendDefaultPii: true,
   };
+}
+
+export function getSentryOptions() {
+  return createSentryOptions(getDefaultSentryDsn());
 }

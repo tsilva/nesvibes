@@ -76,17 +76,35 @@ Enable Sentry locally in dev mode:
 PUBLIC_SENTRY_ENABLED=true pnpm dev
 ```
 
-Override the default project DSN if needed:
+Local Sentry settings live in `.env`. Start from the example:
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+Set the browser/runtime DSN if needed:
 
 ```bash
 PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0 pnpm dev
 ```
 
+Optionally override the server-side DSN used by SSR and hooks:
+
+```bash
+SENTRY_DSN=https://examplePrivateKey@o0.ingest.sentry.io/0 pnpm dev
+```
+
+Use the same `.env` file for source map uploads and issue queries:
+
+```bash
+SENTRY_AUTH_TOKEN=sntrys_your_token_here pnpm sentry:issues
+pnpm build
+```
+
 List existing Sentry issues for this project:
 
 ```bash
-cp .env.sentry-mcp.example .env.sentry-mcp
-$EDITOR .env.sentry-mcp
 pnpm sentry:issues
 ```
 
@@ -190,8 +208,8 @@ static/roms/pdroms/nes/
 - 45 ROMs are cataloged in total: 36 public-domain entries and 9 redistributable homebrew entries.
 - 44 bundled ROMs are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
 - The emulator runs entirely client-side. Google Analytics is only loaded when `PUBLIC_GOOGLE_ANALYTICS_ID` is set, and it is deferred until after mount so it stays out of the render path.
-- Sentry is preconfigured for the `nesvibes` project and defaults to enabled in production builds. Set `PUBLIC_SENTRY_ENABLED=true` to send events during local development.
-- `pnpm sentry:issues` reads `.env.sentry-mcp` and uses the Sentry API to list existing issues for this project.
+- Sentry is preconfigured for the `nesvibes` project and defaults to enabled in production builds. Local runtime, build upload, and issue-query settings all come from `.env`. Production uses `PUBLIC_SENTRY_DSN`, and the server runtime can override that with `SENTRY_DSN`. Set `PUBLIC_SENTRY_ENABLED=true` to send events during local development.
+- `pnpm sentry:issues` reads `.env` and uses the Sentry API to list existing issues for this project.
 - Production deployments attach static security headers from `vercel.json`, including CSP, HSTS, COOP, and clickjacking/content-sniffing protections.
 
 ## ⭐ Support

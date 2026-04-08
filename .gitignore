@@ -4,14 +4,9 @@ node_modules
 .env
 .env.*
 !.env.example
-!.env.sentry-mcp.example
 
 *.nes
 !static/roms/pdroms/nes/library/**/*.nes
 !static/roms/pdroms/nes/library/**/*.NES
 !static/roms/licensed/nes/library/**/*.nes
 !static/roms/licensed/nes/library/**/*.NES
-
-# Sentry Config File
-.env.sentry-build-plugin
-.env.sentry-mcp
