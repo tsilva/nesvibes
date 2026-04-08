@@ -1,22 +1,10 @@
 export const site = {
   name: "NESVibes",
   url: "https://nesvibes.tsilva.eu",
-  title: "NESVibes | Vibecoded with GPT-5.4",
+  title: "Play NES Online Instantly | NESVibes",
   description:
-    "Vibecoded with GPT-5.4, NESVibes lets you play public-domain and redistributable homebrew NES games instantly in your browser with quicklaunch ROMs, upstream credits, license notices, touch controls, fullscreen play, and a built-in debugger.",
-  shortDescription: "Vibecoded with GPT-5.4. Browser NES emulator for public-domain and redistributable homebrew games.",
-  keywords: [
-    "vibecoded with GPT-5.4",
-    "GPT-5.4 project",
-    "NES emulator browser",
-    "play NES online",
-    "browser NES emulator",
-    "public-domain NES ROMs",
-    "licensed homebrew NES ROMs",
-    "homebrew NES games",
-    "retro gaming",
-    "mobile NES emulator"
-  ],
+    "Play NES games instantly in your browser. Public-domain and homebrew ROMs, touch controls, fullscreen, and a built-in debugger.",
+  shortDescription: "Play NES games instantly in your browser.",
   locale: "en_US",
   themeColor: "#e4000f",
   backgroundColor: "#252525",

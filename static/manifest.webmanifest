@@ -1,7 +1,7 @@
 {
   "name": "NESVibes",
   "short_name": "NESVibes",
-  "description": "Vibecoded with GPT-5.4. Play public-domain and homebrew NES games instantly in your browser.",
+  "description": "Play NES games instantly in your browser.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

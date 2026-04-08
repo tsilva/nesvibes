@@ -6,10 +6,10 @@ const sentryOptions = getSentryOptions();
 globalThis.__sentryTest = () => {
   const error = new Error(`Sentry smoke test [${new Date().toISOString()}]`);
 
-  if (sentryOptions) {
+  if (sentryOptions?.enabled) {
     Sentry.captureException(error);
   } else {
-    console.warn("Sentry DSN is not configured; throwing without capture.");
+    console.warn("Sentry is disabled; throwing without capture.");
   }
 
   throw error;

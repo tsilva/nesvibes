@@ -61,43 +61,57 @@ npm run dev
 Build for production:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Enable Google Analytics 4 with a public measurement ID:
 
 ```bash
-PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX npm run dev
+PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX pnpm dev
 ```
 
-Enable Sentry error reporting with a public DSN:
+Enable Sentry locally in dev mode:
 
 ```bash
-PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0 npm run dev
+PUBLIC_SENTRY_ENABLED=true pnpm dev
+```
+
+Override the default project DSN if needed:
+
+```bash
+PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0 pnpm dev
+```
+
+List existing Sentry issues for this project:
+
+```bash
+cp .env.sentry-mcp.example .env.sentry-mcp
+$EDITOR .env.sentry-mcp
+pnpm sentry:issues
 ```
 
 Run the project checks:
 
 ```bash
-npm run check
+pnpm check
 ```
 
 Verify the production security header policy:
 
 ```bash
-npm run check:headers
+pnpm check:headers
 ```
 
 Verify the bundled ROM tree only contains catalog-referenced runtime assets:
 
 ```bash
-npm run check:rom-assets
+pnpm check:rom-assets
 ```
 
 You can also verify a deployed URL matches the checked-in policy:
 
 ```bash
-npm run check:headers -- https://nesvibes.tsilva.eu
+pnpm check:headers -- https://nesvibes.tsilva.eu
 ```
 
 ## 🎮 Controls
@@ -176,7 +190,8 @@ static/roms/pdroms/nes/
 - 45 ROMs are cataloged in total: 36 public-domain entries and 9 redistributable homebrew entries.
 - 44 bundled ROMs are launchable with the current mapper set. The mapper-5 TMNT Demo is shown but disabled.
 - The emulator runs entirely client-side. Google Analytics is only loaded when `PUBLIC_GOOGLE_ANALYTICS_ID` is set, and it is deferred until after mount so it stays out of the render path.
-- Sentry is enabled when `PUBLIC_SENTRY_DSN` is set.
+- Sentry is preconfigured for the `nesvibes` project and defaults to enabled in production builds. Set `PUBLIC_SENTRY_ENABLED=true` to send events during local development.
+- `pnpm sentry:issues` reads `.env.sentry-mcp` and uses the Sentry API to list existing issues for this project.
 - Production deployments attach static security headers from `vercel.json`, including CSP, HSTS, COOP, and clickjacking/content-sniffing protections.
 
 ## ⭐ Support

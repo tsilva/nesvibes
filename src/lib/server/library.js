@@ -1,12 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { getLibraryEntrySlug } from "../rom-slug.js";
+import { site } from "../site.js";
 
 const EMULATOR_FILE_PATH = resolve(process.cwd(), "src/lib/emu/nes-emulator.js");
 const PUBLIC_DOMAIN_CATALOG_FILE_PATH = resolve(process.cwd(), "static/roms/pdroms/nes/catalog.json");
 const LICENSED_CATALOG_FILE_PATH = resolve(process.cwd(), "static/roms/licensed/nes/catalog.json");
 const EMULATOR_SOURCE_URL =
   "https://github.com/tsilva/nesvibes/blob/main/src/lib/emu/nes-emulator.js";
+const MAX_TITLE_LENGTH = 60;
+const MAX_DESCRIPTION_LENGTH = 155;
+const MAX_DESCRIPTION_HOOK_LENGTH = 125;
+const DESCRIPTION_CTA = " Play instantly in your browser.";
 
 function countLines(source) {
   if (source.length === 0) {
@@ -40,6 +45,32 @@ function compareLibraryEntries(a, b) {
 
 function assetPath(path) {
   return path.startsWith("/") ? path : `/${path}`;
+}
+
+function normalizeMetaText(text) {
+  return String(text ?? "").replace(/\s+/g, " ").trim();
+}
+
+function trimTextAtWordBoundary(text, maxLength) {
+  const normalizedText = normalizeMetaText(text);
+
+  if (normalizedText.length <= maxLength) {
+    return normalizedText;
+  }
+
+  const slice = normalizedText.slice(0, Math.max(0, maxLength - 1));
+  const lastSpaceIndex = slice.lastIndexOf(" ");
+  const trimmedSlice = lastSpaceIndex >= 0 ? slice.slice(0, lastSpaceIndex) : slice;
+
+  return `${trimmedSlice.trimEnd()}…`;
+}
+
+function getDescriptionHook(description) {
+  const normalizedDescription = normalizeMetaText(description);
+  const firstSentenceMatch = normalizedDescription.match(/^.*?[.!?](?=\s|$)/);
+  const firstSentence = firstSentenceMatch?.[0] ?? normalizedDescription;
+
+  return trimTextAtWordBoundary(firstSentence, MAX_DESCRIPTION_HOOK_LENGTH);
 }
 
 function getLicenseLabel(entry) {
@@ -160,16 +191,29 @@ async function readCatalog(filePath, failureMessage, sourceKind) {
 }
 
 function buildPageTitle(selectedGame) {
-  return selectedGame ? `Play ${selectedGame.title} | NESVibes` : "NESVibes | Vibecoded with GPT-5.4";
+  if (!selectedGame) {
+    return site.title;
+  }
+
+  const onlineTitle = `Play ${selectedGame.title} Online | ${site.name}`;
+  return onlineTitle.length <= MAX_TITLE_LENGTH
+    ? onlineTitle
+    : `Play ${selectedGame.title} | ${site.name}`;
 }
 
 function buildPageDescription(selectedGame) {
   if (!selectedGame) {
-    return "Vibecoded with GPT-5.4, NESVibes lets you play public-domain and redistributable homebrew NES games instantly in your browser with quicklaunch ROMs, upstream credits, license notices, touch controls, fullscreen play, and a built-in debugger.";
+    return site.description;
   }
 
-  const authorSuffix = selectedGame.author ? ` by ${selectedGame.author}` : "";
-  return `${selectedGame.description} Play ${selectedGame.title}${authorSuffix} instantly in your browser on NESVibes.`;
+  const hook = getDescriptionHook(selectedGame.description);
+  const withCta = `${hook}${DESCRIPTION_CTA}`;
+
+  if (withCta.length <= MAX_DESCRIPTION_LENGTH) {
+    return withCta;
+  }
+
+  return trimTextAtWordBoundary(hook, MAX_DESCRIPTION_LENGTH);
 }
 
 export async function getLibraryData() {

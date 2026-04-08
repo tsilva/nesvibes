@@ -4,6 +4,7 @@ node_modules
 .env
 .env.*
 !.env.example
+!.env.sentry-mcp.example
 
 *.nes
 !static/roms/pdroms/nes/library/**/*.nes
@@ -13,3 +14,4 @@ node_modules
 
 # Sentry Config File
 .env.sentry-build-plugin
+.env.sentry-mcp
