@@ -4,7 +4,7 @@
   import { page } from "$app/stores";
   import { env } from "$env/dynamic/public";
   import { trackPageView } from "$lib/google-analytics.js";
-  import { site } from "$lib/site.js";
+  import { createPageMetadata, site } from "$lib/site.js";
   import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
   import { onMount } from "svelte";
 
@@ -17,37 +17,18 @@
   let lastTrackedUrl = null;
   let pendingUrl = null;
 
-  $: pageTitle = $page.data.pageTitle ?? site.title;
-  $: pageDescription = $page.data.pageDescription ?? site.description;
-  $: canonicalUrl = new URL($page.url.pathname, site.url).href;
-  $: ogImageUrl = `${site.url}${site.ogImage.path}`;
-  $: jsonLd = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: pageTitle,
-    url: canonicalUrl,
-    description: pageDescription,
-    applicationCategory: "GameApplication",
-    operatingSystem: "Any",
-    inLanguage: "en",
-    isAccessibleForFree: true,
-    browserRequirements: "Requires a modern browser with Canvas, AudioWorklet, and ES modules.",
-    image: ogImageUrl,
-    screenshot: ogImageUrl,
-    sameAs: [site.githubUrl],
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD"
-    },
-    featureList: [
-      "Instant browser play for public-domain and homebrew NES games",
-      "Drag-and-drop .nes ROM loading",
-      "Mobile touch controls",
-      "Fullscreen gameplay",
-      "Desktop debugger"
-    ]
+  $: pageMetadata = createPageMetadata({
+    pathname: $page.url.pathname,
+    title: $page.data.pageTitle ?? site.title,
+    description: $page.data.pageDescription ?? site.description,
+    selectedGame: $page.data.selectedGame ?? null
   });
+  $: pageTitle = pageMetadata.title;
+  $: pageDescription = pageMetadata.description;
+  $: canonicalUrl = pageMetadata.canonicalUrl;
+  $: ogImageUrl = pageMetadata.ogImageUrl;
+  $: ogImageAlt = pageMetadata.ogImageAlt;
+  $: jsonLd = JSON.stringify(pageMetadata.jsonLd);
   $: jsonLdScript = `<script type="application/ld+json">${jsonLd}<\/script>`;
 
   function queuePageView(url) {
@@ -110,15 +91,18 @@
   <meta property="og:description" content={pageDescription} />
   <meta property="og:url" content={canonicalUrl} />
   <meta property="og:image" content={ogImageUrl} />
+  <meta property="og:image:secure_url" content={ogImageUrl} />
+  <meta property="og:image:type" content={site.ogImage.type} />
   <meta property="og:image:width" content={String(site.ogImage.width)} />
   <meta property="og:image:height" content={String(site.ogImage.height)} />
-  <meta property="og:image:alt" content={site.ogImage.alt} />
+  <meta property="og:image:alt" content={ogImageAlt} />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={pageTitle} />
   <meta name="twitter:description" content={pageDescription} />
+  <meta name="twitter:url" content={canonicalUrl} />
   <meta name="twitter:image" content={ogImageUrl} />
-  <meta name="twitter:image:alt" content={site.ogImage.alt} />
+  <meta name="twitter:image:alt" content={ogImageAlt} />
 
   <meta name="msapplication-TileColor" content={site.themeColor} />
   <meta name="msapplication-config" content="/browserconfig.xml" />

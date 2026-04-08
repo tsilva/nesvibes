@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" alt="nesvibes" width="512"/>
+  <img src="./static/icon-512.png" alt="NESVibes icon" width="192"/>
 
   [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=flat-square&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
   [![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://nesvibes.tsilva.eu)
@@ -54,8 +54,8 @@ Head to **[nesvibes.tsilva.eu](https://nesvibes.tsilva.eu)** and pick a ROM from
 ```bash
 git clone https://github.com/tsilva/nesvibes.git
 cd nesvibes
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Build for production:

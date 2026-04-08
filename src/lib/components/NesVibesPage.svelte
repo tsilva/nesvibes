@@ -4,7 +4,6 @@
   import { onMount } from "svelte";
   import LibraryPanel from "$lib/components/LibraryPanel.svelte";
   import TouchControlButton from "$lib/components/TouchControlButton.svelte";
-  import { site } from "$lib/site.js";
   import {
     ArrowDown,
     ArrowLeft,
@@ -874,10 +873,6 @@
 </script>
 
 <svelte:head>
-  {#if isRouteSelectionSuppressed}
-    <title>{site.title}</title>
-    <meta name="description" content={site.description} />
-  {/if}
   {#if selectedGameAssetHref}
     <link rel="preload" href={selectedGameAssetHref} as="fetch" />
   {/if}
