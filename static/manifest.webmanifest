@@ -1,12 +1,15 @@
 {
   "name": "NESVibes",
   "short_name": "NESVibes",
-  "description": "Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs.",
+  "description": "Play NES games online instantly in your browser with bundled homebrew and public-domain titles, drag-and-drop ROM support, touch controls, and fullscreen retro play.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#252525",
   "theme_color": "#e4000f",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "/icon-192.png",

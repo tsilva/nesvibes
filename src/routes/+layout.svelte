@@ -21,7 +21,8 @@
     pathname: $page.url.pathname,
     title: $page.data.pageTitle ?? site.title,
     description: $page.data.pageDescription ?? site.description,
-    selectedGame: $page.data.selectedGame ?? null
+    selectedGame: $page.data.selectedGame ?? null,
+    libraryEntries: $page.data.libraryEntries ?? []
   });
   $: pageTitle = pageMetadata.title;
   $: pageDescription = pageMetadata.description;
