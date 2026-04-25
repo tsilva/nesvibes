@@ -1424,8 +1424,7 @@ class AudioDriver {
     this.buffer[this.writeIndex] = Math.max(-1, Math.min(1, sample));
     this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
     this.availableSamples += 1;
-    if (this.workletNode && this.availableSamples >= AUDIO_WORKLET_CHUNK_SIZE)
-      this.flushPendingSamples();
+    // Intentionally defer flush to end-of-frame to stay out of the emulation hot path
   }
   consume(buffer) {
     for (let i = 0; i < buffer.length; i += 1) {
@@ -2030,6 +2029,8 @@ class NES {
     this.context = canvas.getContext("2d");
     this.imageData = this.context.createImageData(256, 240);
     this.context.imageSmoothingEnabled = false;
+    // Route PPU pixels directly into ImageData to eliminate per-frame copy
+    this.bus.ppu.framebuffer = this.imageData.data;
     this.bus.reset();
     this.cpu.reset();
   }
@@ -2045,7 +2046,7 @@ class NES {
     while (!this.bus.ppu.frameReady) stepNesInstruction(this);
   }
   present() {
-    this.imageData.data.set(this.bus.ppu.framebuffer);
+    // PPU already writes directly into imageData.data, so no copy needed
     this.context.putImageData(this.imageData, 0, 0);
   }
 }
@@ -2369,6 +2370,7 @@ export function createNesEmulator({
     const frameDuration = 1000 / 60;
     let previousFrameTime = performance.now();
     let lag = 0;
+    const MAX_CATCH_UP_FRAMES = 5;
     const frame = (now) => {
       if (generation !== loopGeneration || activeNES !== nes) return;
       try {
@@ -2376,9 +2378,19 @@ export function createNesEmulator({
         else {
           lag += Math.min(100, now - previousFrameTime);
           previousFrameTime = now;
-          while (lag >= frameDuration) (nes.runFrame(), (lag -= frameDuration));
+          let framesToRun = 0;
+          while (lag >= frameDuration && framesToRun < MAX_CATCH_UP_FRAMES) {
+            nes.runFrame();
+            lag -= frameDuration;
+            framesToRun += 1;
+          }
+          if (lag >= frameDuration) {
+            // Still behind after max catch-up: drop excess to avoid death spiral
+            lag = lag % frameDuration;
+          }
         }
         nes.present();
+        audioDriver.flushPendingSamples();
         frameHandle = requestAnimationFrame(frame);
       } catch (error) {
         handleRuntimeFailure(error);
