@@ -707,9 +707,14 @@
   }
 
   async function handleFilePickerChange(event) {
-    const [file] = event.currentTarget.files ?? [];
-    await loadRomFile(file);
-    event.currentTarget.value = "";
+    const input = event.currentTarget;
+    const [file] = input.files ?? [];
+
+    try {
+      await loadRomFile(file);
+    } finally {
+      input.value = "";
+    }
   }
 
   onMount(() => {
