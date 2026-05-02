@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./static/icon-512.png" alt="NESVibes icon" width="192" />
+  <img src="./logo.png" alt="NESVibes logo" width="420" />
 
   **Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
 
