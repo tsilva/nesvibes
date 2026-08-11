@@ -3,12 +3,14 @@
   import { afterNavigate } from "$app/navigation";
   import { page } from "$app/stores";
   import { env } from "$env/dynamic/public";
+  import { injectAnalytics } from "@vercel/analytics/sveltekit";
   import { trackPageView } from "$lib/google-analytics.js";
   import { createPageMetadata, site } from "$lib/site.js";
   import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
   import { onMount } from "svelte";
 
   const googleAnalyticsMeasurementId = env.PUBLIC_GOOGLE_ANALYTICS_ID?.trim() || null;
+  injectAnalytics();
   const googleAnalyticsScript = googleAnalyticsMeasurementId
     ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAnalyticsMeasurementId)}"><\/script><script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function gtag(){window.dataLayer.push(arguments);};window.gtag("js",new Date());window.gtag("config",${JSON.stringify(googleAnalyticsMeasurementId)},{"send_page_view":false,"transport_type":"beacon"});<\/script>`
     : "";
