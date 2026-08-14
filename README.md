@@ -45,6 +45,14 @@ pnpm sentry:issues     # list Sentry issues using .env credentials
 - Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`.
 - Production deploys through the Vercel adapter and `vercel.json` security headers.
 
+## Local credentials
+
+Private local values declared in `.keyenv.toml` live in macOS Keychain. Run
+`keyenv doctor` to verify them and launch credential-dependent commands with
+`keyenv run -- <command>`. Python, Node, and their child processes receive the
+values through their normal environment APIs. Keep only public or non-secret
+configuration in dotenv files.
+
 ## Architecture
 
 ![NESVibes architecture diagram](./architecture.png)
