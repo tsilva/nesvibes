@@ -1,2 +1,5 @@
 minimumReleaseAge: 10080
 blockExoticSubdeps: true
+
+overrides:
+  '@sveltejs/kit>cookie': 0.7.2
