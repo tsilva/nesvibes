@@ -5,7 +5,7 @@ import { SENTRY_ORG, SENTRY_PROJECT } from "./src/lib/sentry-project.js";
 
 export default defineConfig(({ mode }) => {
   const loadedEnv = loadEnv(mode, process.cwd(), "");
-  const authToken = process.env.SENTRY_AUTH_TOKEN || loadedEnv.SENTRY_AUTH_TOKEN;
+  const authToken = process.env.SENTRY_AUTH_TOKEN ?? loadedEnv.SENTRY_AUTH_TOKEN;
 
   return {
     plugins: [

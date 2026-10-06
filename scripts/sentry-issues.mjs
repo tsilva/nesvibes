@@ -131,8 +131,7 @@ async function sentryFetch(config, pathname, searchParams = new URLSearchParams(
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Sentry API request failed (${response.status} ${response.statusText}): ${body}`);
+    throw new Error(`Sentry API request failed (${response.status} ${response.statusText}); provider details suppressed.`);
   }
 
   return response.json();
@@ -203,14 +202,14 @@ async function main() {
 
   const cwd = process.cwd();
   const fileEnv = loadEnvFile(path.join(cwd, ".env"));
-  const authToken = process.env.SENTRY_AUTH_TOKEN || fileEnv.SENTRY_AUTH_TOKEN || "";
+  const authToken = process.env.SENTRY_AUTH_TOKEN ?? "";
   const org = process.env.SENTRY_ORG || fileEnv.SENTRY_ORG || SENTRY_ORG;
   const project = process.env.SENTRY_PROJECT || fileEnv.SENTRY_PROJECT || SENTRY_PROJECT;
   const baseUrl = (process.env.SENTRY_BASE_URL || fileEnv.SENTRY_BASE_URL || SENTRY_BASE_URL).replace(/\/+$/, "");
 
   if (!authToken) {
     throw new Error(
-      "Missing SENTRY_AUTH_TOKEN. Set it in the environment or in .env.",
+      "Missing SENTRY_AUTH_TOKEN. Use pnpm sentry:issues with Infisical.",
     );
   }
 
