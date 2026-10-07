@@ -60,3 +60,11 @@ No repository-wide license file is currently included. Bundled ROM license and n
 `pnpm sentry:issues -- --help` uses the managed development token. Private tokens in local Sentry env files are ignored.
 
 Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](docs/production-delivery.md) for destinations, access boundaries and failure behavior.
+
+## Secret scanning
+
+GitHub Actions scans changed commits with the pinned Infisical CLI. New branches
+and rewritten pushes scan the complete history reachable from the new head, even
+when the previous commit is no longer available. Missing pull-request revisions
+and scanner errors still fail the check. Reports publish only finding locations;
+credentials and matched source content remain private.
