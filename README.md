@@ -1,10 +1,14 @@
-<div align="center">
+<p align="center">
   <img src="./logo.png" alt="NESVibes logo" width="420" />
+  <br />
+  <!-- repo-tagline:start -->
+  <strong>🎮 Play NES homebrew and public-domain games in your browser 🕹️</strong>
+  <!-- repo-tagline:end -->
+</p>
 
-  **Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
+**Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
 
   [Live Demo](https://nesvibes.tsilva.eu)
-</div>
 
 NESVibes is a SvelteKit NES player that runs in the browser. It ships with a catalog of public-domain and redistributable homebrew ROMs, plus drag-and-drop support for local `.nes` files.
 
