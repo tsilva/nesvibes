@@ -65,7 +65,7 @@ test("installed vulnerable dependency families are patched", () => {
     ["@opentelemetry/core", "2.8.0"],
     ["@sveltejs/kit", "2.70.2"],
     ["cookie", "0.7.0"],
-    ["devalue", "5.8.1"],
+    ["devalue", "5.9.3"],
     ["nanoid", "3.3.18"],
     ["postcss", "8.5.23"],
     ["svelte", "5.55.7"],
@@ -80,7 +80,7 @@ test("installed vulnerable dependency families are patched", () => {
 
   for (const installed of versions.get("brace-expansion") ?? []) {
     if (installed.startsWith("5.")) {
-      assert.ok(compareVersions(installed, "5.0.9") >= 0, `brace-expansion@${installed} is vulnerable`);
+      assert.ok(compareVersions(installed, "5.0.12") >= 0, `brace-expansion@${installed} is vulnerable`);
     }
   }
 

@@ -42,5 +42,8 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": false
+  }
 }

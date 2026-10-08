@@ -12,5 +12,10 @@ output/
 !static/roms/licensed/nes/library/**/*.nes
 !static/roms/licensed/nes/library/**/*.NES
 
-# Python secret-management helpers
-__pycache__/
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+.codex*

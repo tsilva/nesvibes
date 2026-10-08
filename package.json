@@ -6,29 +6,35 @@
   "packageManager": "pnpm@10.27.0",
   "scripts": {
     "preinstall": "node -e \"const ua = process.env.npm_config_user_agent || ''; if (!ua.startsWith('pnpm/')) { console.error('Use pnpm for this repo.'); process.exit(1); }\"",
-    "dev": "node scripts/dev-server.mjs vite dev",
+    "dev": "python3 scripts/infisical/run.py dev",
     "build": "vite build",
     "preview": "node scripts/dev-server.mjs vite preview",
-    "sentry:issues": "node scripts/sentry-issues.mjs",
+    "sentry:issues": "python3 scripts/infisical/run.py issues",
     "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
     "check:headers": "node scripts/check-security-headers.mjs",
     "check:rom-assets": "node scripts/rom-assets.mjs",
     "prune:rom-assets": "node scripts/rom-assets.mjs --prune",
-    "test:emu": "node --test"
+    "test:emu": "node --test",
+    "dev:app": "node scripts/dev-server.mjs vite dev",
+    "build:secrets": "python3 scripts/infisical/run.py build",
+    "secrets:check": "python3 scripts/infisical/run.py check",
+    "secrets:migrate:keyenv": "python3 scripts/infisical/migrate_keyenv.py",
+    "test:secrets": "python3 -m unittest discover -s scripts/infisical -p test_secrets.py",
+    "secrets:sync:production": "python3 scripts/infisical/sync_production.py"
   },
   "dependencies": {
     "@fontsource/silkscreen": "^5.3.0",
-    "@sentry/sveltekit": "^10.69.0",
+    "@sentry/sveltekit": "^10.73.0",
     "@vercel/analytics": "2.0.1",
-    "lucide-svelte": "^0.577.0",
-    "svelte": "5.56.8"
+    "lucide-svelte": "^1.0.1",
+    "svelte": "5.57.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-vercel": "6.3.4",
-    "@sveltejs/kit": "2.70.2",
-    "@sveltejs/vite-plugin-svelte": "7.3.0",
-    "playwright": "^1.62.1",
-    "svelte-check": "4.7.5",
-    "vite": "8.2.1"
+    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "playwright": "^1.63.0",
+    "svelte-check": "4.7.6",
+    "vite": "8.3.1"
   }
 }

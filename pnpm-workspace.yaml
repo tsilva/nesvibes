@@ -3,3 +3,10 @@ blockExoticSubdeps: true
 
 overrides:
   '@sveltejs/kit>cookie': 0.7.2
+  brace-expansion@5: 5.0.12
+  devalue: 5.9.3
+  source-map-js: 1.2.2
+
+# Exact security-patch exception approved for the source-map-js advisory.
+minimumReleaseAgeExclude:
+  - source-map-js@1.2.2

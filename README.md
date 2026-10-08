@@ -1,10 +1,14 @@
-<div align="center">
+<p align="center">
   <img src="./logo.png" alt="NESVibes logo" width="420" />
+  <br />
+  <!-- repo-tagline:start -->
+  <strong>🎮 Play NES homebrew and public-domain games in your browser 🕹️</strong>
+  <!-- repo-tagline:end -->
+</p>
 
-  **Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
+**Play Nintendo Entertainment System (NES) games online in your browser with bundled homebrew and public-domain ROMs. Vibecoded with GPT-5.4.**
 
   [Live Demo](https://nesvibes.tsilva.eu)
-</div>
 
 NESVibes is a SvelteKit NES player that runs in the browser. It ships with a catalog of public-domain and redistributable homebrew ROMs, plus drag-and-drop support for local `.nes` files.
 
@@ -16,10 +20,10 @@ Pick a bundled game, open a per-game URL, or drop a ROM onto the stage. Gameplay
 git clone https://github.com/tsilva/nesvibes.git
 cd nesvibes
 pnpm install
-pnpm dev
+pnpm dev --port auto
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open the local URL printed by the server.
 
 ## Commands
 
@@ -31,7 +35,7 @@ pnpm check             # run Svelte type and diagnostics checks
 pnpm test:emu          # run emulator tests with node:test
 pnpm check:headers     # verify the configured security headers
 pnpm check:rom-assets  # verify ROM files match the catalogs
-pnpm sentry:issues     # list Sentry issues using .env credentials
+pnpm sentry:issues
 ```
 
 ## Notes
@@ -45,14 +49,6 @@ pnpm sentry:issues     # list Sentry issues using .env credentials
 - Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`.
 - Production deploys through the Vercel adapter and `vercel.json` security headers.
 
-## Local credentials
-
-Private local values declared in `.keyenv.toml` live in macOS Keychain. Run
-`keyenv doctor` to verify them and launch credential-dependent commands with
-`keyenv run -- <command>`. Python, Node, and their child processes receive the
-values through their normal environment APIs. Keep only public or non-secret
-configuration in dotenv files.
-
 ## Architecture
 
 ![NESVibes architecture diagram](./architecture.png)
@@ -60,3 +56,15 @@ configuration in dotenv files.
 ## License
 
 No repository-wide license file is currently included. Bundled ROM license and notice files live beside their assets under `static/roms`.
+
+`pnpm sentry:issues -- --help` uses the managed development token. Private tokens in local Sentry env files are ignored.
+
+Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](docs/production-delivery.md) for destinations, access boundaries and failure behavior.
+
+## Secret scanning
+
+GitHub Actions scans changed commits with the pinned Infisical CLI. New branches
+and rewritten pushes scan the complete history reachable from the new head, even
+when the previous commit is no longer available. Missing pull-request revisions
+and scanner errors still fail the check. Reports publish only finding locations;
+credentials and matched source content remain private.

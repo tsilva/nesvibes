@@ -2,7 +2,7 @@ import adapter from "@sveltejs/adapter-vercel";
 
 const config = {
   kit: {
-    adapter: adapter(),
+    adapter: adapter({ runtime: "nodejs24.x" }),
     inlineStyleThreshold: 50000,
 
     experimental: {
