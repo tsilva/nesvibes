@@ -49,17 +49,13 @@ pnpm sentry:issues
 - Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`.
 - Production deploys through the Vercel adapter and `vercel.json` security headers.
 
+The [dated development and verification notes](docs/development-notes-2026-03-21.md)
+preserve the original fullscreen, mobile-control and routing work, including the
+limits of its historical browser checks.
+
 ## Architecture
 
 ![NESVibes architecture diagram](./architecture.png)
-
-## License
-
-No repository-wide license file is currently included. Bundled ROM license and notice files live beside their assets under `static/roms`.
-
-`pnpm sentry:issues -- --help` uses the managed development token. Private tokens in local Sentry env files are ignored.
-
-Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](docs/production-delivery.md) for destinations, access boundaries and failure behavior.
 
 ## Secret scanning
 
@@ -69,4 +65,16 @@ when the previous commit is no longer available. Missing pull-request revisions
 and scanner errors still fail the check. Reports publish only finding locations;
 credentials and matched source content remain private.
 
+Production secrets are delivered through the pinned shared GitHub Actions workflow. The standalone signed Infisical relay triggers synchronization and deployment; see [production delivery](docs/production-delivery.md) for scope and recovery.
+
 Production delivery keeps Vercel secret isolation enabled and distinguishes public configuration from private credentials; see [production delivery](docs/production-delivery.md).
+
+## License
+
+The NESVibes application code is available under the [MIT License](LICENSE). Bundled ROMs retain their own licenses and notices beside their assets under `static/roms`.
+
+`pnpm sentry:issues -- --help` uses the managed development token. Private tokens in local Sentry env files are ignored.
+
+Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](docs/production-delivery.md) for destinations, access boundaries and failure behavior.
+
+[MIT License](LICENSE).

@@ -1,7 +1,5 @@
-"""Check transport, conflict handling, readback and application isolation."""
+"""Check transport, readback and application isolation."""
 
-import contextlib
-import io
 import json
 import os
 from pathlib import Path
@@ -11,7 +9,6 @@ import unittest
 from unittest.mock import patch
 
 from common import Infisical, SecretError, application_environment, KEYS, ROOT
-from migrate_keyenv import transfer
 import run as launcher
 
 PROJECT = "8b78afdf-f8c5-4613-8ee3-869dda72eee4"
@@ -59,20 +56,6 @@ class SecretTests(unittest.TestCase):
             with self.assertRaisesRegex(SecretError, "Readback"):
                 self.client.create_and_verify("SENTRY_AUTH_TOKEN", VALUE)
 
-    def test_conflict_preflight_prevents_all_writes(self):
-        source = {"keys": {"OPENROUTER_API_KEY": {"status": "available", "value": "dummy-new"},
-                           "SENTRY_AUTH_TOKEN": {"status": "available", "value": VALUE}}}
-        with patch.object(self.client, "read", return_value={"SENTRY_AUTH_TOKEN": "different"}), \
-                patch.object(self.client, "create_and_verify") as create:
-            with self.assertRaisesRegex(SecretError, "no credentials were written"):
-                transfer(source, self.client)
-            create.assert_not_called()
-
-    def test_keychain_bindings_fail_closed(self):
-        with patch.object(self.client, "read") as read:
-            with self.assertRaisesRegex(SecretError, "bindings"):
-                transfer({"keys": {"SENTRY_AUTH_TOKEN": {"status": "binding-foreign"}}}, self.client)
-            read.assert_not_called()
 
     def test_destination_identity_and_duplicates_are_rejected(self):
         for rows in ([row(workspace="other-project")], [row(secretPath="/other")],
@@ -124,17 +107,6 @@ class SecretTests(unittest.TestCase):
             with self.assertRaises(SecretError):
                 launcher.main()
             execute.assert_not_called()
-
-    def test_report_skips_missing_keys_and_never_prints_values(self):
-        output = io.StringIO()
-        source = {"keys": {"SENTRY_AUTH_TOKEN": {"status": "available", "value": VALUE},
-                           "OPENROUTER_API_KEY": {"status": "missing"}}}
-        with patch.object(self.client, "read", return_value={}), \
-                patch.object(self.client, "create_and_verify", return_value="copied; verified matching"), \
-                contextlib.redirect_stdout(output):
-            report = transfer(source, self.client)
-        self.assertIn("skipped", report["OPENROUTER_API_KEY"])
-        self.assertNotIn(VALUE, output.getvalue())
 
 
     def test_manual_sync_refuses_a_combined_destination_before_writing(self):

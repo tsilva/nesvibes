@@ -1,3 +1,17 @@
+# Development and verification notes — 2026-03-21 snapshot
+
+Preserved from `progress.md` as recorded in commit
+`a5dbf2258b2b8899e34aa275f020d9900e41ea6b` on 2026-03-21. The original log did
+not date each implementation or verification step. Documentation review:
+2026-10-27; no browser checks or application tests were rerun for this conversion.
+
+The entries below retain the original prompts, changes, reported checks and
+verification gaps. Browser crashes, session failures, local URLs and workarounds
+are historical observations, not current testing instructions or evidence that
+those limitations still apply. Current project instructions govern new work.
+
+## Original development log
+
 Original prompt: Add fullscreen mod support, clicking it shows the emulator canvas only in browser fullscreen mode
 
 - Inspected the Svelte page shell, emulator canvas container, and CSS. There was no existing fullscreen control or fullscreen-state handling.

@@ -18,7 +18,6 @@
     "dev:app": "node scripts/dev-server.mjs vite dev",
     "build:secrets": "python3 scripts/infisical/run.py build",
     "secrets:check": "python3 scripts/infisical/run.py check",
-    "secrets:migrate:keyenv": "python3 scripts/infisical/migrate_keyenv.py",
     "test:secrets": "python3 -m unittest discover -s scripts/infisical -p test_secrets.py",
     "secrets:sync:production": "python3 scripts/infisical/sync_production.py"
   },
