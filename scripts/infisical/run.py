@@ -7,7 +7,6 @@ from common import Infisical, ROOT, SecretError, application_environment
 
 COMMANDS = {
     "dev": ["pnpm", "run", "dev:app", "--port", "auto"],
-    "build": ["pnpm", "run", "build"],
     "check": ["node", "scripts/check-infisical-secrets.mjs"],
     "issues": ["node", "scripts/sentry-issues.mjs"],
 }
@@ -15,7 +14,7 @@ COMMANDS = {
 
 def selected_command(arguments):
     if not arguments or arguments[0] not in COMMANDS:
-        raise SecretError("Usage: python3 scripts/infisical/run.py <dev|build|check|issues>")
+        raise SecretError("Usage: python3 scripts/infisical/run.py <dev|check|issues>")
     if arguments[0] == "issues":
         if "--env-file" in arguments[1:]:
             raise SecretError("Private env-file overrides are not supported.")
@@ -28,7 +27,8 @@ def selected_command(arguments):
 
 def main():
     command = selected_command(sys.argv[1:])
-    environment = application_environment(Infisical().read())
+    values = Infisical().read() if sys.argv[1] in ("check", "issues") else {}
+    environment = application_environment(values)
     os.chdir(ROOT)
     os.execvpe(command[0], command, environment)
 

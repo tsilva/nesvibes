@@ -46,7 +46,7 @@ pnpm sentry:issues
 - Keyboard controls are arrow keys for D-pad, `Z` for B, `X` for A, `Enter` for Start, and `Shift` for Select.
 - Browser audio may require one user gesture before playback starts.
 - Quicklaunch requires HTTP(S). Use the deployed site or a local dev/static server; drag-and-drop still works with local files.
-- Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`.
+- Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`. Local builds skip source-map uploads. `pnpm sentry:issues` uses its existing Infisical credential.
 - Production deploys through the Vercel adapter and `vercel.json` security headers.
 
 The [dated development and verification notes](docs/development-notes-2026-03-21.md)
