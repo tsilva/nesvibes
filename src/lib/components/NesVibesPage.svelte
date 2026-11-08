@@ -143,13 +143,18 @@
     lastHandledSelectedGameId = effectiveSelectedGameId;
     void syncSelectedGameEntry(selectedGameEntry);
   }
+  $: if (hasMounted && !isMobileMode && stageMode === "loaded") {
+    void enableDesktopDebugger().catch((error) => {
+      console.error(error);
+    });
+  }
 
   function refreshDebugger() {
     debuggerController?.refresh();
   }
 
   async function enableDesktopDebugger() {
-    if (debuggerEnabled || typeof window === "undefined") {
+    if (debuggerEnabled) {
       return;
     }
 
@@ -157,6 +162,10 @@
       import("$lib/components/EmulatorDebugger.svelte"),
       import("$lib/debugger/create-emulator-debugger.js"),
     ]);
+
+    if (debuggerEnabled || !hasMounted || isMobileMode || stageMode !== "loaded") {
+      return;
+    }
 
     debuggerController = createEmulatorDebugger();
     debuggerComponent = EmulatorDebugger;
@@ -731,11 +740,7 @@
       isMobileMode = nextIsMobileMode;
       syncOverlayForViewport();
 
-      if (debuggerQuery.matches) {
-        void enableDesktopDebugger().catch((error) => {
-          console.error(error);
-        });
-      } else {
+      if (isMobileMode) {
         disableDesktopDebugger();
       }
     };
