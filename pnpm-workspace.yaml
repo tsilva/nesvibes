@@ -2,7 +2,9 @@ minimumReleaseAge: 10080
 blockExoticSubdeps: true
 
 overrides:
-  '@sveltejs/kit>cookie': 0.7.2
+  '@sveltejs/vite-plugin-svelte@7.3.1>deepmerge': npm:@fastify/deepmerge@3.2.4
+  glob@>=13.0.0 <14.0.2: 14.0.2
+  minimatch@>=10.0.0 <11.0.1: 11.0.1
   brace-expansion@5: 5.0.12
   devalue: 5.9.3
   source-map-js: 1.2.2
@@ -10,3 +12,6 @@ overrides:
 # Exact security-patch exception approved for the source-map-js advisory.
 minimumReleaseAgeExclude:
   - source-map-js@1.2.2
+
+patchedDependencies:
+  "@sveltejs/vite-plugin-svelte@7.3.1": patches/svelte-vite-plugin-7.3.1.patch

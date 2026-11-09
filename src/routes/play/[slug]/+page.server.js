@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import { getLibraryEntryBySlug, getLibraryRouteEntries, loadNesVibesPageData } from "$lib/server/library.js";
+import { getLibraryEntryBySlug, getLibraryRouteEntries, loadNesVibesPageData } from "#lib/server/library.js";
 
 export const prerender = true;
 

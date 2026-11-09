@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/sveltekit";
-import { getSentryOptions } from "$lib/sentry.js";
+import { getSentryOptions } from "#lib/sentry.js";
 
 const sentryOptions = getSentryOptions();
 

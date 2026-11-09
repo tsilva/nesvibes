@@ -1,6 +1,6 @@
 <script>
   import { Bug, Pause, Play, StepForward, X } from "lucide-svelte";
-  import { formatInstructionTooltip } from "$lib/debugger/instruction-tooltip.js";
+  import { formatInstructionTooltip } from "#lib/debugger/instruction-tooltip.js";
 
   export let debuggerController;
 
