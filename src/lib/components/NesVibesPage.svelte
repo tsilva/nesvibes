@@ -541,8 +541,9 @@
   }
 
   function openRomPicker() {
-    void ensureEmulator();
-    void enableAudio();
+    void enableAudio().catch((error) => {
+      console.error(error);
+    });
     filePicker?.click();
   }
 
@@ -842,9 +843,6 @@
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     const quicklaunchUnavailable = updateQuicklaunchAvailability();
-    void ensureEmulator().catch((error) => {
-      console.error(error);
-    });
     const autoLaunchEntry = selectedGameEntry ?? getAutoLaunchEntry(requestedRomMode);
     if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
       void loadBundledRom(autoLaunchEntry);
