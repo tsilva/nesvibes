@@ -1,6 +1,9 @@
+<!-- Keep the debugger styles with the component that loads after a ROM starts. -->
+<svelte:options css="injected" />
+
 <script>
   import { Bug, Pause, Play, StepForward, X } from "lucide-svelte";
-  import { formatInstructionTooltip } from "$lib/debugger/instruction-tooltip.js";
+  import { formatInstructionTooltip } from "#lib/debugger/instruction-tooltip.js";
 
   export let debuggerController;
 

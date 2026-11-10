@@ -1,7 +1,7 @@
-import { env } from "$env/dynamic/public";
+import { PUBLIC_GOOGLE_ANALYTICS_ID } from "$app/env/public";
 
 function getMeasurementId() {
-  const measurementId = env.PUBLIC_GOOGLE_ANALYTICS_ID?.trim();
+  const measurementId = PUBLIC_GOOGLE_ANALYTICS_ID?.trim();
   return measurementId ? measurementId : null;
 }
 

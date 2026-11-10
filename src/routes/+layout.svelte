@@ -1,38 +1,38 @@
 <script>
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { afterNavigate } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { env } from "$env/dynamic/public";
-  import { injectAnalytics } from "@vercel/analytics/sveltekit";
-  import { trackPageView } from "$lib/google-analytics.js";
-  import { createPageMetadata, site } from "$lib/site.js";
+  import { page } from "$app/state";
+  import { PUBLIC_GOOGLE_ANALYTICS_ID } from "$app/env/public";
+  import { inject, pageview } from "@vercel/analytics";
+  import { trackPageView } from "#lib/google-analytics.js";
+  import { createPageMetadata, site } from "#lib/site.js";
   import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
   import { onMount } from "svelte";
 
-  const googleAnalyticsMeasurementId = env.PUBLIC_GOOGLE_ANALYTICS_ID?.trim() || null;
-  injectAnalytics();
+  const googleAnalyticsMeasurementId = PUBLIC_GOOGLE_ANALYTICS_ID?.trim() || null;
   const googleAnalyticsScript = googleAnalyticsMeasurementId
     ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAnalyticsMeasurementId)}"><\/script><script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function gtag(){window.dataLayer.push(arguments);};window.gtag("js",new Date());window.gtag("config",${JSON.stringify(googleAnalyticsMeasurementId)},{"send_page_view":false,"transport_type":"beacon"});<\/script>`
     : "";
 
+  let { children } = $props();
   let analyticsReady = Boolean(googleAnalyticsMeasurementId);
   let lastTrackedUrl = null;
   let pendingUrl = null;
 
-  $: pageMetadata = createPageMetadata({
-    pathname: $page.url.pathname,
-    title: $page.data.pageTitle ?? site.title,
-    description: $page.data.pageDescription ?? site.description,
-    selectedGame: $page.data.selectedGame ?? null,
-    libraryEntries: $page.data.libraryEntries ?? []
-  });
-  $: pageTitle = pageMetadata.title;
-  $: pageDescription = pageMetadata.description;
-  $: canonicalUrl = pageMetadata.canonicalUrl;
-  $: ogImageUrl = pageMetadata.ogImageUrl;
-  $: ogImageAlt = pageMetadata.ogImageAlt;
-  $: jsonLd = JSON.stringify(pageMetadata.jsonLd);
-  $: jsonLdScript = `<script type="application/ld+json">${jsonLd}<\/script>`;
+  const pageMetadata = $derived(createPageMetadata({
+    pathname: page.url.pathname,
+    title: page.data.pageTitle ?? site.title,
+    description: page.data.pageDescription ?? site.description,
+    selectedGame: page.data.selectedGame ?? null,
+    libraryEntries: page.data.libraryEntries ?? []
+  }));
+  const pageTitle = $derived(pageMetadata.title);
+  const pageDescription = $derived(pageMetadata.description);
+  const canonicalUrl = $derived(pageMetadata.canonicalUrl);
+  const ogImageUrl = $derived(pageMetadata.ogImageUrl);
+  const ogImageAlt = $derived(pageMetadata.ogImageAlt);
+  const jsonLd = $derived(JSON.stringify(pageMetadata.jsonLd));
+  const jsonLdScript = $derived(`<script type="application/ld+json">${jsonLd}<\/script>`);
 
   function queuePageView(url) {
     pendingUrl = new URL(url.href);
@@ -55,7 +55,14 @@
   }
 
   if (browser) {
-    afterNavigate(({ to }) => {
+    inject({
+      basePath: import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH,
+      disableAutoTrack: true,
+      framework: "sveltekit"
+    }, import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG);
+    afterNavigate(({ to, shallow }) => {
+      if (shallow) return;
+      if (to?.route.id) pageview({ route: to.route.id, path: to.url.pathname });
       queuePageView(to?.url ?? new URL(window.location.href));
     });
   }
@@ -114,4 +121,4 @@
   {@html jsonLdScript}
 </svelte:head>
 
-<slot />
+{@render children()}

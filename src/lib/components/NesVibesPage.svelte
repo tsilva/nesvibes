@@ -1,9 +1,9 @@
 <script>
-  import { goto, replaceState } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import { onMount } from "svelte";
-  import LibraryPanel from "$lib/components/LibraryPanel.svelte";
-  import TouchControlButton from "$lib/components/TouchControlButton.svelte";
+  import LibraryPanel from "#lib/components/LibraryPanel.svelte";
+  import TouchControlButton from "#lib/components/TouchControlButton.svelte";
   import {
     ArrowDown,
     ArrowLeft,
@@ -159,8 +159,8 @@
     }
 
     const [{ default: EmulatorDebugger }, { createEmulatorDebugger }] = await Promise.all([
-      import("$lib/components/EmulatorDebugger.svelte"),
-      import("$lib/debugger/create-emulator-debugger.js"),
+      import("#lib/components/EmulatorDebugger.svelte"),
+      import("#lib/debugger/create-emulator-debugger.js"),
     ]);
 
     if (debuggerEnabled || !hasMounted || isMobileMode || stageMode !== "loaded") {
@@ -358,7 +358,7 @@
     }
 
     if (!emulatorPromise) {
-      emulatorPromise = import("$lib/emu/nes-emulator.js")
+      emulatorPromise = import("#lib/emu/nes-emulator.js")
         .then(({ createNesEmulator }) => {
           emulator = createNesEmulator({
             canvas,
@@ -427,7 +427,7 @@
 
     bundledLoadRequestToken += 1;
     activeLibraryId = "";
-    clearBundledSelectionInPlace();
+    await clearBundledSelectionInPlace();
 
     try {
       await ensureEmulator();
@@ -503,25 +503,23 @@
     }
 
     await goto(entry.playPath, {
-      keepFocus: true,
-      noScroll: true
+      reset: false
     });
   }
 
-  function clearBundledSelectionInPlace() {
+  async function clearBundledSelectionInPlace() {
     if (!routeSelectedGameId) {
       return false;
     }
 
     clearedRouteSelectedGameId = routeSelectedGameId;
-    replaceState(HOME_PATH, $page.state);
+    await goto(HOME_PATH, { shallow: true, replace: true, state: page.state });
     return true;
   }
 
   async function navigateHomeForLocalRomSelection() {
     await goto(HOME_PATH, {
-      keepFocus: true,
-      noScroll: true
+      reset: false
     });
   }
 
@@ -543,8 +541,9 @@
   }
 
   function openRomPicker() {
-    void ensureEmulator();
-    void enableAudio();
+    void enableAudio().catch((error) => {
+      console.error(error);
+    });
     filePicker?.click();
   }
 
@@ -844,9 +843,6 @@
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     const quicklaunchUnavailable = updateQuicklaunchAvailability();
-    void ensureEmulator().catch((error) => {
-      console.error(error);
-    });
     const autoLaunchEntry = selectedGameEntry ?? getAutoLaunchEntry(requestedRomMode);
     if (!quicklaunchUnavailable && autoLaunchEntry?.supported) {
       void loadBundledRom(autoLaunchEntry);

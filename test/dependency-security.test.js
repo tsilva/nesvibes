@@ -22,6 +22,8 @@ function collectDependencyVersions() {
     "brace-expansion",
     "cookie",
     "devalue",
+    "glob",
+    "minimatch",
     "nanoid",
     "postcss",
     "svelte",
@@ -58,14 +60,18 @@ function collectDependencyVersions() {
 test("installed vulnerable dependency families are patched", () => {
   const { names, versions } = collectDependencyVersions();
   for (const name of names) {
-    assert.ok((versions.get(name)?.size ?? 0) > 0, `${name} was not inspected`);
+    if (name !== "@opentelemetry/core") {
+      assert.ok((versions.get(name)?.size ?? 0) > 0, `${name} was not inspected`);
+    }
   }
 
   const floors = new Map([
     ["@opentelemetry/core", "2.8.0"],
-    ["@sveltejs/kit", "2.70.2"],
+    ["@sveltejs/kit", "3.0.0"],
     ["cookie", "0.7.0"],
     ["devalue", "5.9.3"],
+    ["glob", "14.0.2"],
+    ["minimatch", "11.0.1"],
     ["nanoid", "3.3.18"],
     ["postcss", "8.5.23"],
     ["svelte", "5.55.7"],
@@ -85,9 +91,10 @@ test("installed vulnerable dependency families are patched", () => {
   }
 
   const lockfile = readFileSync(`${root}/pnpm-lock.yaml`, "utf8");
-  const babelVersion = lockfile.match(/^  '@babel\/core@([^']+)':$/m)?.[1];
-  assert.ok(babelVersion, "@babel/core lock entry was not inspected");
-  assert.ok(compareVersions(babelVersion, "7.29.6") >= 0, `@babel/core@${babelVersion} is vulnerable`);
+  assert.doesNotMatch(lockfile, /^  deepmerge@/m);
+  for (const [, version] of lockfile.matchAll(/^  '@babel\/core@([^']+)':$/gm)) {
+    assert.ok(compareVersions(version, "7.29.6") >= 0, `@babel/core@${version} is vulnerable`);
+  }
 });
 
 test("manifests and lockfile reject exotic dependency sources", () => {

@@ -1,5 +1,5 @@
-import { env } from "$env/dynamic/public";
-import { DEFAULT_SENTRY_DSN } from "$lib/sentry-project.js";
+import { PUBLIC_SENTRY_DSN, PUBLIC_SENTRY_ENABLED } from "$app/env/public";
+import { DEFAULT_SENTRY_DSN } from "#lib/sentry-project.js";
 
 function parseBoolean(value) {
   if (!value) {
@@ -20,12 +20,12 @@ function parseBoolean(value) {
 }
 
 export function getDefaultSentryDsn() {
-  const dsn = env.PUBLIC_SENTRY_DSN?.trim();
+  const dsn = PUBLIC_SENTRY_DSN?.trim();
   return dsn ? dsn : DEFAULT_SENTRY_DSN;
 }
 
 export function isSentryEnabled() {
-  const explicitFlag = parseBoolean(env.PUBLIC_SENTRY_ENABLED);
+  const explicitFlag = parseBoolean(PUBLIC_SENTRY_ENABLED);
 
   if (explicitFlag !== null) {
     return explicitFlag;

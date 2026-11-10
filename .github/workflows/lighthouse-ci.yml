@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   audit:
-    uses: tsilva/.github/.github/workflows/lighthouse-ci.yml@8431a260737bf768359214a20a97295a76e8ff55
+    uses: tsilva/.github/.github/workflows/lighthouse-ci.yml@1eb40277dd97b1c617d4ae53aef7bf21f5dd1dd3
     with:
       url: "https://nesvibes.tsilva.eu/"
+      sample_timings: true

@@ -1,6 +1,6 @@
-import { getLibraryData } from "$lib/server/library.js";
-import { getLibraryEntrySlug } from "$lib/rom-slug.js";
-import { site } from "$lib/site.js";
+import { getLibraryData } from "#lib/server/library.js";
+import { getLibraryEntrySlug } from "#lib/rom-slug.js";
+import { site } from "#lib/site.js";
 
 export const prerender = true;
 
