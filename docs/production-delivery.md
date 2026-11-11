@@ -25,6 +25,11 @@ exist byte-for-byte in `.vercel/output/static` before a build can be deployed.
 This gate checks the build artifact; a staged deployment still needs a game-load
 smoke test to verify delivery through the hosting platform.
 
+Keep `.vercelignore` exceptions for both source paths (`static/roms/...`) and
+public paths (`roms/...`): Vercel filters the adapter's static output again after
+the application build. Only the bundled licensed and public-domain libraries
+are allowed through the general ROM exclusion.
+
 Use **Actions → Production delivery → Run workflow → main** with **stage_prebuilt** selected to build and verify a Vercel deployment while production domains keep serving the live release. Leave the option clear for a production delivery.
 
 Infisical Production owns the Sentry upload token. The build job uses the encrypted `SENTRY_AUTH_TOKEN` copy in the GitHub Production environment and confirms the source-map upload before deployment. Refresh that copy after rotating the source token, then rerun delivery.

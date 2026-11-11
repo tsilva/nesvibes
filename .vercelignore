@@ -12,6 +12,12 @@ output/
 !static/roms/licensed/nes/library/**/*.nes
 !static/roms/licensed/nes/library/**/*.NES
 
+# Vercel also filters the adapter's static output using public-relative paths.
+!roms/pdroms/nes/library/**/*.nes
+!roms/pdroms/nes/library/**/*.NES
+!roms/licensed/nes/library/**/*.nes
+!roms/licensed/nes/library/**/*.NES
+
 .env
 .env.*
 **/.env
