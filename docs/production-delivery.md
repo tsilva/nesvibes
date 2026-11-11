@@ -41,3 +41,16 @@ are allowed through the general ROM exclusion.
 Use **Actions → Production delivery → Run workflow → main** with **stage_prebuilt** selected to build and verify a Vercel deployment while production domains keep serving the live release. Leave the option clear for a production delivery.
 
 Infisical Production owns the Sentry upload token. The build job uses the encrypted `SENTRY_AUTH_TOKEN` copy in the GitHub Production environment and confirms the source-map upload before deployment. Refresh that copy after rotating the source token, then rerun delivery.
+
+## Initial browser module recovery
+
+If the root layout module cannot load during initial hydration, the browser checks
+SvelteKit’s published version before retrying. A confirmed newer deployment
+permits one reload per original build version, recorded in session storage.
+The check is bounded to two seconds; offline checks, blocked storage, unchanged
+versions and repeated failures keep normal error reporting. Other module errors
+retain the framework’s normal navigation behavior, so recovery does not reload
+a running emulator because a route preload failed.
+Recovered bootstrap rejections remain in Sentry with a handled mechanism and
+`recovery: root-module-update`; failed recovery retains the original unhandled
+error. The same recovery also runs before the hydration error boundary exists.
