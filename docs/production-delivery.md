@@ -20,6 +20,11 @@ GitHub Actions builds bundle `PUBLIC_GOOGLE_ANALYTICS_ID`, `PUBLIC_SENTRY_DSN`, 
 
 ## Staging a prebuilt deployment
 
+`pnpm build` verifies that every bundled ROM catalog entry and its legal files
+exist byte-for-byte in `.vercel/output/static` before a build can be deployed.
+This gate checks the build artifact; a staged deployment still needs a game-load
+smoke test to verify delivery through the hosting platform.
+
 Use **Actions → Production delivery → Run workflow → main** with **stage_prebuilt** selected to build and verify a Vercel deployment while production domains keep serving the live release. Leave the option clear for a production delivery.
 
 Infisical Production owns the Sentry upload token. The build job uses the encrypted `SENTRY_AUTH_TOKEN` copy in the GitHub Production environment and confirms the source-map upload before deployment. Refresh that copy after rotating the source token, then rerun delivery.

@@ -96,6 +96,27 @@ export async function getRomAssetState(rootDir = process.cwd()) {
   };
 }
 
+export async function verifyBuiltRomAssets(rootDir = process.cwd()) {
+  const keepSet = await buildRomAssetKeepSet(rootDir);
+  const outputRoot = resolve(rootDir, ".vercel/output/static");
+
+  for (const sourcePath of keepSet) {
+    const publicPath = sourcePath.slice("static/".length);
+    let built;
+    try {
+      built = await readFile(resolve(outputRoot, publicPath));
+    } catch {
+      throw new Error(`Built ROM catalog asset is missing: ${publicPath}`);
+    }
+    const source = await readFile(resolve(rootDir, sourcePath));
+    if (!source.equals(built)) {
+      throw new Error(`Built ROM catalog asset differs from its source: ${publicPath}`);
+    }
+  }
+
+  return keepSet.size;
+}
+
 export async function pruneRomAssets(rootDir = process.cwd()) {
   const state = await getRomAssetState(rootDir);
 
@@ -124,6 +145,11 @@ function printFileList(title, filePaths) {
 }
 
 async function main() {
+  if (process.argv.includes("--check-build")) {
+    const count = await verifyBuiltRomAssets();
+    console.log(`Verified ${count} catalog assets in the Vercel build output.`);
+    return;
+  }
   const shouldPrune = process.argv.includes("--prune");
   const shouldList = process.argv.includes("--list");
 
