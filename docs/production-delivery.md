@@ -40,6 +40,11 @@ are allowed through the general ROM exclusion.
 
 Use **Actions → Production delivery → Run workflow → main** with **stage_prebuilt** selected to build and verify a Vercel deployment while production domains keep serving the live release. Leave the option clear for a production delivery.
 
+Production builds remove Sentry's internal debug statements with the SDK's
+`__SENTRY_DEBUG__` compile-time flag. Error capture, tracing, structured logs and
+module-load recovery keep their existing configuration. Development retains SDK
+diagnostics, and the hosted source-map upload checks remain enabled.
+
 Infisical Production owns the Sentry upload token. The build job uses the encrypted `SENTRY_AUTH_TOKEN` copy in the GitHub Production environment and confirms the source-map upload before deployment. Refresh that copy after rotating the source token, then rerun delivery.
 
 ## Initial browser module recovery

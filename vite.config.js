@@ -11,6 +11,7 @@ export default defineConfig(({ command, mode }) => {
     : undefined;
 
   return {
+    define: command === "build" ? { __SENTRY_DEBUG__: false } : {},
     plugins: [
       sentrySvelteKit({
         org: SENTRY_ORG,
