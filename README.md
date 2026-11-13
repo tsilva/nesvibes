@@ -35,7 +35,6 @@ pnpm check             # run Svelte type and diagnostics checks
 pnpm test:emu          # run emulator tests with node:test
 pnpm check:headers     # verify the configured security headers
 pnpm check:rom-assets  # verify ROM files match the catalogs
-pnpm sentry:issues
 ```
 
 ## Notes
@@ -46,7 +45,7 @@ pnpm sentry:issues
 - Keyboard controls are arrow keys for D-pad, `Z` for B, `X` for A, `Enter` for Start, and `Shift` for Select.
 - Browser audio may require one user gesture before playback starts.
 - Quicklaunch requires HTTP(S). Use the deployed site or a local dev/static server; drag-and-drop still works with local files.
-- Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`. Local builds skip source-map uploads. `pnpm sentry:issues` uses its existing Infisical credential.
+- Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`. Local builds skip source-map uploads. The optional issue reader requires a separately configured access route.
 - Production deploys through the Vercel adapter and `vercel.json` security headers.
 
 The [dated development and verification notes](docs/development-notes-2026-03-21.md)
@@ -59,13 +58,13 @@ limits of its historical browser checks.
 
 ## Secret scanning
 
-GitHub Actions scans changed commits with the pinned Infisical CLI. New branches
+GitHub Actions scans changed commits for exposed credentials. New branches
 and rewritten pushes scan the complete history reachable from the new head, even
 when the previous commit is no longer available. Missing pull-request revisions
 and scanner errors still fail the check. Reports publish only finding locations;
 credentials and matched source content remain private.
 
-Production secrets are delivered through the pinned shared GitHub Actions workflow. The standalone signed Infisical relay triggers synchronization and deployment; see [production delivery](docs/production-delivery.md) for scope and recovery.
+Production delivery uses the pinned shared GitHub Actions workflow; see [production delivery](docs/production-delivery.md) for scope and recovery.
 
 Production delivery keeps Vercel secret isolation enabled and distinguishes public configuration from private credentials; see [production delivery](docs/production-delivery.md).
 
@@ -73,7 +72,6 @@ Production delivery keeps Vercel secret isolation enabled and distinguishes publ
 
 The NESVibes application code is available under the [MIT License](LICENSE). Bundled ROMs retain their own licenses and notices beside their assets under `static/roms`.
 
-`pnpm sentry:issues -- --help` uses the managed development token. Private tokens in local Sentry env files are ignored.
 
 Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](docs/production-delivery.md) for destinations, access boundaries and failure behavior.
 

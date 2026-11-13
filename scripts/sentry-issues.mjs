@@ -1,47 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
 import process from "node:process";
 import { SENTRY_BASE_URL, SENTRY_ORG, SENTRY_PROJECT } from "../src/lib/sentry-project.js";
 
-function loadEnvFile(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return {};
-  }
-
-  const loaded = {};
-  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-
-    if (!line || line.startsWith("#")) {
-      continue;
-    }
-
-    const separatorIndex = line.indexOf("=");
-
-    if (separatorIndex === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, separatorIndex).trim();
-    let value = line.slice(separatorIndex + 1).trim();
-
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    loaded[key] = value;
-  }
-
-  return loaded;
-}
-
 function printHelp() {
-  console.log(`Usage: pnpm sentry:issues -- [options]
+  console.log(`Usage: node scripts/sentry-issues.mjs -- [options]
 
 Options:
   --all                  Include resolved and ignored issues
@@ -200,16 +161,16 @@ async function main() {
     return;
   }
 
-  const cwd = process.cwd();
-  const fileEnv = loadEnvFile(path.join(cwd, ".env"));
   const authToken = process.env.SENTRY_AUTH_TOKEN ?? "";
-  const org = process.env.SENTRY_ORG || fileEnv.SENTRY_ORG || SENTRY_ORG;
-  const project = process.env.SENTRY_PROJECT || fileEnv.SENTRY_PROJECT || SENTRY_PROJECT;
-  const baseUrl = (process.env.SENTRY_BASE_URL || fileEnv.SENTRY_BASE_URL || SENTRY_BASE_URL).replace(/\/+$/, "");
+  const org = process.env.SENTRY_ORG || SENTRY_ORG;
+  const project = process.env.SENTRY_PROJECT || SENTRY_PROJECT;
+  const baseUrl = (process.env.SENTRY_BASE_URL || SENTRY_BASE_URL).replace(/\/+$/, "");
 
-  if (!authToken) {
+  if (process.env.SENTRY_VAULT_TRANSPORT !== undefined
+      ? process.env.SENTRY_VAULT_TRANSPORT !== "agent-vault" || authToken !== "sentry_read_public_placeholder"
+      : !authToken || authToken === "sentry_read_public_placeholder") {
     throw new Error(
-      "Missing SENTRY_AUTH_TOKEN. Use pnpm sentry:issues with Infisical.",
+      "Set SENTRY_AUTH_TOKEN in the server environment; configured proxy sessions require their reviewed placeholder.",
     );
   }
 

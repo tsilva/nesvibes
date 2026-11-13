@@ -14,3 +14,5 @@ output/
 
 # Python secret-management helpers
 __pycache__/
+/.internal/
+/.runbox.yaml
