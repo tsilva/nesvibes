@@ -3,19 +3,6 @@
   import { page } from "$app/state";
   import { onMount } from "svelte";
   import LibraryPanel from "#lib/components/LibraryPanel.svelte";
-  import TouchControlButton from "#lib/components/TouchControlButton.svelte";
-  import {
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
-    ArrowUp,
-    EyeOff,
-    Gamepad2,
-    Joystick,
-    Keyboard,
-    Maximize2,
-    Minimize2,
-  } from "lucide-svelte";
   import "../../app.css";
 
   export let data;
@@ -35,26 +22,6 @@
     ["ArrowLeft", "left"],
     ["ArrowRight", "right"],
   ]);
-  const BUTTON_KEY_LABELS = new Map([
-    ["select", "Shift"],
-    ["start", "Enter"],
-    ["b", "Z"],
-    ["a", "X"],
-  ]);
-  const TOUCH_DIRECTION_BUTTONS = [
-    { button: "up", label: "Up", position: "up", icon: ArrowUp },
-    { button: "left", label: "Left", position: "left", icon: ArrowLeft },
-    { button: "right", label: "Right", position: "right", icon: ArrowRight },
-    { button: "down", label: "Down", position: "down", icon: ArrowDown },
-  ];
-  const SYSTEM_BUTTONS = [
-    { button: "select", label: "Select" },
-    { button: "start", label: "Start" },
-  ];
-  const ACTION_BUTTONS = [
-    { button: "b", label: "B", tone: "secondary" },
-    { button: "a", label: "A", tone: "primary" },
-  ];
   const DESKTOP_DEBUGGER_QUERY = "(min-width: 981px)";
   const EMPTY_OVERLAY_TITLE = "";
   const RELOAD_OVERLAY_TITLE = "Drop another ROM";
@@ -78,6 +45,8 @@
   let stageElement;
   let emulator;
   let emulatorPromise;
+  let controlsComponent = null;
+  let toolbarComponent = null;
   let debuggerComponent = null;
   let debuggerController = null;
   let debuggerEnabled = false;
@@ -224,44 +193,6 @@
     setCanvasControlsMode(availableModes[nextIndex]);
   }
 
-  function getCanvasControlsModeLabel(mode) {
-    if (mode === "gamepad") {
-      return "Touch gamepad overlay";
-    }
-
-    if (mode === "keys") {
-      return "Keyboard overlay";
-    }
-
-    if (mode === "hidden") {
-      return "Overlay hidden";
-    }
-
-    return "Controls overlay";
-  }
-
-  function getCanvasControlsModeIcon(mode) {
-    if (mode === "gamepad") {
-      return Joystick;
-    }
-
-    if (mode === "keys") {
-      return Keyboard;
-    }
-
-    if (mode === "hidden") {
-      return EyeOff;
-    }
-
-    return Gamepad2;
-  }
-
-  function getCanvasControlText(control, mode) {
-    return mode === "keys"
-      ? BUTTON_KEY_LABELS.get(control.button) ?? control.label
-      : control.label;
-  }
-
   function getEmptyOverlayCopy() {
     return isMobileMode ? MOBILE_EMPTY_OVERLAY_COPY : DESKTOP_EMPTY_OVERLAY_COPY;
   }
@@ -358,8 +289,13 @@
     }
 
     if (!emulatorPromise) {
-      emulatorPromise = import("#lib/emu/nes-emulator.js")
-        .then(({ createNesEmulator }) => {
+      emulatorPromise = Promise.all([
+        import("#lib/emu/nes-emulator.js"),
+        import("#lib/components/EmulatorToolbar.svelte"),
+        import("#lib/components/EmulatorControls.svelte"),
+      ]).then(([{ createNesEmulator }, { default: EmulatorToolbar }, { default: EmulatorControls }]) => {
+          toolbarComponent = EmulatorToolbar;
+          controlsComponent = EmulatorControls;
           emulator = createNesEmulator({
             canvas,
             onRuntimeError: handleEmulatorRuntimeError
@@ -935,33 +871,9 @@
           aria-label="ROM drop zone"
         >
           {#if stageMode === "loaded"}
-            <div class="stage-toolbar">
-              <button
-                type="button"
-                class="stage-toolbar-button controls-toggle"
-                aria-label={`Switch controls overlay mode. Currently ${getCanvasControlsModeLabel(effectiveCanvasControlsMode).toLowerCase()}.`}
-                title={`Controls overlay: ${getCanvasControlsModeLabel(effectiveCanvasControlsMode)}`}
-                on:click={() => cycleCanvasControlsMode()}
-              >
-                <svelte:component this={getCanvasControlsModeIcon(effectiveCanvasControlsMode)} size={18} strokeWidth={2.25} aria-hidden="true" />
-              </button>
-              {#if canToggleFullscreen}
-                <button
-                  type="button"
-                  class="stage-toolbar-button fullscreen-toggle"
-                  aria-pressed={isFullscreen}
-                  aria-label={isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
-                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                  on:click={() => void toggleFullscreenMode()}
-                >
-                  {#if isFullscreen}
-                    <Minimize2 size={18} strokeWidth={2.25} aria-hidden="true" />
-                  {:else}
-                    <Maximize2 size={18} strokeWidth={2.25} aria-hidden="true" />
-                  {/if}
-                </button>
-              {/if}
-            </div>
+            <svelte:component this={toolbarComponent}
+              {effectiveCanvasControlsMode} {canToggleFullscreen} {isFullscreen}
+              {cycleCanvasControlsMode} {toggleFullscreenMode} />
           {/if}
           <canvas bind:this={canvas} id="screen" width="256" height="240" tabindex="0" aria-label="NES screen"></canvas>
           <button class="overlay" type="button" on:click={openRomPicker}>
@@ -986,81 +898,11 @@
             {/if}
           </button>
           {#if showCanvasControls}
-            <div class={`touch-controls active ${effectiveCanvasControlsMode === "keys" ? "keys-mode" : ""} ${showJoystickOverlay ? "gamepad-mode" : ""}`.trim()}>
-              <div class="touch-cluster touch-system" role="group" aria-label="System buttons">
-                {#each SYSTEM_BUTTONS as control (control.button)}
-                  <TouchControlButton
-                    ariaLabel={control.label}
-                    button={control.button}
-                    className="touch-button system"
-                    pressed={pressedButtons[control.button]}
-                    onPress={handleControllerPress}
-                    onRelease={handleControllerRelease}
-                    onLostCapture={() => setPressedButton(control.button, false)}
-                  >
-                    <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
-                  </TouchControlButton>
-                {/each}
-              </div>
-
-              {#if showJoystickOverlay}
-                <div class="touch-cluster touch-joystick-shell" role="group" aria-label="Analog directional pad">
-                  <div
-                    class={`touch-joystick ${joystickState.active ? "active" : ""}`.trim()}
-                    aria-hidden="true"
-                    on:pointerdown={handleJoystickPointerDown}
-                    on:pointermove={handleJoystickPointerMove}
-                    on:pointerup={handleJoystickPointerUp}
-                    on:pointercancel={handleJoystickPointerUp}
-                    on:lostpointercapture={handleJoystickLostCapture}
-                  >
-                    <span class="touch-joystick-base"></span>
-                    <span class="touch-joystick-guide horizontal"></span>
-                    <span class="touch-joystick-guide vertical"></span>
-                    <span
-                      class="touch-joystick-thumb"
-                      style={`transform: translate(${joystickState.x}px, ${joystickState.y}px);`}
-                    >
-                      <Joystick size={24} strokeWidth={2.1} aria-hidden="true" />
-                    </span>
-                  </div>
-                </div>
-              {:else}
-                <div class="touch-cluster touch-dpad" role="group" aria-label="Directional pad">
-                  {#each TOUCH_DIRECTION_BUTTONS as control (control.button)}
-                    <TouchControlButton
-                      ariaLabel={control.label}
-                      button={control.button}
-                      className={`touch-button directional ${control.position}`.trim()}
-                      pressed={pressedButtons[control.button]}
-                      onPress={handleControllerPress}
-                      onRelease={handleControllerRelease}
-                      onLostCapture={() => setPressedButton(control.button, false)}
-                    >
-                      <span class="touch-button-label touch-button-icon" aria-hidden="true">
-                        <svelte:component this={control.icon} size={18} strokeWidth={2.75} />
-                      </span>
-                    </TouchControlButton>
-                  {/each}
-                </div>
-              {/if}
-
-              <div class="touch-cluster touch-actions" role="group" aria-label="Action buttons">
-                {#each ACTION_BUTTONS as control (control.button)}
-                  <TouchControlButton
-                    ariaLabel={control.label}
-                    button={control.button}
-                    className={`touch-button action ${control.button}`.trim()}
-                    pressed={pressedButtons[control.button]}
-                    onPress={handleControllerPress}
-                    onRelease={handleControllerRelease}
-                    onLostCapture={() => setPressedButton(control.button, false)}
-                  >
-                    <span class="touch-button-label">{getCanvasControlText(control, effectiveCanvasControlsMode)}</span>
-                  </TouchControlButton>
-                {/each}
-              </div>
-            </div>
+            <svelte:component this={controlsComponent}
+              {effectiveCanvasControlsMode} {showJoystickOverlay} {pressedButtons} {joystickState}
+              {handleControllerPress} {handleControllerRelease} {setPressedButton}
+              {handleJoystickPointerDown} {handleJoystickPointerMove}
+              {handleJoystickPointerUp} {handleJoystickLostCapture} />
           {/if}
         </section>
       </div>
