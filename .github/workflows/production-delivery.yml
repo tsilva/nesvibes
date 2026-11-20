@@ -75,7 +75,7 @@ jobs:
     with:
       project_id: prj_Xobvbls2uatrxEW22TwAqXYr2rnF
       project_name: nesvibes
-      production_domains: '["nesvibes.tsilva.eu","nesvibes.vercel.app"]'
+      production_domains: '["nesvibes.tsilva.eu"]'
       public_environment: '["NEXT_PUBLIC_GA_MEASUREMENT_ID","PUBLIC_GOOGLE_ANALYTICS_ID","PUBLIC_SENTRY_DSN"]'
       source_maps: true
       promote: ${{ !inputs.stage_prebuilt }}
