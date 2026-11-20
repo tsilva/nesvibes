@@ -1,0 +1,64 @@
+# NESVibes development and compatibility guide
+
+## Install
+
+```bash
+git clone https://github.com/tsilva/nesvibes.git
+cd nesvibes
+pnpm install
+pnpm dev --port auto
+```
+
+Open the local URL printed by the server.
+
+## Commands
+
+```bash
+pnpm dev               # start the Vite dev server
+pnpm build             # build the SvelteKit app for Vercel
+pnpm preview           # preview the production build locally
+pnpm check             # run Svelte type and diagnostics checks
+pnpm test:emu          # run emulator tests with node:test
+pnpm check:headers     # verify the configured security headers
+pnpm check:rom-assets  # verify ROM files match the catalogs
+```
+
+## Notes
+
+- Use `pnpm`; the repo blocks other package managers in `preinstall`.
+- The bundled library has 45 cataloged ROMs: 36 public-domain entries and 9 redistributable homebrew entries. 44 are playable today; the mapper-5 TMNT Demo is cataloged but disabled.
+- The emulator supports mappers 0, 1, 2, 3, and 4. Trainer ROMs are rejected.
+- Keyboard controls are arrow keys for D-pad, `Z` for B, `X` for A, `Enter` for Start, and `Shift` for Select.
+- Browser audio may require one user gesture before playback starts.
+- Quicklaunch requires HTTP(S). Use the deployed site or a local dev/static server; drag-and-drop still works with local files.
+- Optional analytics use `PUBLIC_GOOGLE_ANALYTICS_ID`. Sentry uses `PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `PUBLIC_SENTRY_ENABLED`, `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_BASE_URL`; start from `.env.example`. Local builds skip source-map uploads. The optional issue reader requires a separately configured access route.
+- Production deploys through the Vercel adapter and `vercel.json` security headers.
+
+The [dated development and verification notes](development-notes-2026-03-21.md)
+preserve the original fullscreen, mobile-control and routing work, including the
+limits of its historical browser checks.
+
+## Architecture
+
+![NESVibes architecture diagram](../architecture.png)
+
+## Secret scanning
+
+GitHub Actions scans changed commits for exposed credentials. New branches
+and rewritten pushes scan the complete history reachable from the new head, even
+when the previous commit is no longer available. Missing pull-request revisions
+and scanner errors still fail the check. Reports publish only finding locations;
+credentials and matched source content remain private.
+
+Production delivery uses the pinned shared GitHub Actions workflow; see [production delivery](production-delivery.md) for scope and recovery.
+
+Production delivery keeps Vercel secret isolation enabled and distinguishes public configuration from private credentials; see [production delivery](production-delivery.md).
+
+## License
+
+The NESVibes application code is available under the [MIT License](../LICENSE). Bundled ROMs retain their own licenses and notices beside their assets under `static/roms`.
+
+
+Production delivery runs on pushes to `main` and supports manual secret rotations. See [production delivery](production-delivery.md) for destinations, access boundaries and failure behavior.
+
+[MIT License](../LICENSE).
