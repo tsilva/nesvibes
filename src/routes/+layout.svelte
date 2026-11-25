@@ -3,7 +3,6 @@
   import { afterNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { PUBLIC_GOOGLE_ANALYTICS_ID } from "$app/env/public";
-  import { inject, pageview } from "@vercel/analytics";
   import { trackPageView } from "#lib/google-analytics.js";
   import { createPageMetadata, site } from "#lib/site.js";
   import silkscreenFontUrl from "@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url";
@@ -55,14 +54,8 @@
   }
 
   if (browser) {
-    inject({
-      basePath: import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH,
-      disableAutoTrack: true,
-      framework: "sveltekit"
-    }, import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG);
     afterNavigate(({ to, shallow }) => {
       if (shallow) return;
-      if (to?.route.id) pageview({ route: to.route.id, path: to.url.pathname });
       queuePageView(to?.url ?? new URL(window.location.href));
     });
   }
